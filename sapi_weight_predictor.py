@@ -16,7 +16,6 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import seaborn as sns
 import json
-import base64
 from PIL import Image
 from io import BytesIO
 import plotly.graph_objects as go
@@ -412,148 +411,6 @@ def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_
     
     return berat_badan, formula_name, formula_text
 
-# Helper function untuk membuat visualisasi ternak
-def create_animal_visualization(animal_type, chest_size, body_length, gender="Jantan"):
-    """
-    Membuat visualisasi ternak berdasarkan jenis dan ukuran.
-    
-    Args:
-        animal_type (str): Jenis ternak (Sapi, Kambing, Domba)
-        chest_size (float): Ukuran lingkar dada ternak
-        body_length (float): Ukuran panjang badan ternak
-        gender (str): Jenis kelamin (Jantan, Betina)
-    
-    Returns:
-        BytesIO object: Gambar dalam format PNG
-    """
-    # Parameter untuk visualisasi
-    colors = {
-        "Sapi": "#8B4513",     # Coklat tua
-        "Kambing": "#A0522D",  # Sienna
-        "Domba": "#D2B48C"     # Tan
-    }
-    
-    # Normalisasi ukuran untuk visualisasi
-    norm_chest = min(1.0, max(0.5, chest_size / 200))  # Maksimal 200cm untuk sapi besar
-    norm_length = min(1.0, max(0.5, body_length / 180))  # Maksimal 180cm untuk sapi besar
-    
-    # Buat gambar
-    fig, ax = plt.subplots(figsize=(8, 6))
-    
-    # Parameter dasar berdasarkan jenis
-    if animal_type == "Sapi":
-        # Badan
-        body_width = 100 * norm_chest
-        body_height = 70 * norm_chest
-        body_length_px = 150 * norm_length
-        
-        # Gambar badan (oval)
-        ellipse = plt.Rectangle((50, 50), body_length_px, body_height, 
-                               color=colors[animal_type], alpha=0.8, 
-                               angle=0)
-        ax.add_patch(ellipse)
-        
-        # Gambar kepala
-        head_size = 40 * norm_chest
-        head = plt.Circle((30, 85), head_size/2, color=colors[animal_type])
-        ax.add_patch(head)
-        
-        # Kaki
-        leg_width = 10 * norm_chest
-        for x_pos in [70, 170]:
-            for y_pos in [50]:
-                leg = plt.Rectangle((x_pos, 10), leg_width, 40, 
-                                   color=colors[animal_type])
-                ax.add_patch(leg)
-        
-        # Tanduk untuk jantan
-        if gender == "Jantan":
-            plt.plot([15, 5], [95, 110], 'k-', linewidth=2)
-            plt.plot([25, 35], [100, 115], 'k-', linewidth=2)
-        
-    elif animal_type == "Kambing":
-        # Badan
-        body_width = 80 * norm_chest
-        body_height = 50 * norm_chest
-        body_length_px = 120 * norm_length
-        
-        # Gambar badan (oval)
-        ellipse = plt.Rectangle((50, 50), body_length_px, body_height, 
-                               color=colors[animal_type], alpha=0.8, 
-                               angle=0)
-        ax.add_patch(ellipse)
-        
-        # Gambar kepala
-        head_size = 30 * norm_chest
-        head = plt.Circle((35, 75), head_size/2, color=colors[animal_type])
-        ax.add_patch(head)
-        
-        # Kaki
-        leg_width = 8 * norm_chest
-        for x_pos in [70, 140]:
-            for y_pos in [50]:
-                leg = plt.Rectangle((x_pos, 10), leg_width, 40, 
-                                   color=colors[animal_type])
-                ax.add_patch(leg)
-        
-        # Tanduk dan janggut untuk jantan
-        if gender == "Jantan":
-            plt.plot([25, 10], [85, 105], 'k-', linewidth=2)
-            plt.plot([35, 50], [90, 110], 'k-', linewidth=2)
-            plt.plot([35, 35], [60, 45], 'k-', linewidth=1.5)  # Janggut
-            
-    elif animal_type == "Domba":
-        # Badan
-        body_width = 90 * norm_chest
-        body_height = 60 * norm_chest
-        body_length_px = 130 * norm_length
-        
-        # Gambar badan (oval) dengan bulu
-        ellipse = plt.Rectangle((50, 50), body_length_px, body_height, 
-                               color=colors[animal_type], alpha=0.9, 
-                               angle=0)
-        ax.add_patch(ellipse)
-        
-        # Buat efek bulu dengan titik-titik (wool)
-        for _ in range(100):
-            x = np.random.uniform(50, 50+body_length_px)
-            y = np.random.uniform(50, 50+body_height)
-            size = np.random.uniform(2, 4)
-            plt.plot(x, y, 'o', color='white', alpha=0.5, markersize=size)
-        
-        # Gambar kepala
-        head_size = 35 * norm_chest
-        head = plt.Circle((35, 80), head_size/2, color=colors[animal_type])
-        ax.add_patch(head)
-        
-        # Kaki
-        leg_width = 9 * norm_chest
-        for x_pos in [70, 150]:
-            for y_pos in [50]:
-                leg = plt.Rectangle((x_pos, 10), leg_width, 40, 
-                                   color="#8B4513")  # Kaki berwarna coklat
-                ax.add_patch(leg)
-    
-    # Tambahkan dimensi dan label
-    plt.text(50, 130, f"Lingkar Dada: {chest_size} cm", fontsize=10)
-    plt.text(50, 145, f"Panjang Badan: {body_length} cm", fontsize=10)
-    plt.text(120, 20, f"Jenis Kelamin: {gender}", fontsize=10)
-    
-    # Judul dan pengaturan axis
-    plt.title(f"Visualisasi {animal_type}", fontsize=14)
-    ax.set_xlim(0, 250)
-    ax.set_ylim(0, 160)
-    ax.set_aspect('equal')
-    plt.axis('off')
-    
-    # Simpan gambar ke BytesIO
-    buf = BytesIO()
-    plt.savefig(buf, format='png', bbox_inches='tight')
-    plt.close(fig)
-    buf.seek(0)
-    
-    return buf
-
 # Helper function untuk membandingkan rumus-rumus yang berbeda
 def compare_formulas(animal_type, chest_size, body_length, gender, breed):
     """
@@ -882,13 +739,6 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     - Panjang Badan (PB): **{panjang_badan} cm** (Rentang normal: {length_range['min']}-{length_range['max']} cm)
     - Berat Badan (BB) = **{berat_badan:.2f} kg**
     """)
-    
-    # Visualisasi Ternak
-    st.subheader("Visualisasi Ternak")
-    
-    # Buat visualisasi ternak
-    animal_image = create_animal_visualization(jenis_ternak, lingkar_dada, panjang_badan, jenis_kelamin)
-    st.image(animal_image, caption=f"Visualisasi {jenis_ternak} {bangsa_ternak} ({jenis_kelamin})")
     
     # Visualisasi Data Detail
     st.subheader("Visualisasi Data Detail")
