@@ -288,6 +288,9 @@ st.markdown(f"""
     Aplikasi ini menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan 
     menggunakan **Rumus Formula** yang spesifik untuk jenis dan bangsa ternak yang berbeda. 
     Silakan pilih jenis dan bangsa ternak yang sesuai di sidebar untuk mendapatkan hasil yang lebih akurat.
+    
+    > **Catatan**: Metode ini adalah prediksi pendekatan. Untuk mendapatkan data berat badan yang akurat, 
+    > timbangan ternak tetap merupakan alat ukur yang paling tepat.
     """)
 
 # Sidebar untuk input pengguna
@@ -738,7 +741,11 @@ with info_expander:
     
     ## Kesimpulan
     
-    Penggunaan rumus pendugaan berat badan ternak dapat menjadi alternatif yang praktis dan ekonomis bagi peternak untuk memperkirakan bobot ternak tanpa timbangan. Namun, perlu diingat bahwa rumus-rumus ini memberikan estimasi, dan faktor-faktor seperti kondisi tubuh, kebuntingan, dan variasi individual dapat mempengaruhi akurasi. Untuk keperluan yang memerlukan presisi tinggi (seperti penjualan, penetapan dosis obat, dsb), penggunaan timbangan tetap direkomendasikan.
+    Penggunaan rumus pendugaan berat badan ternak dapat menjadi alternatif yang praktis dan ekonomis bagi peternak untuk memperkirakan bobot ternak tanpa timbangan. Namun, perlu diingat bahwa rumus-rumus ini memberikan estimasi, dan faktor-faktor seperti kondisi tubuh, kebuntingan, dan variasi individual dapat mempengaruhi akurasi. 
+    
+    > **Penting**: Metode prediksi menggunakan rumus ini memiliki margin error berkisar 5-15% tergantung kondisi ternak, keakuratan pengukuran, dan kesesuaian rumus dengan bangsa ternak. Untuk keperluan yang memerlukan presisi tinggi (seperti penjualan komersial, penetapan dosis obat, kompetisi ternak, dll), penggunaan timbangan ternak tetap merupakan metode yang paling direkomendasikan.
+    
+    Aplikasi ini menyediakan alat bantu praktis di lapangan ketika timbangan tidak tersedia, namun hasilnya tidak dapat menggantikan pengukuran langsung dengan alat timbang standar.
     """)
 
 # Footer
