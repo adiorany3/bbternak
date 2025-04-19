@@ -13,8 +13,19 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import seaborn as sns
 import json
 from PIL import Image
+from io import BytesIO
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.figure_factory as ff
+from datetime import datetime
+
+# Get current year for the footer
+current_year = datetime.now().year
 
 # Konfigurasi halaman Streamlit - HARUS DITEMPATKAN PERTAMA
 st.set_page_config(
@@ -404,6 +415,249 @@ def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_
     
     return berat_badan, formula_name, formula_text
 
+# Helper function untuk membandingkan rumus-rumus yang berbeda
+def compare_formulas(animal_type, chest_size, body_length, gender, breed):
+    """
+    Membandingkan beberapa rumus perhitungan berat badan untuk jenis ternak yang sama
+    
+    Args:
+        animal_type (str): Jenis ternak (Sapi, Kambing, Domba)
+        chest_size (float): Ukuran lingkar dada ternak
+        body_length (float): Ukuran panjang badan ternak
+        gender (str): Jenis kelamin (Jantan, Betina)
+        breed (str): Bangsa ternak
+        
+    Returns:
+        dict: Hasil perhitungan dari berbagai rumus
+    """
+    results = {}
+    breed_data = ANIMAL_DATA[animal_type]["breeds"][breed]
+    gender_factor = breed_data["gender_factor"][gender]
+    factor = breed_data["factor"]
+    
+    formulas = ANIMAL_FORMULAS[animal_type]["formulas"]
+    
+    for formula_name, formula_data in formulas.items():
+        calculation_func = formula_data["calculation"]
+        raw_weight = calculation_func(chest_size, body_length)
+        corrected_weight = raw_weight * factor * gender_factor
+        
+        results[formula_name] = {
+            "formula": formula_data["formula"],
+            "raw_weight": raw_weight,
+            "corrected_weight": corrected_weight,
+            "description": formula_data["description"],
+            "reference": formula_data["reference"]
+        }
+    
+    return results
+
+# Helper function untuk membuat visualisasi data detail
+def create_weight_distribution_chart(animal_type, breed, gender, current_weight):
+    """
+    Membuat visualisasi distribusi berat badan untuk bangsa ternak tertentu
+    
+    Args:
+        animal_type (str): Jenis ternak (Sapi, Kambing, Domba)
+        breed (str): Bangsa ternak
+        gender (str): Jenis kelamin (Jantan, Betina)
+        current_weight (float): Berat badan ternak saat ini
+        
+    Returns:
+        plotly.graph_objects.Figure: Visualisasi distribusi berat
+    """
+    breed_data = ANIMAL_DATA[animal_type]["breeds"][breed]
+    
+    # Dapatkan rentang berat berdasarkan jenis ternak dan bangsa
+    if animal_type == "Sapi":
+        if gender == "Jantan":
+            min_weight = 200
+            max_weight = 1200
+            typical_min = 300
+            typical_max = 800
+        else:  # Betina
+            min_weight = 150
+            max_weight = 900
+            typical_min = 250
+            typical_max = 600
+    elif animal_type == "Kambing":
+        if gender == "Jantan":
+            min_weight = 15
+            max_weight = 120
+            typical_min = 25
+            typical_max = 80
+        else:  # Betina
+            min_weight = 10
+            max_weight = 90
+            typical_min = 20
+            typical_max = 60
+    else:  # Domba
+        if gender == "Jantan":
+            min_weight = 15
+            max_weight = 160
+            typical_min = 30
+            typical_max = 100
+        else:  # Betina
+            min_weight = 10
+            max_weight = 110
+            typical_min = 25
+            typical_max = 70
+    
+    # Sesuaikan rentang berdasarkan bangsa ternak
+    # Ini seharusnya disesuaikan dengan data yang lebih akurat untuk setiap bangsa
+    if "lokal" in breed.lower() or "kacang" in breed.lower() or "ekor tipis" in breed.lower():
+        typical_min *= 0.7
+        typical_max *= 0.7
+    elif "besar" in breed.lower() or "limousin" in breed.lower() or "simental" in breed.lower() or "texas" in breed.lower():
+        typical_min *= 1.2
+        typical_max *= 1.2
+    
+    # Generate distribusi berat (ini adalah distribusi hipotetis untuk ilustrasi)
+    x = np.linspace(min_weight, max_weight, 500)
+    
+    # Buat distribusi normal yang berpusat pada rentang tipikal
+    mean = (typical_min + typical_max) / 2
+    std = (typical_max - typical_min) / 4
+    y = (1 / (std * np.sqrt(2 * np.pi))) * np.exp(-(x - mean)**2 / (2 * std**2))
+    
+    # Buat visualisasi distribusi
+    fig = go.Figure()
+    
+    # Tambahkan area distribusi
+    fig.add_trace(go.Scatter(
+        x=x, 
+        y=y,
+        fill='tozeroy',
+        fillcolor='rgba(0, 176, 246, 0.2)',
+        line=dict(color='rgba(0, 176, 246, 0.7)', width=2),
+        name='Distribusi Berat'
+    ))
+    
+    # Tambahkan marker untuk berat saat ini
+    fig.add_trace(go.Scatter(
+        x=[current_weight],
+        y=[0.002],  # Nilai y yang cukup rendah agar terlihat pada plot
+        mode='markers',
+        marker=dict(size=12, color='red', symbol='diamond'),
+        name='Berat Saat Ini'
+    ))
+    
+    # Tambahkan area untuk rentang normal
+    fig.add_shape(
+        type="rect",
+        x0=typical_min,
+        y0=0,
+        x1=typical_max,
+        y1=max(y) * 1.1,
+        fillcolor="rgba(0, 255, 0, 0.1)",
+        line=dict(width=0),
+        layer="below"
+    )
+    
+    # Tambahkan label untuk rentang normal
+    fig.add_annotation(
+        x=(typical_min + typical_max) / 2,
+        y=max(y) * 0.8,
+        text=f"Rentang Berat Normal<br>{typical_min:.0f} - {typical_max:.0f} kg",
+        showarrow=False,
+        font=dict(size=12, color="black"),
+        bgcolor="rgba(255, 255, 255, 0.7)",
+        bordercolor="green",
+        borderwidth=1,
+        borderpad=4
+    )
+    
+    # Konfigurasi layout
+    fig.update_layout(
+        title=f"Distribusi Berat Badan untuk {breed} ({gender})",
+        xaxis_title="Berat Badan (kg)",
+        yaxis_title="Kepadatan Probabilitas",
+        showlegend=True,
+        legend=dict(x=0.02, y=0.98),
+        margin=dict(l=40, r=40, t=60, b=40),
+        height=400
+    )
+    
+    # Sembunyikan skala y karena tidak terlalu penting dalam konteks ini
+    fig.update_yaxes(showticklabels=False)
+    
+    return fig
+
+# Helper function untuk membuat visualisasi perbandingan berat antar bangsa
+def create_breed_comparison_chart(animal_type, chest_size, body_length, gender):
+    """
+    Membuat visualisasi perbandingan berat badan antar bangsa dengan ukuran yang sama
+    
+    Args:
+        animal_type (str): Jenis ternak (Sapi, Kambing, Domba)
+        chest_size (float): Ukuran lingkar dada ternak
+        body_length (float): Ukuran panjang badan ternak
+        gender (str): Jenis kelamin (Jantan, Betina)
+        
+    Returns:
+        plotly.graph_objects.Figure: Visualisasi perbandingan berat antar bangsa
+    """
+    breeds = ANIMAL_DATA[animal_type]["breeds"]
+    breed_names = []
+    weights = []
+    formulas = []
+    colors = []
+    
+    # Generate warna berbeda untuk setiap bangsa
+    color_palette = px.colors.qualitative.Plotly
+    
+    idx = 0
+    for breed_name, breed_data in breeds.items():
+        formula_name = breed_data["formula_name"]
+        factor = breed_data["factor"]
+        gender_factor = breed_data["gender_factor"][gender]
+        
+        formula_data = ANIMAL_FORMULAS[animal_type]["formulas"][formula_name]
+        calculation_func = formula_data["calculation"]
+        
+        # Hitung berat
+        weight = calculation_func(chest_size, body_length) * factor * gender_factor
+        
+        breed_names.append(breed_name)
+        weights.append(weight)
+        formulas.append(formula_name)
+        colors.append(color_palette[idx % len(color_palette)])
+        idx += 1
+    
+    # Urutkan data berdasarkan berat
+    sorted_indices = np.argsort(weights)
+    breed_names = [breed_names[i] for i in sorted_indices]
+    weights = [weights[i] for i in sorted_indices]
+    formulas = [formulas[i] for i in sorted_indices]
+    colors = [colors[i] for i in sorted_indices]
+    
+    # Buat visualisasi
+    fig = go.Figure()
+    
+    # Tambahkan batang untuk setiap bangsa
+    for i in range(len(breed_names)):
+        fig.add_trace(go.Bar(
+            x=[breed_names[i]],
+            y=[weights[i]],
+            name=breed_names[i],
+            marker_color=colors[i],
+            text=[f"{weights[i]:.1f} kg<br>({formulas[i]})"],
+            textposition='auto',
+            hoverinfo='text',
+            hovertext=[f"Bangsa: {breed_names[i]}<br>Berat: {weights[i]:.1f} kg<br>Rumus: {formulas[i]}<br>Lingkar Dada: {chest_size} cm<br>Panjang Badan: {body_length} cm"]
+        ))
+    
+    # Konfigurasi layout
+    fig.update_layout(
+        title=f"Perbandingan Berat Badan Antar Bangsa {animal_type} ({gender})<br>dengan LD={chest_size}cm, PB={body_length}cm",
+        xaxis_title="Bangsa Ternak",
+        yaxis_title="Berat Badan (kg)",
+        showlegend=False,
+        height=500
+    )
+    
+    return fig
+
 # Judul dan deskripsi aplikasi
 st.title("🐄 Prediksi Berat Badan Ternak")
 st.markdown(f"""
@@ -490,394 +744,442 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     - Berat Badan (BB) = **{berat_badan:.2f} kg**
     """)
     
-    # Visualisasi
-    st.subheader("Visualisasi Data")
+    # Visualisasi Data Detail
+    st.subheader("Visualisasi Data Detail")
     
-    # Buat data untuk visualisasi
-    col1, col2 = st.columns(2)
+    # Tampilkan tabs untuk berbagai visualisasi detail
+    viz_tab1, viz_tab2, viz_tab3, viz_tab4 = st.tabs([
+        "Grafik Dimensi & Berat", 
+        "Distribusi Berat", 
+        "Perbandingan Rumus",
+        "Perbandingan Bangsa"
+    ])
     
-    with col1:
-        # Grafik hubungan lingkar dada dan berat badan
-        ld_range = np.linspace(chest_range['min'] * 0.9, chest_range['max'] * 1.1, 50)
-        bb_range = [hitung_berat_badan(ld, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for ld in ld_range]
+    with viz_tab1:
+        # Grafik hubungan dimensi dan berat
+        col1, col2 = st.columns(2)
         
-        fig1, ax1 = plt.subplots()
-        ax1.plot(ld_range, bb_range)
-        ax1.scatter([lingkar_dada], [berat_badan], color='red', s=100)
+        with col1:
+            # Grafik hubungan lingkar dada dan berat badan
+            ld_range = np.linspace(chest_range['min'] * 0.9, chest_range['max'] * 1.1, 50)
+            bb_range = [hitung_berat_badan(ld, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for ld in ld_range]
+            
+            fig1, ax1 = plt.subplots()
+            ax1.plot(ld_range, bb_range)
+            ax1.scatter([lingkar_dada], [berat_badan], color='red', s=100)
+            
+            # Tambahkan area rentang normal
+            ax1.axvspan(chest_range['min'], chest_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
+            
+            ax1.set_xlabel('Lingkar Dada (cm)')
+            ax1.set_ylabel('Berat Badan (kg)')
+            ax1.set_title('Hubungan Lingkar Dada dan Berat Badan')
+            ax1.grid(True)
+            ax1.legend()
+            st.pyplot(fig1)
         
-        # Tambahkan area rentang normal
-        ax1.axvspan(chest_range['min'], chest_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
+        with col2:
+            # Grafik hubungan panjang badan dan berat badan
+            pb_range = np.linspace(length_range['min'] * 0.9, length_range['max'] * 1.1, 50)
+            bb_range = [hitung_berat_badan(lingkar_dada, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for pb in pb_range]
+            
+            fig2, ax2 = plt.subplots()
+            ax2.plot(pb_range, bb_range)
+            ax2.scatter([panjang_badan], [berat_badan], color='red', s=100)
+            
+            # Tambahkan area rentang normal
+            ax2.axvspan(length_range['min'], length_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
+            
+            ax2.set_xlabel('Panjang Badan (cm)')
+            ax2.set_ylabel('Berat Badan (kg)')
+            ax2.set_title('Hubungan Panjang Badan dan Berat Badan')
+            ax2.grid(True)
+            ax2.legend()
+            st.pyplot(fig2)
         
-        ax1.set_xlabel('Lingkar Dada (cm)')
-        ax1.set_ylabel('Berat Badan (kg)')
-        ax1.set_title('Hubungan Lingkar Dada dan Berat Badan')
-        ax1.grid(True)
-        ax1.legend()
-        st.pyplot(fig1)
-    
-    with col2:
-        # Grafik hubungan panjang badan dan berat badan
-        pb_range = np.linspace(length_range['min'] * 0.9, length_range['max'] * 1.1, 50)
-        bb_range = [hitung_berat_badan(lingkar_dada, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for pb in pb_range]
+        # Tabel perbandingan dengan variasi ukuran
+        st.subheader("Estimasi Berat dengan Variasi Dimensi Tubuh")
+        data = []
         
-        fig2, ax2 = plt.subplots()
-        ax2.plot(pb_range, bb_range)
-        ax2.scatter([panjang_badan], [berat_badan], color='red', s=100)
+        # Variasi lingkar dada dan panjang badan (±10%)
+        ld_variations = [lingkar_dada * 0.9, lingkar_dada, lingkar_dada * 1.1]
+        pb_variations = [panjang_badan * 0.9, panjang_badan, panjang_badan * 1.1]
         
-        # Tambahkan area rentang normal
-        ax2.axvspan(length_range['min'], length_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
+        for ld in ld_variations:
+            for pb in pb_variations:
+                bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)
+                data.append({
+                    "Lingkar Dada (cm)": f"{ld:.1f}",
+                    "Panjang Badan (cm)": f"{pb:.1f}",
+                    "Berat Badan (kg)": f"{bb:.2f}",
+                    "Persentase Perubahan (%)": f"{((bb/berat_badan)-1)*100:.1f}%"
+                })
         
-        ax2.set_xlabel('Panjang Badan (cm)')
-        ax2.set_ylabel('Berat Badan (kg)')
-        ax2.set_title('Hubungan Panjang Badan dan Berat Badan')
-        ax2.grid(True)
-        ax2.legend()
-        st.pyplot(fig2)
+        # Tampilkan tabel dengan highlight
+        df = pd.DataFrame(data)
+        st.dataframe(df, use_container_width=True, hide_index=True)
+
+    with viz_tab2:
+        # Visualisasi distribusi berat badan
+        st.write("##### Distribusi Berat Badan untuk Bangsa dan Jenis Kelamin")
+        st.write("Grafik ini menunjukkan distribusi berat umum untuk bangsa dan jenis kelamin ternak ini, dan dimana posisi ternak Anda berada dalam distribusi tersebut.")
+        
+        # Buat visualisasi distribusi berat
+        weight_dist_fig = create_weight_distribution_chart(jenis_ternak, bangsa_ternak, jenis_kelamin, berat_badan)
+        st.plotly_chart(weight_dist_fig, use_container_width=True)
+        
+        # Tambahkan penjelasan tentang distribusi
+        breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+        
+        # Tentukan kategori berat (ringan, sedang, berat)
+        if jenis_ternak == "Sapi":
+            if jenis_kelamin == "Jantan":
+                weight_ranges = {"ringan": 300, "sedang": 600, "berat": 900}
+            else:
+                weight_ranges = {"ringan": 250, "sedang": 450, "berat": 700}
+        elif jenis_ternak == "Kambing":
+            if jenis_kelamin == "Jantan":
+                weight_ranges = {"ringan": 30, "sedang": 60, "berat": 90}
+            else:
+                weight_ranges = {"ringan": 25, "sedang": 45, "berat": 70}
+        else:  # Domba
+            if jenis_kelamin == "Jantan":
+                weight_ranges = {"ringan": 35, "sedang": 70, "berat": 120}
+            else:
+                weight_ranges = {"ringan": 30, "sedang": 60, "berat": 90}
+        
+        # Sesuaikan dengan faktor bangsa
+        factor = breed_data["factor"]
+        for key in weight_ranges:
+            weight_ranges[key] = weight_ranges[key] * factor
+        
+        # Tentukan kategori berat saat ini
+        if berat_badan < weight_ranges["ringan"]:
+            weight_category = "ringan"
+        elif berat_badan < weight_ranges["sedang"]:
+            weight_category = "sedang"
+        elif berat_badan < weight_ranges["berat"]:
+            weight_category = "berat"
+        else:
+            weight_category = "sangat berat"
+        
+        st.info(f"""
+        ##### Interpretasi Hasil:
+        
+        Berdasarkan berat badan yang diprediksi ({berat_badan:.2f} kg), ternak Anda termasuk ke dalam **kategori {weight_category}** untuk {bangsa_ternak} {jenis_kelamin}.
+        
+        **Penjelasan Kategori**:
+        - Ringan: < {weight_ranges['ringan']:.0f} kg
+        - Sedang: {weight_ranges['ringan']:.0f} - {weight_ranges['sedang']:.0f} kg
+        - Berat: {weight_ranges['sedang']:.0f} - {weight_ranges['berat']:.0f} kg
+        - Sangat Berat: > {weight_ranges['berat']:.0f} kg
+        """)
+
+    with viz_tab3:
+        # Perbandingan hasil dari berbagai rumus
+        st.write("##### Perbandingan Hasil dari Berbagai Rumus Perhitungan")
+        st.write("Berat badan yang sama dapat dihitung dengan berbagai rumus yang berbeda. Berikut perbandingan hasil perhitungan dari berbagai rumus yang tersedia untuk jenis ternak yang dipilih.")
+        
+        # Dapatkan hasil dari berbagai rumus
+        formula_results = compare_formulas(jenis_ternak, lingkar_dada, panjang_badan, jenis_kelamin, bangsa_ternak)
+        
+        # Buat dataframe untuk visualisasi
+        formula_names = []
+        raw_weights = []
+        corrected_weights = []
+        formula_texts = []
+        descriptions = []
+        
+        for formula_name, result in formula_results.items():
+            formula_names.append(formula_name)
+            raw_weights.append(result["raw_weight"])
+            corrected_weights.append(result["corrected_weight"])
+            formula_texts.append(result["formula"])
+            descriptions.append(result["description"])
+        
+        # Buat tabel perbandingan
+        formulas_df = pd.DataFrame({
+            "Nama Rumus": formula_names,
+            "Formula": formula_texts,
+            "Berat Dasar (kg)": [f"{w:.2f}" for w in raw_weights],
+            "Berat Terkoreksi (kg)": [f"{w:.2f}" for w in corrected_weights],
+            "Deskripsi": descriptions
+        })
+        
+        # Tampilkan tabel
+        st.dataframe(formulas_df, use_container_width=True, hide_index=True)
+        
+        # Buat visualisasi perbandingan rumus
+        fig = go.Figure()
+        
+        # Tambahkan batang untuk raw weight
+        fig.add_trace(go.Bar(
+            x=formula_names, 
+            y=raw_weights,
+            name='Berat Dasar',
+            marker_color='skyblue',
+            text=[f"{w:.1f} kg" for w in raw_weights],
+            textposition='auto'
+        ))
+        
+        # Tambahkan batang untuk corrected weight
+        fig.add_trace(go.Bar(
+            x=formula_names, 
+            y=corrected_weights,
+            name='Berat Terkoreksi',
+            marker_color='orangered',
+            text=[f"{w:.1f} kg" for w in corrected_weights],
+            textposition='auto'
+        ))
+        
+        # Tambahkan garis untuk berat yang dihitung
+        fig.add_shape(
+            type="line",
+            x0=-0.5, 
+            y0=berat_badan, 
+            x1=len(formula_names)-0.5, 
+            y1=berat_badan,
+            line=dict(color="green", width=2, dash="dash")
+        )
+        
+        # Tambahkan anotasi untuk berat yang dihitung
+        fig.add_annotation(
+            x=len(formula_names)-0.5,
+            y=berat_badan,
+            xshift=10,
+            text=f"Berat Saat Ini: {berat_badan:.1f} kg",
+            showarrow=False,
+            font=dict(color="green", size=12),
+            bgcolor="white",
+            bordercolor="green",
+            borderwidth=1
+        )
+        
+        # Konfigurasi layout
+        fig.update_layout(
+            title=f"Perbandingan Hasil Perhitungan Berbagai Rumus",
+            xaxis_title="Rumus Perhitungan",
+            yaxis_title="Berat Badan (kg)",
+            barmode='group',
+            bargap=0.15,
+            bargroupgap=0.1,
+            legend=dict(
+                x=0.01,
+                y=0.99,
+                bgcolor='rgba(255, 255, 255, 0.8)',
+                bordercolor='rgba(0, 0, 0, 0.3)',
+                borderwidth=1
+            ),
+            margin=dict(t=80, b=60, l=40, r=40)
+        )
+        
+        # Tampilkan grafik
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Tambahkan penjelasan
+        st.info("""
+        ##### Penjelasan Perbandingan Rumus:
+        
+        **Berat Dasar** adalah hasil perhitungan murni menggunakan rumus tanpa faktor koreksi. 
+        
+        **Berat Terkoreksi** adalah hasil setelah menerapkan faktor koreksi bangsa dan jenis kelamin.
+        
+        Perbedaan hasil antar rumus disebabkan oleh:
+        1. Perbedaan konstanta perhitungan yang disesuaikan dengan tipe ternak
+        2. Perbedaan metode perhitungan yang mempertimbangkan karakteristik fisik ternak yang berbeda
+        """)
+
+    with viz_tab4:
+        # Perbandingan berat antar bangsa
+        st.write("##### Perbandingan Berat Antar Bangsa Ternak")
+        st.write("Grafik ini membandingkan berat badan yang dihasilkan pada berbagai bangsa ternak dengan ukuran lingkar dada dan panjang badan yang sama.")
+        
+        # Buat visualisasi perbandingan bangsa
+        breed_comparison_fig = create_breed_comparison_chart(jenis_ternak, lingkar_dada, panjang_badan, jenis_kelamin)
+        st.plotly_chart(breed_comparison_fig, use_container_width=True)
+        
+        # Tambahkan penjelasan
+        st.info("""
+        ##### Penjelasan Perbandingan Bangsa:
+        
+        Grafik di atas menunjukkan bagaimana berat badan bervariasi antar bangsa ternak meskipun dengan ukuran lingkar dada dan panjang badan yang sama. Hal ini disebabkan oleh:
+        
+        1. **Karakteristik fisik bangsa** - Setiap bangsa memiliki konformasi tubuh, kepadatan otot, dan distribusi lemak yang berbeda
+        2. **Rumus yang digunakan** - Bangsa yang berbeda sering menggunakan rumus perhitungan yang berbeda
+        3. **Faktor koreksi** - Faktor koreksi spesifik diterapkan untuk setiap bangsa
+        
+        Perbandingan ini berguna untuk memahami potensi produksi dari berbagai bangsa ternak dan membantu dalam keputusan pemilihan bangsa untuk program peternakan.
+        """)
     
     # Tabel perbandingan
     st.subheader("Tabel Prediksi dengan Variasi Ukuran")
-    data = []
     
-    # Variasi lingkar dada (±10%)
-    ld_variations = [lingkar_dada * 0.9, lingkar_dada, lingkar_dada * 1.1]
-    pb_variations = [panjang_badan * 0.9, panjang_badan, panjang_badan * 1.1]
+    # Fungsi untuk membuat tabel prediksi berat dengan berbagai variasi ukuran
+    def create_prediction_table(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_kelamin, steps=5, variation_percent=15):
+        """
+        Membuat tabel prediksi berat badan dengan variasi ukuran lingkar dada dan panjang badan
+        
+        Args:
+            lingkar_dada (float): Ukuran lingkar dada saat ini (cm)
+            panjang_badan (float): Ukuran panjang badan saat ini (cm)
+            jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
+            bangsa (str): Bangsa ternak
+            jenis_kelamin (str): Jenis kelamin ternak
+            steps (int): Jumlah langkah variasi (default=5)
+            variation_percent (float): Persentase variasi dari nilai tengah (default=15%)
+            
+        Returns:
+            pd.DataFrame: DataFrame berisi tabel prediksi berat dengan variasi ukuran
+        """
+        # Tentukan rentang variasi
+        ld_min = lingkar_dada * (1 - variation_percent/100)
+        ld_max = lingkar_dada * (1 + variation_percent/100)
+        pb_min = panjang_badan * (1 - variation_percent/100)
+        pb_max = panjang_badan * (1 + variation_percent/100)
+        
+        # Buat array variasi ukuran
+        ld_values = np.linspace(ld_min, ld_max, steps)
+        pb_values = np.linspace(pb_min, pb_max, steps)
+        
+        # Format untuk nama kolom (lingkar dada)
+        ld_headers = [f"LD: {ld:.1f} cm" for ld in ld_values]
+        
+        # Buat dataframe untuk menyimpan hasil
+        results = []
+        
+        # Hitung berat untuk setiap kombinasi
+        for pb in pb_values:
+            row = {"Panjang Badan (cm)": f"{pb:.1f}"}
+            
+            for i, ld in enumerate(ld_values):
+                bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa, jenis_kelamin)
+                row[ld_headers[i]] = f"{bb:.1f} kg"
+            
+            results.append(row)
+        
+        # Kembalikan DataFrame
+        return pd.DataFrame(results)
     
-    for ld in ld_variations:
-        for pb in pb_variations:
-            bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)
-            data.append({
-                "Lingkar Dada (cm)": f"{ld:.1f}",
-                "Panjang Badan (cm)": f"{pb:.1f}",
-                "Berat Badan (kg)": f"{bb:.2f}"
-            })
-    
-    # Tampilkan tabel
-    df = pd.DataFrame(data)
-    st.dataframe(df, use_container_width=True)
-
-# Tampilkan contoh kasus
-st.sidebar.markdown("---")
-st.sidebar.subheader("Contoh Kasus:")
-contoh_expander = st.sidebar.expander("Lihat Contoh Kasus")
-with contoh_expander:
-    st.markdown("""
-    Jika lingkar dada ternak (LD) adalah **180 cm** dan panjang badan (PB) adalah **150 cm**, maka:
-    
-    BB = (180)² × 150 / 10.815,15  
-    BB = 32.400 × 150 / 10.815,15  
-    BB = 448,72 kg
+    # Tampilkan tabel prediksi berat dengan berbagai variasi ukuran
+    st.write("""
+    Tabel di bawah ini menunjukkan prediksi berat badan ternak dengan berbagai variasi ukuran lingkar dada (LD) 
+    dan panjang badan (PB). Gunakan tabel ini untuk memperkirakan berat ternak dengan rentang ukuran yang lebih luas
+    atau untuk memahami bagaimana perubahan kecil pada pengukuran dapat mempengaruhi hasil prediksi berat.
     """)
-
-# Tampilkan informasi tentang rumus Formula
-st.markdown("---")
-info_expander = st.expander("ℹ️ Informasi tentang Rumus Perhitungan")
-with info_expander:
-    st.markdown("""
-    ## Pendahuluan
     
-    Estimasi berat badan ternak merupakan hal yang sangat penting dalam manajemen peternakan. Penggunaan rumus pendugaan berat badan membantu peternak mengestimasi berat ternak tanpa memerlukan timbangan yang mahal dan tidak praktis di lapangan. Rumus-rumus ini dikembangkan berdasarkan penelitian ilmiah yang mengkorelasikan ukuran-ukuran tubuh ternak dengan berat badannya.
+    # Buat container untuk memperbarui konten tabel saat slider berubah
+    table_container = st.container()
     
-    ## Cara Pengukuran yang Benar
+    # Opsi untuk kustomisasi tabel
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        variation_percent = st.slider("Rentang Variasi (%)", min_value=5, max_value=30, value=15, 
+                                      help="Persentase variasi ukuran dari nilai tengah", key="variation_percent_slider")
+    with col2:
+        steps = st.slider("Jumlah Langkah Variasi", min_value=3, max_value=9, value=5, step=2,
+                          help="Jumlah langkah variasi ukuran (kolom dan baris)", key="steps_slider")
     
-    ### Pengukuran Lingkar Dada (LD)
-    Pengukuran lingkar dada dilakukan dengan melingkarkan pita ukur pada bagian dada tepat di belakang sendi bahu (scapula) atau sekitar 2-3 cm di belakang siku:
+    # Buat dan tampilkan tabel prediksi dalam container yang akan diperbarui saat slider berubah
+    with table_container:
+        # Buat tabel baru setiap kali slider berubah
+        prediction_table = create_prediction_table(
+            lingkar_dada=lingkar_dada,
+            panjang_badan=panjang_badan,
+            jenis_ternak=jenis_ternak,
+            bangsa=bangsa_ternak,
+            jenis_kelamin=jenis_kelamin,
+            steps=steps,
+            variation_percent=variation_percent
+        )
+        
+        # Tampilkan tabel dengan highlight pada nilai tengah
+        st.dataframe(prediction_table, use_container_width=True, hide_index=True)
     
-    1. Pastikan ternak berdiri dengan posisi normal (tidak membungkuk atau meregang)
-    2. Lingkarkan pita ukur mengelilingi dada tepat di belakang kaki depan
-    3. Tarik pita dengan kekencangan sedang (tidak terlalu kencang atau kendor)
-    4. Catat hasil pengukuran dalam satuan sentimeter (cm)
+    # Tambahkan penjelasan dan tips penggunaan
+    st.info("""
+    ##### Cara Menggunakan Tabel Prediksi:
     
-    ### Pengukuran Panjang Badan (PB)
-    Cara pengukuran panjang badan berbeda untuk setiap jenis ternak:
+    1. **Bandingkan rentang** - Lihat bagaimana berat badan berubah dengan variasi ukuran lingkar dada dan panjang badan
+    2. **Antisipasi pertumbuhan** - Gunakan untuk memperkirakan pertambahan berat jika ukuran tubuh ternak bertambah
+    3. **Koreksi pengukuran** - Jika tidak yakin dengan pengukuran awal, lihat rentang beratnya pada variasi ukuran
+    4. **Nilai optimal** - Identifikasi target ukuran tubuh untuk mencapai berat badan yang diinginkan
     
-    **Untuk Sapi:**
-    - Ukur dari tonjolan bahu (tuberculum humeralis) sampai tonjolan tulang duduk (tuberculum ischiadicum)
-    - Gunakan tongkat ukur atau pita yang ditarik lurus, bukan mengikuti lekukan tubuh
-    
-    **Untuk Kambing/Domba:**
-    - Ukur dari sendi bahu sampai tonjolan tulang duduk (tuber ischii)
-    - Pengukuran dilakukan dengan pita ukur yang ditarik lurus
-    
-    ## Rumus-Rumus Pendugaan Berat Badan Ternak
-    
-    ### Rumus untuk Sapi
-    
-    #### 1. Rumus Winter (Eropa)
-    **BB = (LD)² × PB / 10.815,15**
-    
-    Rumus Winter dikembangkan oleh AW Winter pada tahun 1910, dan merupakan rumus yang paling umum digunakan untuk sapi tipe Eropa (Bos taurus). Rumus ini memberikan hasil yang lebih akurat untuk sapi-sapi tipe besar dengan konformasi tubuh yang proporsional.
-    
-    - **Keunggulan**: Akurasi tinggi untuk sapi tipe Eropa dan persilangannya
-    - **Keterbatasan**: Kurang akurat untuk sapi lokal Asia yang memiliki punuk dan proporsi tubuh berbeda
-    - **Cocok untuk**: Sapi Limousin, Simental, Angus, Charolais
-    
-    #### 2. Rumus Schoorl (Indonesia)
-    **BB = (LD + 22)² / 100**
-    
-    Rumus Schoorl dikembangkan khusus dengan mempertimbangkan karakteristik fisik sapi-sapi lokal Indonesia. Rumus ini sering digunakan untuk sapi-sapi dengan ukuran kecil hingga sedang.
-    
-    - **Keunggulan**: Sederhana dan cukup akurat untuk sapi lokal Indonesia
-    - **Keterbatasan**: Tidak memperhitungkan panjang badan sehingga bisa kurang akurat untuk beberapa individu
-    - **Cocok untuk**: Sapi Bali, Sapi Madura, Sapi PO, Sapi Aceh
-    
-    #### 3. Rumus Denmark
-    **BB = (LD)² × 0.000138 × PB**
-    
-    Rumus Denmark adalah modifikasi dari rumus Winter yang dikembangkan di Denmark untuk sapi-sapi perah dan sapi pedaging tipe besar. Konstanta yang digunakan dioptimalkan untuk sapi-sapi dengan tubuh panjang.
-    
-    - **Keunggulan**: Akurasi tinggi untuk sapi perah dan sapi pedaging tipe besar
-    - **Keterbatasan**: Dapat overestimasi untuk sapi berukuran kecil
-    - **Cocok untuk**: Sapi Friesian Holstein, Jersey, Simental
-    
-    #### 4. Rumus Lambourne (Sapi Kecil)
-    **BB = (LD)² × PB / 11.900**
-    
-    Modifikasi dari rumus Lambourne yang disesuaikan untuk sapi-sapi tipe kecil hingga sedang, dengan mempertimbangkan proporsi tubuh yang lebih ramping.
-    
-    - **Keunggulan**: Memberikan hasil lebih akurat untuk sapi dengan ukuran sedang
-    - **Keterbatasan**: Kurang akurat untuk sapi tipe besar
-    - **Cocok untuk**: Sapi PO, Sapi Pesisir, beberapa sapi persilangan lokal
-    
-    ### Rumus untuk Kambing
-    
-    #### 1. Rumus Arjodarmoko
-    **BB = (LD)² × PB / 18.000**
-    
-    Rumus Arjodarmoko dikembangkan di Indonesia khusus untuk kambing lokal. Konstanta pembagi 18.000 disesuaikan dengan karakteristik fisik kambing lokal yang umumnya memiliki ukuran tubuh lebih kecil.
-    
-    - **Keunggulan**: Akurasi baik untuk kambing lokal Indonesia
-    - **Keterbatasan**: Dapat underestimasi untuk kambing tipe besar
-    - **Cocok untuk**: Kambing Kacang, Kambing Jawarandu, Kambing PE
-    
-    #### 2. Rumus New Zealand
-    **BB = 0.0000968 × (LD)² × PB**
-    
-    Rumus ini dikembangkan di Selandia Baru untuk kambing tipe besar, terutama kambing perah dan kambing pedaging.
-    
-    - **Keunggulan**: Akurasi tinggi untuk kambing tipe besar
-    - **Keterbatasan**: Bisa overestimasi untuk kambing lokal
-    - **Cocok untuk**: Kambing Ettawa, Kambing Boer, Kambing Saanen
-    
-    #### 3. Rumus Khan
-    **BB = 0.0004 × (LD)² × 0.6 × PB**
-    
-    Dikembangkan oleh peneliti Khan untuk berbagai tipe kambing dengan faktor koreksi 0.6 untuk panjang badan.
-    
-    - **Keunggulan**: Versatilitas tinggi, dapat digunakan untuk berbagai tipe kambing
-    - **Keterbatasan**: Presisi sedang dibandingkan rumus spesifik
-    - **Cocok untuk**: Berbagai jenis kambing, terutama tipe campuran atau crossbreed
-    
-    ### Rumus untuk Domba
-    
-    #### 1. Rumus Lambourne
-    **BB = (LD)² × PB / 15.000**
-    
-    Rumus yang dikembangkan oleh Lambourne khusus untuk domba, dengan konstanta pembagi yang disesuaikan berdasarkan proporsi tubuh domba.
-    
-    - **Keunggulan**: Standar yang baik untuk berbagai jenis domba
-    - **Keterbatasan**: Akurasi sedang untuk domba dengan karakteristik ekstrem
-    - **Cocok untuk**: Domba lokal Indonesia, Domba Ekor Tipis, Domba Garut
-    
-    #### 2. Rumus NSA Australia (National Sheep Association)
-    **BB = (0.0000627 × LD × PB) - 3.91**
-    
-    Dikembangkan oleh Asosiasi Domba Nasional Australia untuk domba tipe medium yang umum di Australia.
-    
-    - **Keunggulan**: Akurasi tinggi untuk domba tipe sedang dan domba wool
-    - **Keterbatasan**: Memiliki konstanta pengurangan yang bisa menyebabkan nilai negatif untuk domba sangat kecil
-    - **Cocok untuk**: Domba Merino, Domba Dorset, domba tipe sedang lainnya
-    
-    #### 3. Rumus Valdez
-    **BB = 0.0003 × (LD)² × PB**
-    
-    Rumus Valdez adalah rumus sederhana yang dapat diaplikasikan untuk berbagai tipe domba pedaging.
-    
-    - **Keunggulan**: Sederhana dan cukup akurat untuk domba pedaging
-    - **Keterbatasan**: Kurang akurat untuk domba dengan distribusi lemak yang tidak merata
-    - **Cocok untuk**: Domba Suffolk, Domba Texel, domba pedaging lainnya
+    > **Tips**: Pengukuran lingkar dada memiliki pengaruh lebih besar terhadap berat badan dibandingkan dengan panjang badan,
+    > karena dalam rumus perhitungan, lingkar dada dikuadratkan sedangkan panjang badan tidak.
     """)
+    
+    # Buat container untuk memperbarui heatmap saat slider berubah
+    heatmap_container = st.container()
+    
+    # Tampilkan visualisasi heatmap berat badan
+    with heatmap_container:
+        st.subheader("Peta Panas Prediksi Berat Badan")
+        st.write("Visualisasi di bawah ini menunjukkan hubungan antara lingkar dada, panjang badan, dan prediksi berat badan dalam bentuk peta panas (heatmap).")
+        
+        # Buat array untuk heatmap (gunakan nilai slider terbaru)
+        ld_values = np.linspace(lingkar_dada * (1 - variation_percent/100), 
+                               lingkar_dada * (1 + variation_percent/100), 
+                               20)  # Lebih banyak titik untuk visualisasi yang lebih halus
+        pb_values = np.linspace(panjang_badan * (1 - variation_percent/100), 
+                               panjang_badan * (1 + variation_percent/100), 
+                               20)
+        
+        # Buat grid untuk heatmap
+        ld_grid, pb_grid = np.meshgrid(ld_values, pb_values)
+        weights = np.zeros(ld_grid.shape)
+        
+        # Hitung berat untuk setiap kombinasi ukuran
+        for i in range(ld_grid.shape[0]):
+            for j in range(ld_grid.shape[1]):
+                weights[i, j], _, _ = hitung_berat_badan(ld_grid[i, j], pb_grid[i, j], 
+                                                        jenis_ternak, bangsa_ternak, jenis_kelamin)
+        
+        # Buat heatmap dengan Plotly
+        fig = go.Figure(data=go.Heatmap(
+            z=weights,
+            x=ld_values,
+            y=pb_values,
+            colorscale='Viridis',
+            colorbar=dict(title='Berat (kg)')
+        ))
+        
+        # Tambahkan marker untuk nilai saat ini
+        fig.add_trace(go.Scatter(
+            x=[lingkar_dada],
+            y=[panjang_badan],
+            mode='markers',
+            marker=dict(size=12, color='red', symbol='x'),
+            name='Ukuran Saat Ini'
+        ))
+        
+        # Konfigurasi layout
+        fig.update_layout(
+            title=f"Peta Panas Prediksi Berat {jenis_ternak} {bangsa_ternak} ({jenis_kelamin})<br>Rentang Variasi: {variation_percent}%, Langkah: {steps}",
+            xaxis_title="Lingkar Dada (cm)",
+            yaxis_title="Panjang Badan (cm)",
+            height=500
+        )
+        
+        # Tampilkan heatmap
+        st.plotly_chart(fig, use_container_width=True)
 
-    st.markdown("""
-    ## Faktor Koreksi dan Pertimbangan Praktis
-    
-    ### Faktor Koreksi untuk Bangsa
-    Setiap bangsa ternak memiliki karakteristik morfologi yang unik, sehingga diperlukan faktor koreksi untuk meningkatkan akurasi pendugaan berat badan:
-    
-    - Faktor > 1.0: Digunakan untuk ternak dengan kepadatan otot tinggi atau frame size besar
-    - Faktor = 1.0: Standar untuk ternak dengan proporsi tubuh normal
-    - Faktor < 1.0: Digunakan untuk ternak dengan tubuh yang lebih ringan atau ramping
-    
-    ### Pertimbangan Praktis
-    
-    1. **Kondisi Ternak**: Rumus akan lebih akurat jika ternak dalam kondisi normal (tidak terlalu kurus atau gemuk ekstrem)
-    
-    2. **Waktu Pengukuran**: Idealnya pengukuran dilakukan pagi hari sebelum ternak diberi makan
-    
-    3. **Umur Ternak**: Rumus lebih akurat untuk ternak dewasa dibandingkan anak atau ternak remaja
-    
-    4. **Jenis Kelamin**: Beberapa rumus mungkin perlu penyesuaian tambahan untuk perbedaan antara jantan dan betina
-    
-    5. **Kebuntingan**: Untuk ternak betina bunting, terutama pada trimester ketiga, rumus ini bisa underestimasi karena bobot fetus
-    
-    ## Karakteristik Khusus Bangsa Ternak
-    """)
+# Footer with LinkedIn profile link and improved styling
+st.markdown("""
+<hr style="height:1px;border:none;color:#333;background-color:#333;margin-top:30px;margin-bottom:20px">
+""", unsafe_allow_html=True)
 
-    # Cattle breed characteristics (existing section)
-    st.markdown("""
-    ### Karakteristik Spesifik Bangsa-Bangsa Ternak
-    
-    #### Sapi
-    - **Sapi Bali**: 
-        - Asal: Indonesia (domestikasi banteng)
-        - Ciri khas: Warna merah bata, kaki putih, punggung bergaris hitam
-        - Bobot dewasa: Jantan 300-400 kg, Betina 250-350 kg
-        - Keunggulan: Daya adaptasi tinggi, tahan pakan berkualitas rendah, persentase karkas tinggi (56%)
-    
-    - **Sapi Madura**: 
-        - Asal: Persilangan sapi Zebu dan Banteng di Pulau Madura
-        - Ciri khas: Warna merah bata hingga cokelat, bertanduk khas melengkung ke atas
-        - Bobot dewasa: Jantan 250-350 kg, Betina 200-300 kg
-        - Keunggulan: Toleran iklim panas, tahan penyakit, cocok untuk kerja dan sapi karapan
-    
-    - **Sapi Limousin**: 
-        - Asal: Perancis
-        - Ciri khas: Warna cokelat kemerahan, bertubuh besar dan berotot
-        - Bobot dewasa: Jantan 800-1200 kg, Betina 600-800 kg
-        - Keunggulan: Pertumbuhan cepat, konversi pakan efisien, persentase karkas tinggi (58-62%)
-    
-    - **Sapi Simental**: 
-        - Asal: Swiss
-        - Ciri khas: Warna cokelat kemerahan dengan bercak putih, kepala putih
-        - Bobot dewasa: Jantan 1000-1300 kg, Betina 700-900 kg
-        - Keunggulan: Tipe dwiguna (pedaging dan perah), pertumbuhan cepat, produksi susu tinggi
-    
-    - **Sapi Brahman**: 
-        - Asal: Amerika Serikat (dikembangkan dari sapi Zebu India)
-        - Ciri khas: Memiliki punuk besar, gelambir lebar, telinga panjang
-        - Bobot dewasa: Jantan 800-1100 kg, Betina 500-700 kg
-        - Keunggulan: Tahan panas, tahan caplak, adaptif di daerah tropis
-    
-    - **Sapi PO (Peranakan Ongole)**: 
-        - Asal: Indonesia (persilangan sapi lokal dengan Ongole dari India)
-        - Ciri khas: Warna putih hingga putih keabu-abuan, gelambir lebar
-        - Bobot dewasa: Jantan 400-600 kg, Betina 300-400 kg
-        - Keunggulan: Adaptasi baik di Indonesia, tahan panas, tahan penyakit
-    
-    - **Sapi FH (Friesian Holstein)**: 
-        - Asal: Belanda
-        - Ciri khas: Warna hitam belang putih, bertubuh besar
-        - Bobot dewasa: Jantan 700-900 kg, Betina 600-700 kg
-        - Keunggulan: Produksi susu tinggi (15-25 liter/hari), jinak
-    
-    - **Sapi Aceh**: 
-        - Asal: Aceh, Indonesia
-        - Ciri khas: Ukuran kecil, warna merah bata hingga cokelat tua
-        - Bobot dewasa: Jantan 200-300 kg, Betina 150-250 kg
-        - Keunggulan: Sangat adaptif dengan lingkungan ekstrem, tahan penyakit lokal
-    """)
-
-    # Goat breed characteristics (enhanced information)
-    st.markdown("""
-    #### Kambing
-    
-    - **Kambing Kacang**: 
-        - Asal: Indonesia
-        - Ciri khas: Ukuran kecil, telinga tegak kecil, warna bervariasi
-        - Bobot dewasa: Jantan 20-30 kg, Betina 15-25 kg
-        - Keunggulan: Fertil tinggi (kemampuan beranak kembar), adaptasi luas, tahan penyakit lokal
-        - Produksi: Daging, dapat menghasilkan susu 0.1-0.3 liter/hari
-    
-    - **Kambing Ettawa**: 
-        - Asal: India (Jamnapari)
-        - Ciri khas: Ukuran besar, telinga panjang menggantung, profil hidung melengkung
-        - Bobot dewasa: Jantan 60-90 kg, Betina 40-60 kg
-        - Keunggulan: Produksi susu tinggi, pertumbuhan cepat
-        - Produksi: Susu 1-3 liter/hari, daging
-    
-    - **Kambing PE (Peranakan Ettawa)**: 
-        - Asal: Indonesia (persilangan Kacang dan Ettawa)
-        - Ciri khas: Ukuran sedang, telinga panjang tapi tidak seluruhnya menggantung
-        - Bobot dewasa: Jantan 40-60 kg, Betina 30-50 kg
-        - Keunggulan: Adaptasi baik di Indonesia, produksi susu lebih tinggi dari Kacang
-        - Produksi: Susu 0.5-2 liter/hari, daging
-    
-    - **Kambing Boer**: 
-        - Asal: Afrika Selatan
-        - Ciri khas: Tubuh kompak berotot, kepala cokelat, badan putih, telinga panjang
-        - Bobot dewasa: Jantan 80-120 kg, Betina 60-90 kg
-        - Keunggulan: Pertumbuhan sangat cepat, persentase karkas tinggi (48-60%)
-        - Produksi: Daging premium, ADG (Average Daily Gain) bisa mencapai 200-250 gram/hari
-    
-    - **Kambing Jawarandu**: 
-        - Asal: Jawa Tengah (persilangan Kacang dan PE)
-        - Ciri khas: Ukuran sedang, telinga setengah menggantung
-        - Bobot dewasa: Jantan 35-45 kg, Betina 25-35 kg
-        - Keunggulan: Adaptif, produksi susu moderat, fertilitas baik
-        - Produksi: Susu 0.4-1 liter/hari, daging
-    
-    - **Kambing Bligon/Jawa Randu**: 
-        - Asal: Jawa (persilangan Kacang dan PE dengan proporsi darah Kacang lebih tinggi)
-        - Ciri khas: Mirip Jawarandu tapi ukuran lebih kecil
-        - Bobot dewasa: Jantan 25-40 kg, Betina 20-30 kg
-        - Keunggulan: Sangat adaptif, fertil, mudah pemeliharaan
-        - Produksi: Daging, susu 0.3-0.7 liter/hari
-    """)
-
-    # Sheep breed characteristics (enhanced information)
-    st.markdown("""
-    #### Domba
-    
-    - **Domba Ekor Tipis (DET)**: 
-        - Asal: Indonesia
-        - Ciri khas: Ekor kecil dan pendek, warna dominan putih
-        - Bobot dewasa: Jantan 20-35 kg, Betina 15-25 kg
-        - Keunggulan: Prolifikasi tinggi (kemampuan beranak banyak, 1.8-2.0 anak/kelahiran)
-        - Produksi: Daging, wool kasar
-    
-    - **Domba Ekor Gemuk (DEG)**: 
-        - Asal: Indonesia timur, pengaruh dari domba Timur Tengah
-        - Ciri khas: Penimbunan lemak di bagian ekor, tubuh lebih besar dari DET
-        - Bobot dewasa: Jantan 30-50 kg, Betina 25-40 kg
-        - Keunggulan: Tahan kekeringan, dapat menyimpan cadangan energi di ekornya
-        - Produksi: Daging dengan karakteristik khas
-    
-    - **Domba Merino**: 
-        - Asal: Spanyol, dikembangkan di Australia
-        - Ciri khas: Wool sangat halus dan tebal, wajah terbuka tanpa wool
-        - Bobot dewasa: Jantan 70-100 kg, Betina 40-70 kg
-        - Keunggulan: Penghasil wool terbaik (3-6 kg wool/tahun)
-        - Produksi: Wool premium, daging
-    
-    - **Domba Garut**: 
-        - Asal: Garut, Jawa Barat
-        - Ciri khas: Tanduk melingkar kuat (jantan), postur gagah
-        - Bobot dewasa: Jantan 60-80 kg, Betina 30-40 kg
-        - Keunggulan: Performa petarung baik (domba adu), pertumbuhan cepat
-        - Produksi: Daging, domba aduan
-    
-    - **Domba Suffolk**: 
-        - Asal: Inggris
-        - Ciri khas: Kepala dan kaki hitam, badan berisi wool putih, tidak bertanduk
-        - Bobot dewasa: Jantan 100-160 kg, Betina 80-110 kg
-        - Keunggulan: Pertumbuhan sangat cepat, konformasi tubuh ideal untuk daging
-        - Produksi: Daging premium, pertumbuhan anak bisa mencapai 300-400 gram/hari
-    
-    - **Domba Texel**: 
-        - Asal: Belanda
-        - Ciri khas: Tubuh sangat berotot, wool putih, kepala putih tanpa tanduk
-        - Bobot dewasa: Jantan 110-160 kg, Betina 70-100 kg
-        - Keunggulan: Persentase karkas tertinggi (60-65%), kualitas daging superior
-        - Produksi: Daging premium dengan kadar lemak rendah
-    
-    ## Kesimpulan
-    
-    Penggunaan rumus pendugaan berat badan ternak dapat menjadi alternatif yang praktis dan ekonomis bagi peternak untuk memperkirakan bobot ternak tanpa timbangan. Namun, perlu diingat bahwa rumus-rumus ini memberikan estimasi, dan faktor-faktor seperti kondisi tubuh, kebuntingan, dan variasi individual dapat mempengaruhi akurasi. 
-    
-    > **Penting**: Metode prediksi menggunakan rumus ini memiliki margin error berkisar 5-15% tergantung kondisi ternak, keakuratan pengukuran, dan kesesuaian rumus dengan bangsa ternak. Untuk keperluan yang memerlukan presisi tinggi (seperti penjualan komersial, penetapan dosis obat, kompetisi ternak, dll), penggunaan timbangan ternak tetap merupakan metode yang paling direkomendasikan.
-    
-    Aplikasi ini menyediakan alat bantu praktis di lapangan ketika timbangan tidak tersedia, namun hasilnya tidak dapat menggantikan pengukuran langsung dengan alat timbang standar.
-    """)
-
-# Footer
-st.markdown("---")
-st.markdown("Dibuat oleh [Galuh Adi Insani](https://www.linkedin.com/in/galuh-adi-insani-1aa0a5105/) dengan ❤️ | © 2025")
+st.markdown(f"""
+<div style="text-align:center; padding:15px; margin-top:10px; margin-bottom:20px">
+    <p style="font-size:16px; color:#555">
+        © {current_year} Developed by: 
+        <a href="https://www.linkedin.com/in/galuh-adi-insani-1aa0a5105/" target="_blank" 
+           style="text-decoration:none; color:#0077B5; font-weight:bold">
+            <img src="https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg" 
+                 width="16" height="16" style="vertical-align:middle; margin-right:5px">
+            Galuh Adi Insani
+        </a> 
+        with <span style="color:#e25555">❤️</span>
+    </p>
+    <p style="font-size:12px; color:#777">All rights reserved.</p>
+</div>
+""", unsafe_allow_html=True)
