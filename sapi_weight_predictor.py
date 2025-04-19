@@ -1,0 +1,616 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Prediksi Berat Badan Ternak (Sapi, Kambing, Domba) menggunakan Rumus Formula
+
+Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan 
+lingkar dada dan panjang badan menggunakan rumus-rumus yang spesifik untuk
+jenis dan bangsa ternak yang berbeda.
+"""
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import json
+from PIL import Image
+
+# Konfigurasi halaman Streamlit - HARUS DITEMPATKAN PERTAMA
+st.set_page_config(
+    page_title="Prediksi Berat Badan Ternak",
+    page_icon="🐄",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Hide default Streamlit elements
+hide_st_style = """
+        <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        </style>
+        """
+st.markdown(hide_st_style, unsafe_allow_html=True)
+
+# Data untuk jenis dan rumus ternak
+ANIMAL_FORMULAS = {
+    "Sapi": {
+        "formulas": {
+            "Winter (Eropa)": {
+                "formula": "(LD)² × PB / 10815.15",
+                "description": "Rumus Winter umumnya cocok untuk sapi-sapi tipe Eropa",
+                "calculation": lambda ld, pb: (ld ** 2 * pb) / 10815.15
+            },
+            "Schoorl (Indonesia)": {
+                "formula": "(LD + 22)² / 100",
+                "description": "Rumus Schoorl lebih cocok untuk sapi-sapi lokal Indonesia",
+                "calculation": lambda ld, pb: ((ld + 22) ** 2) / 100
+            },
+            "Denmark": {
+                "formula": "(LD)² × 0.000138 × PB",
+                "description": "Rumus Denmark untuk sapi tipe besar",
+                "calculation": lambda ld, pb: (ld ** 2) * 0.000138 * pb
+            },
+            "Lambourne (Sapi Kecil)": {
+                "formula": "(LD)² × PB / 11900",
+                "description": "Rumus Lambourne untuk sapi tipe kecil",
+                "calculation": lambda ld, pb: (ld ** 2 * pb) / 11900
+            }
+        }
+    },
+    "Kambing": {
+        "formulas": {
+            "Arjodarmoko": {
+                "formula": "(LD)² × PB / 18000",
+                "description": "Rumus Arjodarmoko khusus untuk kambing lokal Indonesia",
+                "calculation": lambda ld, pb: (ld ** 2 * pb) / 18000
+            },
+            "New Zealand": {
+                "formula": "0.0000968 × (LD)² × PB",
+                "description": "Rumus New Zealand untuk kambing tipe besar",
+                "calculation": lambda ld, pb: 0.0000968 * (ld ** 2) * pb
+            },
+            "Khan": {
+                "formula": "0.0004 × (LD)² × 0.6 × PB",
+                "description": "Rumus Khan untuk kambing berbagai ukuran",
+                "calculation": lambda ld, pb: 0.0004 * (ld ** 2) * 0.6 * pb
+            }
+        }
+    },
+    "Domba": {
+        "formulas": {
+            "Lambourne": {
+                "formula": "(LD)² × PB / 15000",
+                "description": "Rumus Lambourne khusus untuk domba",
+                "calculation": lambda ld, pb: (ld ** 2 * pb) / 15000
+            },
+            "NSA Australia": {
+                "formula": "(0.0000627 × LD × PB) - 3.91",
+                "description": "Rumus NSA Australia untuk domba tipe medium",
+                "calculation": lambda ld, pb: (0.0000627 * ld * pb) - 3.91
+            },
+            "Valdez": {
+                "formula": "0.0003 × (LD)² × PB",
+                "description": "Rumus Valdez untuk berbagai tipe domba",
+                "calculation": lambda ld, pb: 0.0003 * (ld ** 2) * pb
+            }
+        }
+    }
+}
+
+# Data untuk jenis dan bangsa ternak
+ANIMAL_DATA = {
+    "Sapi": {
+        "breeds": {
+            "Sapi Bali": {"formula_name": "Schoorl (Indonesia)", "factor": 1.0},
+            "Sapi Madura": {"formula_name": "Schoorl (Indonesia)", "factor": 0.95},
+            "Sapi Limousin": {"formula_name": "Winter (Eropa)", "factor": 1.2},
+            "Sapi Simental": {"formula_name": "Winter (Eropa)", "factor": 1.25},
+            "Sapi Brahman": {"formula_name": "Winter (Eropa)", "factor": 1.15},
+            "Sapi Peranakan Ongole (PO)": {"formula_name": "Lambourne (Sapi Kecil)", "factor": 1.05},
+            "Sapi Friesian Holstein (FH)": {"formula_name": "Denmark", "factor": 1.1},
+            "Sapi Aceh": {"formula_name": "Schoorl (Indonesia)", "factor": 0.9},
+        },
+        "icon": "🐄"
+    },
+    "Kambing": {
+        "breeds": {
+            "Kambing Kacang": {"formula_name": "Arjodarmoko", "factor": 0.9},
+            "Kambing Ettawa": {"formula_name": "New Zealand", "factor": 1.05},
+            "Kambing Peranakan Ettawa (PE)": {"formula_name": "Arjodarmoko", "factor": 1.0},
+            "Kambing Boer": {"formula_name": "New Zealand", "factor": 1.1},
+            "Kambing Jawarandu": {"formula_name": "Arjodarmoko", "factor": 0.95},
+            "Kambing Bligon": {"formula_name": "Khan", "factor": 0.92},
+        },
+        "icon": "🐐"
+    },
+    "Domba": {
+        "breeds": {
+            "Domba Ekor Tipis": {"formula_name": "Lambourne", "factor": 0.95},
+            "Domba Ekor Gemuk": {"formula_name": "Lambourne", "factor": 1.1},
+            "Domba Merino": {"formula_name": "NSA Australia", "factor": 1.05},
+            "Domba Garut": {"formula_name": "Lambourne", "factor": 1.0},
+            "Domba Suffolk": {"formula_name": "Valdez", "factor": 1.15},
+            "Domba Texel": {"formula_name": "Valdez", "factor": 1.2},
+        },
+        "icon": "🐑"
+    }
+}
+
+def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa):
+    """
+    Menghitung berat badan ternak menggunakan rumus yang sesuai dengan jenis dan bangsanya.
+    
+    Args:
+        lingkar_dada (float): Lingkar dada ternak dalam sentimeter
+        panjang_badan (float): Panjang badan ternak dalam sentimeter
+        jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
+        bangsa (str): Bangsa ternak
+        
+    Returns:
+        float: Berat badan ternak dalam kilogram
+        str: Nama rumus yang digunakan
+        str: Formula yang digunakan
+    """
+    # Ambil data ternak
+    breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa]
+    formula_name = breed_data["formula_name"]
+    factor = breed_data["factor"]
+    
+    # Ambil detail formula
+    formula_data = ANIMAL_FORMULAS[jenis_ternak]["formulas"][formula_name]
+    formula_text = formula_data["formula"]
+    calculation_func = formula_data["calculation"]
+    
+    # Hitung berat badan sesuai rumus
+    berat_badan = calculation_func(lingkar_dada, panjang_badan)
+    
+    # Terapkan faktor koreksi berdasarkan bangsa
+    berat_badan *= factor
+    
+    return berat_badan, formula_name, formula_text
+
+# Judul dan deskripsi aplikasi
+st.title("🐄 Prediksi Berat Badan Ternak")
+st.markdown(f"""
+    Aplikasi ini menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan 
+    menggunakan **Rumus Formula** yang spesifik untuk jenis dan bangsa ternak yang berbeda. 
+    Silakan pilih jenis dan bangsa ternak yang sesuai di sidebar untuk mendapatkan hasil yang lebih akurat.
+    """)
+
+# Sidebar untuk input pengguna
+st.sidebar.header("Input Data Ternak")
+
+# Pilih jenis ternak
+jenis_ternak = st.sidebar.selectbox(
+    "Jenis Ternak",
+    options=list(ANIMAL_DATA.keys()),
+    help="Pilih jenis ternak yang ingin dihitung berat badannya."
+)
+
+# Pilih bangsa ternak
+bangsa_ternak = st.sidebar.selectbox(
+    "Bangsa Ternak",
+    options=list(ANIMAL_DATA[jenis_ternak]["breeds"].keys()),
+    help="Pilih bangsa ternak yang sesuai."
+)
+
+# Input lingkar dada
+lingkar_dada = st.sidebar.number_input(
+    "Lingkar Dada (cm)",
+    min_value=0.1,
+    max_value=500.0,
+    value=180.0,
+    step=0.1,
+    help="Ukur lingkar dada ternak dengan pita ukur, yaitu mengukur keliling dada ternak tepat di belakang bahu."
+)
+
+# Input panjang badan
+panjang_badan = st.sidebar.number_input(
+    "Panjang Badan (cm)",
+    min_value=0.1,
+    max_value=500.0,
+    value=150.0,
+    step=0.1,
+    help="Ukur panjang badan ternak, yaitu dari ujung hidung hingga pangkal ekor."
+)
+
+# Tombol untuk menghitung berat badan
+if st.sidebar.button("Hitung Berat Badan", type="primary"):
+    # Hitung berat badan
+    berat_badan, formula_name, formula_text = hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
+    
+    # Tampilkan hasil dalam kotak
+    st.success(f"## Prediksi Berat Badan: **{berat_badan:.2f} kg**")
+    
+    # Tampilkan detail perhitungan
+    st.subheader("Detail Perhitungan:")
+    st.markdown(f"""
+    - Jenis Ternak: **{jenis_ternak}**
+    - Bangsa Ternak: **{bangsa_ternak}**
+    - Rumus yang Digunakan: **{formula_name}**
+    - Formula: **{formula_text}**
+    - Lingkar Dada (LD): **{lingkar_dada} cm**
+    - Panjang Badan (PB): **{panjang_badan} cm**
+    - Berat Badan (BB) = **{berat_badan:.2f} kg**
+    """)
+    
+    # Visualisasi
+    st.subheader("Visualisasi Data")
+    
+    # Buat data untuk visualisasi
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Grafik hubungan lingkar dada dan berat badan
+        ld_range = np.linspace(lingkar_dada * 0.7, lingkar_dada * 1.3, 50)
+        bb_range = [hitung_berat_badan(ld, panjang_badan, jenis_ternak, bangsa_ternak)[0] for ld in ld_range]
+        
+        fig1, ax1 = plt.subplots()
+        ax1.plot(ld_range, bb_range)
+        ax1.scatter([lingkar_dada], [berat_badan], color='red', s=100)
+        ax1.set_xlabel('Lingkar Dada (cm)')
+        ax1.set_ylabel('Berat Badan (kg)')
+        ax1.set_title('Hubungan Lingkar Dada dan Berat Badan')
+        ax1.grid(True)
+        st.pyplot(fig1)
+    
+    with col2:
+        # Grafik hubungan panjang badan dan berat badan
+        pb_range = np.linspace(panjang_badan * 0.7, panjang_badan * 1.3, 50)
+        bb_range = [hitung_berat_badan(lingkar_dada, pb, jenis_ternak, bangsa_ternak)[0] for pb in pb_range]
+        
+        fig2, ax2 = plt.subplots()
+        ax2.plot(pb_range, bb_range)
+        ax2.scatter([panjang_badan], [berat_badan], color='red', s=100)
+        ax2.set_xlabel('Panjang Badan (cm)')
+        ax2.set_ylabel('Berat Badan (kg)')
+        ax2.set_title('Hubungan Panjang Badan dan Berat Badan')
+        ax2.grid(True)
+        st.pyplot(fig2)
+    
+    # Tabel perbandingan
+    st.subheader("Tabel Prediksi dengan Variasi Ukuran")
+    data = []
+    
+    # Variasi lingkar dada (±10%)
+    ld_variations = [lingkar_dada * 0.9, lingkar_dada, lingkar_dada * 1.1]
+    pb_variations = [panjang_badan * 0.9, panjang_badan, panjang_badan * 1.1]
+    
+    for ld in ld_variations:
+        for pb in pb_variations:
+            bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa_ternak)
+            data.append({
+                "Lingkar Dada (cm)": f"{ld:.1f}",
+                "Panjang Badan (cm)": f"{pb:.1f}",
+                "Berat Badan (kg)": f"{bb:.2f}"
+            })
+    
+    # Tampilkan tabel
+    df = pd.DataFrame(data)
+    st.dataframe(df, use_container_width=True)
+
+# Tampilkan contoh kasus
+st.sidebar.markdown("---")
+st.sidebar.subheader("Contoh Kasus:")
+contoh_expander = st.sidebar.expander("Lihat Contoh Kasus")
+with contoh_expander:
+    st.markdown("""
+    Jika lingkar dada ternak (LD) adalah **180 cm** dan panjang badan (PB) adalah **150 cm**, maka:
+    
+    BB = (180)² × 150 / 10.815,15  
+    BB = 32.400 × 150 / 10.815,15  
+    BB = 448,72 kg
+    """)
+
+# Tampilkan informasi tentang rumus Formula
+st.markdown("---")
+info_expander = st.expander("ℹ️ Informasi tentang Rumus Perhitungan")
+with info_expander:
+    st.markdown("""
+    ## Pendahuluan
+    
+    Estimasi berat badan ternak merupakan hal yang sangat penting dalam manajemen peternakan. Penggunaan rumus pendugaan berat badan membantu peternak mengestimasi berat ternak tanpa memerlukan timbangan yang mahal dan tidak praktis di lapangan. Rumus-rumus ini dikembangkan berdasarkan penelitian ilmiah yang mengkorelasikan ukuran-ukuran tubuh ternak dengan berat badannya.
+    
+    ## Cara Pengukuran yang Benar
+    
+    ### Pengukuran Lingkar Dada (LD)
+    Pengukuran lingkar dada dilakukan dengan melingkarkan pita ukur pada bagian dada tepat di belakang sendi bahu (scapula) atau sekitar 2-3 cm di belakang siku:
+    
+    1. Pastikan ternak berdiri dengan posisi normal (tidak membungkuk atau meregang)
+    2. Lingkarkan pita ukur mengelilingi dada tepat di belakang kaki depan
+    3. Tarik pita dengan kekencangan sedang (tidak terlalu kencang atau kendor)
+    4. Catat hasil pengukuran dalam satuan sentimeter (cm)
+    
+    ### Pengukuran Panjang Badan (PB)
+    Cara pengukuran panjang badan berbeda untuk setiap jenis ternak:
+    
+    **Untuk Sapi:**
+    - Ukur dari tonjolan bahu (tuberculum humeralis) sampai tonjolan tulang duduk (tuberculum ischiadicum)
+    - Gunakan tongkat ukur atau pita yang ditarik lurus, bukan mengikuti lekukan tubuh
+    
+    **Untuk Kambing/Domba:**
+    - Ukur dari sendi bahu sampai tonjolan tulang duduk (tuber ischii)
+    - Pengukuran dilakukan dengan pita ukur yang ditarik lurus
+    
+    ## Rumus-Rumus Pendugaan Berat Badan Ternak
+    
+    ### Rumus untuk Sapi
+    
+    #### 1. Rumus Winter (Eropa)
+    **BB = (LD)² × PB / 10.815,15**
+    
+    Rumus Winter dikembangkan oleh AW Winter pada tahun 1910, dan merupakan rumus yang paling umum digunakan untuk sapi tipe Eropa (Bos taurus). Rumus ini memberikan hasil yang lebih akurat untuk sapi-sapi tipe besar dengan konformasi tubuh yang proporsional.
+    
+    - **Keunggulan**: Akurasi tinggi untuk sapi tipe Eropa dan persilangannya
+    - **Keterbatasan**: Kurang akurat untuk sapi lokal Asia yang memiliki punuk dan proporsi tubuh berbeda
+    - **Cocok untuk**: Sapi Limousin, Simental, Angus, Charolais
+    
+    #### 2. Rumus Schoorl (Indonesia)
+    **BB = (LD + 22)² / 100**
+    
+    Rumus Schoorl dikembangkan khusus dengan mempertimbangkan karakteristik fisik sapi-sapi lokal Indonesia. Rumus ini sering digunakan untuk sapi-sapi dengan ukuran kecil hingga sedang.
+    
+    - **Keunggulan**: Sederhana dan cukup akurat untuk sapi lokal Indonesia
+    - **Keterbatasan**: Tidak memperhitungkan panjang badan sehingga bisa kurang akurat untuk beberapa individu
+    - **Cocok untuk**: Sapi Bali, Sapi Madura, Sapi PO, Sapi Aceh
+    
+    #### 3. Rumus Denmark
+    **BB = (LD)² × 0.000138 × PB**
+    
+    Rumus Denmark adalah modifikasi dari rumus Winter yang dikembangkan di Denmark untuk sapi-sapi perah dan sapi pedaging tipe besar. Konstanta yang digunakan dioptimalkan untuk sapi-sapi dengan tubuh panjang.
+    
+    - **Keunggulan**: Akurasi tinggi untuk sapi perah dan sapi pedaging tipe besar
+    - **Keterbatasan**: Dapat overestimasi untuk sapi berukuran kecil
+    - **Cocok untuk**: Sapi Friesian Holstein, Jersey, Simental
+    
+    #### 4. Rumus Lambourne (Sapi Kecil)
+    **BB = (LD)² × PB / 11.900**
+    
+    Modifikasi dari rumus Lambourne yang disesuaikan untuk sapi-sapi tipe kecil hingga sedang, dengan mempertimbangkan proporsi tubuh yang lebih ramping.
+    
+    - **Keunggulan**: Memberikan hasil lebih akurat untuk sapi dengan ukuran sedang
+    - **Keterbatasan**: Kurang akurat untuk sapi tipe besar
+    - **Cocok untuk**: Sapi PO, Sapi Pesisir, beberapa sapi persilangan lokal
+    
+    ### Rumus untuk Kambing
+    
+    #### 1. Rumus Arjodarmoko
+    **BB = (LD)² × PB / 18.000**
+    
+    Rumus Arjodarmoko dikembangkan di Indonesia khusus untuk kambing lokal. Konstanta pembagi 18.000 disesuaikan dengan karakteristik fisik kambing lokal yang umumnya memiliki ukuran tubuh lebih kecil.
+    
+    - **Keunggulan**: Akurasi baik untuk kambing lokal Indonesia
+    - **Keterbatasan**: Dapat underestimasi untuk kambing tipe besar
+    - **Cocok untuk**: Kambing Kacang, Kambing Jawarandu, Kambing PE
+    
+    #### 2. Rumus New Zealand
+    **BB = 0.0000968 × (LD)² × PB**
+    
+    Rumus ini dikembangkan di Selandia Baru untuk kambing tipe besar, terutama kambing perah dan kambing pedaging.
+    
+    - **Keunggulan**: Akurasi tinggi untuk kambing tipe besar
+    - **Keterbatasan**: Bisa overestimasi untuk kambing lokal
+    - **Cocok untuk**: Kambing Ettawa, Kambing Boer, Kambing Saanen
+    
+    #### 3. Rumus Khan
+    **BB = 0.0004 × (LD)² × 0.6 × PB**
+    
+    Dikembangkan oleh peneliti Khan untuk berbagai tipe kambing dengan faktor koreksi 0.6 untuk panjang badan.
+    
+    - **Keunggulan**: Versatilitas tinggi, dapat digunakan untuk berbagai tipe kambing
+    - **Keterbatasan**: Presisi sedang dibandingkan rumus spesifik
+    - **Cocok untuk**: Berbagai jenis kambing, terutama tipe campuran atau crossbreed
+    
+    ### Rumus untuk Domba
+    
+    #### 1. Rumus Lambourne
+    **BB = (LD)² × PB / 15.000**
+    
+    Rumus yang dikembangkan oleh Lambourne khusus untuk domba, dengan konstanta pembagi yang disesuaikan berdasarkan proporsi tubuh domba.
+    
+    - **Keunggulan**: Standar yang baik untuk berbagai jenis domba
+    - **Keterbatasan**: Akurasi sedang untuk domba dengan karakteristik ekstrem
+    - **Cocok untuk**: Domba lokal Indonesia, Domba Ekor Tipis, Domba Garut
+    
+    #### 2. Rumus NSA Australia (National Sheep Association)
+    **BB = (0.0000627 × LD × PB) - 3.91**
+    
+    Dikembangkan oleh Asosiasi Domba Nasional Australia untuk domba tipe medium yang umum di Australia.
+    
+    - **Keunggulan**: Akurasi tinggi untuk domba tipe sedang dan domba wool
+    - **Keterbatasan**: Memiliki konstanta pengurangan yang bisa menyebabkan nilai negatif untuk domba sangat kecil
+    - **Cocok untuk**: Domba Merino, Domba Dorset, domba tipe sedang lainnya
+    
+    #### 3. Rumus Valdez
+    **BB = 0.0003 × (LD)² × PB**
+    
+    Rumus Valdez adalah rumus sederhana yang dapat diaplikasikan untuk berbagai tipe domba pedaging.
+    
+    - **Keunggulan**: Sederhana dan cukup akurat untuk domba pedaging
+    - **Keterbatasan**: Kurang akurat untuk domba dengan distribusi lemak yang tidak merata
+    - **Cocok untuk**: Domba Suffolk, Domba Texel, domba pedaging lainnya
+    """)
+
+    st.markdown("""
+    ## Faktor Koreksi dan Pertimbangan Praktis
+    
+    ### Faktor Koreksi untuk Bangsa
+    Setiap bangsa ternak memiliki karakteristik morfologi yang unik, sehingga diperlukan faktor koreksi untuk meningkatkan akurasi pendugaan berat badan:
+    
+    - Faktor > 1.0: Digunakan untuk ternak dengan kepadatan otot tinggi atau frame size besar
+    - Faktor = 1.0: Standar untuk ternak dengan proporsi tubuh normal
+    - Faktor < 1.0: Digunakan untuk ternak dengan tubuh yang lebih ringan atau ramping
+    
+    ### Pertimbangan Praktis
+    
+    1. **Kondisi Ternak**: Rumus akan lebih akurat jika ternak dalam kondisi normal (tidak terlalu kurus atau gemuk ekstrem)
+    
+    2. **Waktu Pengukuran**: Idealnya pengukuran dilakukan pagi hari sebelum ternak diberi makan
+    
+    3. **Umur Ternak**: Rumus lebih akurat untuk ternak dewasa dibandingkan anak atau ternak remaja
+    
+    4. **Jenis Kelamin**: Beberapa rumus mungkin perlu penyesuaian tambahan untuk perbedaan antara jantan dan betina
+    
+    5. **Kebuntingan**: Untuk ternak betina bunting, terutama pada trimester ketiga, rumus ini bisa underestimasi karena bobot fetus
+    
+    ## Karakteristik Khusus Bangsa Ternak
+    """)
+
+    # Cattle breed characteristics (existing section)
+    st.markdown("""
+    ### Karakteristik Spesifik Bangsa-Bangsa Ternak
+    
+    #### Sapi
+    - **Sapi Bali**: 
+        - Asal: Indonesia (domestikasi banteng)
+        - Ciri khas: Warna merah bata, kaki putih, punggung bergaris hitam
+        - Bobot dewasa: Jantan 300-400 kg, Betina 250-350 kg
+        - Keunggulan: Daya adaptasi tinggi, tahan pakan berkualitas rendah, persentase karkas tinggi (56%)
+    
+    - **Sapi Madura**: 
+        - Asal: Persilangan sapi Zebu dan Banteng di Pulau Madura
+        - Ciri khas: Warna merah bata hingga cokelat, bertanduk khas melengkung ke atas
+        - Bobot dewasa: Jantan 250-350 kg, Betina 200-300 kg
+        - Keunggulan: Toleran iklim panas, tahan penyakit, cocok untuk kerja dan sapi karapan
+    
+    - **Sapi Limousin**: 
+        - Asal: Perancis
+        - Ciri khas: Warna cokelat kemerahan, bertubuh besar dan berotot
+        - Bobot dewasa: Jantan 800-1200 kg, Betina 600-800 kg
+        - Keunggulan: Pertumbuhan cepat, konversi pakan efisien, persentase karkas tinggi (58-62%)
+    
+    - **Sapi Simental**: 
+        - Asal: Swiss
+        - Ciri khas: Warna cokelat kemerahan dengan bercak putih, kepala putih
+        - Bobot dewasa: Jantan 1000-1300 kg, Betina 700-900 kg
+        - Keunggulan: Tipe dwiguna (pedaging dan perah), pertumbuhan cepat, produksi susu tinggi
+    
+    - **Sapi Brahman**: 
+        - Asal: Amerika Serikat (dikembangkan dari sapi Zebu India)
+        - Ciri khas: Memiliki punuk besar, gelambir lebar, telinga panjang
+        - Bobot dewasa: Jantan 800-1100 kg, Betina 500-700 kg
+        - Keunggulan: Tahan panas, tahan caplak, adaptif di daerah tropis
+    
+    - **Sapi PO (Peranakan Ongole)**: 
+        - Asal: Indonesia (persilangan sapi lokal dengan Ongole dari India)
+        - Ciri khas: Warna putih hingga putih keabu-abuan, gelambir lebar
+        - Bobot dewasa: Jantan 400-600 kg, Betina 300-400 kg
+        - Keunggulan: Adaptasi baik di Indonesia, tahan panas, tahan penyakit
+    
+    - **Sapi FH (Friesian Holstein)**: 
+        - Asal: Belanda
+        - Ciri khas: Warna hitam belang putih, bertubuh besar
+        - Bobot dewasa: Jantan 700-900 kg, Betina 600-700 kg
+        - Keunggulan: Produksi susu tinggi (15-25 liter/hari), jinak
+    
+    - **Sapi Aceh**: 
+        - Asal: Aceh, Indonesia
+        - Ciri khas: Ukuran kecil, warna merah bata hingga cokelat tua
+        - Bobot dewasa: Jantan 200-300 kg, Betina 150-250 kg
+        - Keunggulan: Sangat adaptif dengan lingkungan ekstrem, tahan penyakit lokal
+    """)
+
+    # Goat breed characteristics (enhanced information)
+    st.markdown("""
+    #### Kambing
+    
+    - **Kambing Kacang**: 
+        - Asal: Indonesia
+        - Ciri khas: Ukuran kecil, telinga tegak kecil, warna bervariasi
+        - Bobot dewasa: Jantan 20-30 kg, Betina 15-25 kg
+        - Keunggulan: Fertil tinggi (kemampuan beranak kembar), adaptasi luas, tahan penyakit lokal
+        - Produksi: Daging, dapat menghasilkan susu 0.1-0.3 liter/hari
+    
+    - **Kambing Ettawa**: 
+        - Asal: India (Jamnapari)
+        - Ciri khas: Ukuran besar, telinga panjang menggantung, profil hidung melengkung
+        - Bobot dewasa: Jantan 60-90 kg, Betina 40-60 kg
+        - Keunggulan: Produksi susu tinggi, pertumbuhan cepat
+        - Produksi: Susu 1-3 liter/hari, daging
+    
+    - **Kambing PE (Peranakan Ettawa)**: 
+        - Asal: Indonesia (persilangan Kacang dan Ettawa)
+        - Ciri khas: Ukuran sedang, telinga panjang tapi tidak seluruhnya menggantung
+        - Bobot dewasa: Jantan 40-60 kg, Betina 30-50 kg
+        - Keunggulan: Adaptasi baik di Indonesia, produksi susu lebih tinggi dari Kacang
+        - Produksi: Susu 0.5-2 liter/hari, daging
+    
+    - **Kambing Boer**: 
+        - Asal: Afrika Selatan
+        - Ciri khas: Tubuh kompak berotot, kepala cokelat, badan putih, telinga panjang
+        - Bobot dewasa: Jantan 80-120 kg, Betina 60-90 kg
+        - Keunggulan: Pertumbuhan sangat cepat, persentase karkas tinggi (48-60%)
+        - Produksi: Daging premium, ADG (Average Daily Gain) bisa mencapai 200-250 gram/hari
+    
+    - **Kambing Jawarandu**: 
+        - Asal: Jawa Tengah (persilangan Kacang dan PE)
+        - Ciri khas: Ukuran sedang, telinga setengah menggantung
+        - Bobot dewasa: Jantan 35-45 kg, Betina 25-35 kg
+        - Keunggulan: Adaptif, produksi susu moderat, fertilitas baik
+        - Produksi: Susu 0.4-1 liter/hari, daging
+    
+    - **Kambing Bligon/Jawa Randu**: 
+        - Asal: Jawa (persilangan Kacang dan PE dengan proporsi darah Kacang lebih tinggi)
+        - Ciri khas: Mirip Jawarandu tapi ukuran lebih kecil
+        - Bobot dewasa: Jantan 25-40 kg, Betina 20-30 kg
+        - Keunggulan: Sangat adaptif, fertil, mudah pemeliharaan
+        - Produksi: Daging, susu 0.3-0.7 liter/hari
+    """)
+
+    # Sheep breed characteristics (enhanced information)
+    st.markdown("""
+    #### Domba
+    
+    - **Domba Ekor Tipis (DET)**: 
+        - Asal: Indonesia
+        - Ciri khas: Ekor kecil dan pendek, warna dominan putih
+        - Bobot dewasa: Jantan 20-35 kg, Betina 15-25 kg
+        - Keunggulan: Prolifikasi tinggi (kemampuan beranak banyak, 1.8-2.0 anak/kelahiran)
+        - Produksi: Daging, wool kasar
+    
+    - **Domba Ekor Gemuk (DEG)**: 
+        - Asal: Indonesia timur, pengaruh dari domba Timur Tengah
+        - Ciri khas: Penimbunan lemak di bagian ekor, tubuh lebih besar dari DET
+        - Bobot dewasa: Jantan 30-50 kg, Betina 25-40 kg
+        - Keunggulan: Tahan kekeringan, dapat menyimpan cadangan energi di ekornya
+        - Produksi: Daging dengan karakteristik khas
+    
+    - **Domba Merino**: 
+        - Asal: Spanyol, dikembangkan di Australia
+        - Ciri khas: Wool sangat halus dan tebal, wajah terbuka tanpa wool
+        - Bobot dewasa: Jantan 70-100 kg, Betina 40-70 kg
+        - Keunggulan: Penghasil wool terbaik (3-6 kg wool/tahun)
+        - Produksi: Wool premium, daging
+    
+    - **Domba Garut**: 
+        - Asal: Garut, Jawa Barat
+        - Ciri khas: Tanduk melingkar kuat (jantan), postur gagah
+        - Bobot dewasa: Jantan 60-80 kg, Betina 30-40 kg
+        - Keunggulan: Performa petarung baik (domba adu), pertumbuhan cepat
+        - Produksi: Daging, domba aduan
+    
+    - **Domba Suffolk**: 
+        - Asal: Inggris
+        - Ciri khas: Kepala dan kaki hitam, badan berisi wool putih, tidak bertanduk
+        - Bobot dewasa: Jantan 100-160 kg, Betina 80-110 kg
+        - Keunggulan: Pertumbuhan sangat cepat, konformasi tubuh ideal untuk daging
+        - Produksi: Daging premium, pertumbuhan anak bisa mencapai 300-400 gram/hari
+    
+    - **Domba Texel**: 
+        - Asal: Belanda
+        - Ciri khas: Tubuh sangat berotot, wool putih, kepala putih tanpa tanduk
+        - Bobot dewasa: Jantan 110-160 kg, Betina 70-100 kg
+        - Keunggulan: Persentase karkas tertinggi (60-65%), kualitas daging superior
+        - Produksi: Daging premium dengan kadar lemak rendah
+    
+    ## Kesimpulan
+    
+    Penggunaan rumus pendugaan berat badan ternak dapat menjadi alternatif yang praktis dan ekonomis bagi peternak untuk memperkirakan bobot ternak tanpa timbangan. Namun, perlu diingat bahwa rumus-rumus ini memberikan estimasi, dan faktor-faktor seperti kondisi tubuh, kebuntingan, dan variasi individual dapat mempengaruhi akurasi. Untuk keperluan yang memerlukan presisi tinggi (seperti penjualan, penetapan dosis obat, dsb), penggunaan timbangan tetap direkomendasikan.
+    """)
+
+# Footer
+st.markdown("---")
+st.markdown("Dibuat oleh Galuh Adi Insani dengan ❤️ | © 2025")
