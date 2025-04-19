@@ -1126,12 +1126,6 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     comparison_df["Berat Karkas (kg)"] = [(p * berat_badan) / 100 for p in karkas_percents]
     comparison_df["Berat Daging (kg)"] = [(p * berat_badan) / 100 for p in meat_percents]
     
-    # Highlight bangsa yang dipilih
-    def highlight_selected_breed(x):
-        df_highlight = pd.DataFrame('', index=x.index, columns=x.columns)
-        df_highlight.loc[x['Bangsa'] == bangsa_ternak, :] = 'background-color: rgba(144, 238, 144, 0.5);'
-        return df_highlight
-    
     # Tampilkan tabel dengan highlight
     st.dataframe(comparison_df.sort_values(by="Persentase Karkas (%)", ascending=False), 
                  hide_index=True,
@@ -1141,8 +1135,7 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
                      "Persentase Daging dari Berat Hidup (%)": st.column_config.NumberColumn(format="%.1f%%"),
                      "Berat Karkas (kg)": st.column_config.NumberColumn(format="%.2f kg"),
                      "Berat Daging (kg)": st.column_config.NumberColumn(format="%.2f kg")
-                 },
-                 style=highlight_selected_breed)
+                 })
     
     # Visualisasi perbandingan
     fig = go.Figure()
