@@ -2,6 +2,8 @@
 
 BBTernak adalah aplikasi berbasis web yang dibangun dengan Streamlit untuk membantu peternak memprediksi berat badan ternak (sapi, kambing, dan domba) tanpa memerlukan timbangan. Aplikasi ini menggunakan rumus-rumus formula yang telah divalidasi secara ilmiah berdasarkan lingkar dada dan panjang badan ternak.
 
+![Screenshot Aplikasi BBTernak](screen.png)
+
 ## 📋 Fitur Utama
 
 - Prediksi berat badan untuk 3 jenis ternak (Sapi, Kambing, Domba)
