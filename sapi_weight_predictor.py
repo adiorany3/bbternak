@@ -1009,4 +1009,143 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     
     # Tabel perbandingan
     st.subheader("Tabel Prediksi dengan Variasi Ukuran")
-    data = []
+    
+    # Fungsi untuk membuat tabel prediksi berat dengan berbagai variasi ukuran
+    def create_prediction_table(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_kelamin, steps=5, variation_percent=15):
+        """
+        Membuat tabel prediksi berat badan dengan variasi ukuran lingkar dada dan panjang badan
+        
+        Args:
+            lingkar_dada (float): Ukuran lingkar dada saat ini (cm)
+            panjang_badan (float): Ukuran panjang badan saat ini (cm)
+            jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
+            bangsa (str): Bangsa ternak
+            jenis_kelamin (str): Jenis kelamin ternak
+            steps (int): Jumlah langkah variasi (default=5)
+            variation_percent (float): Persentase variasi dari nilai tengah (default=15%)
+            
+        Returns:
+            pd.DataFrame: DataFrame berisi tabel prediksi berat dengan variasi ukuran
+        """
+        # Tentukan rentang variasi
+        ld_min = lingkar_dada * (1 - variation_percent/100)
+        ld_max = lingkar_dada * (1 + variation_percent/100)
+        pb_min = panjang_badan * (1 - variation_percent/100)
+        pb_max = panjang_badan * (1 + variation_percent/100)
+        
+        # Buat array variasi ukuran
+        ld_values = np.linspace(ld_min, ld_max, steps)
+        pb_values = np.linspace(pb_min, pb_max, steps)
+        
+        # Format untuk nama kolom (lingkar dada)
+        ld_headers = [f"LD: {ld:.1f} cm" for ld in ld_values]
+        
+        # Buat dataframe untuk menyimpan hasil
+        results = []
+        
+        # Hitung berat untuk setiap kombinasi
+        for pb in pb_values:
+            row = {"Panjang Badan (cm)": f"{pb:.1f}"}
+            
+            for i, ld in enumerate(ld_values):
+                bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa, jenis_kelamin)
+                row[ld_headers[i]] = f"{bb:.1f} kg"
+            
+            results.append(row)
+        
+        # Kembalikan DataFrame
+        return pd.DataFrame(results)
+    
+    # Tampilkan tabel prediksi berat dengan berbagai variasi ukuran
+    st.write("""
+    Tabel di bawah ini menunjukkan prediksi berat badan ternak dengan berbagai variasi ukuran lingkar dada (LD) 
+    dan panjang badan (PB). Gunakan tabel ini untuk memperkirakan berat ternak dengan rentang ukuran yang lebih luas
+    atau untuk memahami bagaimana perubahan kecil pada pengukuran dapat mempengaruhi hasil prediksi berat.
+    """)
+    
+    # Opsi untuk kustomisasi tabel
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        variation_percent = st.slider("Rentang Variasi (%)", min_value=5, max_value=30, value=15, 
+                                      help="Persentase variasi ukuran dari nilai tengah")
+    with col2:
+        steps = st.slider("Jumlah Langkah Variasi", min_value=3, max_value=9, value=5, step=2,
+                          help="Jumlah langkah variasi ukuran (kolom dan baris)")
+    
+    # Buat dan tampilkan tabel prediksi
+    prediction_table = create_prediction_table(
+        lingkar_dada=lingkar_dada,
+        panjang_badan=panjang_badan,
+        jenis_ternak=jenis_ternak,
+        bangsa=bangsa_ternak,
+        jenis_kelamin=jenis_kelamin,
+        steps=steps,
+        variation_percent=variation_percent
+    )
+    
+    # Tampilkan tabel dengan highlight pada nilai tengah
+    st.dataframe(prediction_table, use_container_width=True, hide_index=True)
+    
+    # Tambahkan penjelasan dan tips penggunaan
+    st.info("""
+    ##### Cara Menggunakan Tabel Prediksi:
+    
+    1. **Bandingkan rentang** - Lihat bagaimana berat badan berubah dengan variasi ukuran lingkar dada dan panjang badan
+    2. **Antisipasi pertumbuhan** - Gunakan untuk memperkirakan pertambahan berat jika ukuran tubuh ternak bertambah
+    3. **Koreksi pengukuran** - Jika tidak yakin dengan pengukuran awal, lihat rentang beratnya pada variasi ukuran
+    4. **Nilai optimal** - Identifikasi target ukuran tubuh untuk mencapai berat badan yang diinginkan
+    
+    > **Tips**: Pengukuran lingkar dada memiliki pengaruh lebih besar terhadap berat badan dibandingkan dengan panjang badan,
+    > karena dalam rumus perhitungan, lingkar dada dikuadratkan sedangkan panjang badan tidak.
+    """)
+    
+    # Tampilkan visualisasi heatmap berat badan
+    st.subheader("Peta Panas Prediksi Berat Badan")
+    st.write("Visualisasi di bawah ini menunjukkan hubungan antara lingkar dada, panjang badan, dan prediksi berat badan dalam bentuk peta panas (heatmap).")
+    
+    # Buat array untuk heatmap
+    ld_values = np.linspace(lingkar_dada * (1 - variation_percent/100), 
+                           lingkar_dada * (1 + variation_percent/100), 
+                           20)  # Lebih banyak titik untuk visualisasi yang lebih halus
+    pb_values = np.linspace(panjang_badan * (1 - variation_percent/100), 
+                           panjang_badan * (1 + variation_percent/100), 
+                           20)
+    
+    # Buat grid untuk heatmap
+    ld_grid, pb_grid = np.meshgrid(ld_values, pb_values)
+    weights = np.zeros(ld_grid.shape)
+    
+    # Hitung berat untuk setiap kombinasi ukuran
+    for i in range(ld_grid.shape[0]):
+        for j in range(ld_grid.shape[1]):
+            weights[i, j], _, _ = hitung_berat_badan(ld_grid[i, j], pb_grid[i, j], 
+                                                    jenis_ternak, bangsa_ternak, jenis_kelamin)
+    
+    # Buat heatmap dengan Plotly
+    fig = go.Figure(data=go.Heatmap(
+        z=weights,
+        x=ld_values,
+        y=pb_values,
+        colorscale='Viridis',
+        colorbar=dict(title='Berat (kg)')
+    ))
+    
+    # Tambahkan marker untuk nilai saat ini
+    fig.add_trace(go.Scatter(
+        x=[lingkar_dada],
+        y=[panjang_badan],
+        mode='markers',
+        marker=dict(size=12, color='red', symbol='x'),
+        name='Ukuran Saat Ini'
+    ))
+    
+    # Konfigurasi layout
+    fig.update_layout(
+        title=f"Peta Panas Prediksi Berat {jenis_ternak} {bangsa_ternak} ({jenis_kelamin})",
+        xaxis_title="Lingkar Dada (cm)",
+        yaxis_title="Panjang Badan (cm)",
+        height=500
+    )
+    
+    # Tampilkan heatmap
+    st.plotly_chart(fig, use_container_width=True)
