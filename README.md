@@ -9,9 +9,12 @@ BBTernak adalah aplikasi berbasis web yang dibangun dengan Streamlit untuk memba
 - Prediksi berat badan untuk 3 jenis ternak (Sapi, Kambing, Domba)
 - Mendukung berbagai bangsa ternak dengan faktor koreksi spesifik
 - Visualisasi hubungan antara lingkar dada, panjang badan, dan berat badan
+- Prediksi komponen karkas, non-karkas, dan daging saat pemotongan
 - Penjelasan detail tentang rumus-rumus yang digunakan
 - Informasi tentang cara pengukuran yang benar
 - Tabel prediksi dengan variasi ukuran untuk analisis sensitivitas
+
+![Prediksi Komponen Karkas](karkas.jpeg)
 
 ## 🔧 Cara Penggunaan
 
