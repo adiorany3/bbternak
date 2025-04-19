@@ -22,6 +22,10 @@ import plotly.graph_objects as go
 import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.figure_factory as ff
+from datetime import datetime
+
+# Get current year for the footer
+current_year = datetime.now().year
 
 # Konfigurasi halaman Streamlit - HARUS DITEMPATKAN PERTAMA
 st.set_page_config(
