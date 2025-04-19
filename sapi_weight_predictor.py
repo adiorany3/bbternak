@@ -119,56 +119,96 @@ ANIMAL_DATA = {
                 "factor": 1.0,
                 "gender_factor": {"Jantan": 1.1, "Betina": 0.9},
                 "chest_range": {"min": 140, "max": 210},
-                "length_range": {"min": 120, "max": 180}
+                "length_range": {"min": 120, "max": 180},
+                "age_range": {
+                    "Dewasa": {"min": 24, "max": 84, "unit": "bulan"},
+                    "Muda": {"min": 12, "max": 24, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 12, "unit": "bulan"}
+                }
             },
             "Sapi Madura": {
                 "formula_name": "Schoorl (Indonesia)", 
                 "factor": 0.95,
                 "gender_factor": {"Jantan": 1.15, "Betina": 0.92},
                 "chest_range": {"min": 130, "max": 200},
-                "length_range": {"min": 110, "max": 170}
+                "length_range": {"min": 110, "max": 170},
+                "age_range": {
+                    "Dewasa": {"min": 24, "max": 72, "unit": "bulan"},
+                    "Muda": {"min": 10, "max": 24, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 10, "unit": "bulan"}
+                }
             },
             "Sapi Limousin": {
                 "formula_name": "Winter (Eropa)", 
                 "factor": 1.2,
                 "gender_factor": {"Jantan": 1.12, "Betina": 0.95},
                 "chest_range": {"min": 180, "max": 260},
-                "length_range": {"min": 160, "max": 230}
+                "length_range": {"min": 160, "max": 230},
+                "age_range": {
+                    "Dewasa": {"min": 30, "max": 96, "unit": "bulan"},
+                    "Muda": {"min": 15, "max": 30, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 15, "unit": "bulan"}
+                }
             },
             "Sapi Simental": {
                 "formula_name": "Winter (Eropa)", 
                 "factor": 1.25,
                 "gender_factor": {"Jantan": 1.1, "Betina": 0.93},
                 "chest_range": {"min": 190, "max": 270},
-                "length_range": {"min": 170, "max": 240}
+                "length_range": {"min": 170, "max": 240},
+                "age_range": {
+                    "Dewasa": {"min": 30, "max": 96, "unit": "bulan"},
+                    "Muda": {"min": 15, "max": 30, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 15, "unit": "bulan"}
+                }
             },
             "Sapi Brahman": {
                 "formula_name": "Winter (Eropa)", 
                 "factor": 1.15,
                 "gender_factor": {"Jantan": 1.18, "Betina": 0.9},
                 "chest_range": {"min": 180, "max": 250},
-                "length_range": {"min": 160, "max": 220}
+                "length_range": {"min": 160, "max": 220},
+                "age_range": {
+                    "Dewasa": {"min": 30, "max": 84, "unit": "bulan"},
+                    "Muda": {"min": 12, "max": 30, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 12, "unit": "bulan"}
+                }
             },
             "Sapi Peranakan Ongole (PO)": {
                 "formula_name": "Lambourne (Sapi Kecil)", 
                 "factor": 1.05,
                 "gender_factor": {"Jantan": 1.12, "Betina": 0.9},
                 "chest_range": {"min": 150, "max": 230},
-                "length_range": {"min": 130, "max": 200}
+                "length_range": {"min": 130, "max": 200},
+                "age_range": {
+                    "Dewasa": {"min": 24, "max": 84, "unit": "bulan"},
+                    "Muda": {"min": 12, "max": 24, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 12, "unit": "bulan"}
+                }
             },
             "Sapi Friesian Holstein (FH)": {
                 "formula_name": "Denmark", 
                 "factor": 1.1,
                 "gender_factor": {"Jantan": 1.08, "Betina": 0.97},
                 "chest_range": {"min": 180, "max": 250},
-                "length_range": {"min": 160, "max": 220}
+                "length_range": {"min": 160, "max": 220},
+                "age_range": {
+                    "Dewasa": {"min": 24, "max": 84, "unit": "bulan"},
+                    "Muda": {"min": 12, "max": 24, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 12, "unit": "bulan"}
+                }
             },
             "Sapi Aceh": {
                 "formula_name": "Schoorl (Indonesia)", 
                 "factor": 0.9,
                 "gender_factor": {"Jantan": 1.14, "Betina": 0.92},
                 "chest_range": {"min": 120, "max": 190},
-                "length_range": {"min": 100, "max": 160}
+                "length_range": {"min": 100, "max": 160},
+                "age_range": {
+                    "Dewasa": {"min": 24, "max": 72, "unit": "bulan"},
+                    "Muda": {"min": 10, "max": 24, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 10, "unit": "bulan"}
+                }
             },
         },
         "icon": "🐄"
@@ -180,42 +220,72 @@ ANIMAL_DATA = {
                 "factor": 0.9,
                 "gender_factor": {"Jantan": 1.15, "Betina": 0.9},
                 "chest_range": {"min": 50, "max": 80},
-                "length_range": {"min": 40, "max": 70}
+                "length_range": {"min": 40, "max": 70},
+                "age_range": {
+                    "Dewasa": {"min": 12, "max": 48, "unit": "bulan"},
+                    "Muda": {"min": 6, "max": 12, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 6, "unit": "bulan"}
+                }
             },
             "Kambing Ettawa": {
                 "formula_name": "New Zealand", 
                 "factor": 1.05,
                 "gender_factor": {"Jantan": 1.2, "Betina": 0.88},
                 "chest_range": {"min": 70, "max": 110},
-                "length_range": {"min": 60, "max": 95}
+                "length_range": {"min": 60, "max": 95},
+                "age_range": {
+                    "Dewasa": {"min": 15, "max": 60, "unit": "bulan"},
+                    "Muda": {"min": 8, "max": 15, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 8, "unit": "bulan"}
+                }
             },
             "Kambing Peranakan Ettawa (PE)": {
                 "formula_name": "Arjodarmoko", 
                 "factor": 1.0,
                 "gender_factor": {"Jantan": 1.18, "Betina": 0.9},
                 "chest_range": {"min": 65, "max": 100},
-                "length_range": {"min": 55, "max": 90}
+                "length_range": {"min": 55, "max": 90},
+                "age_range": {
+                    "Dewasa": {"min": 12, "max": 54, "unit": "bulan"},
+                    "Muda": {"min": 7, "max": 12, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 7, "unit": "bulan"}
+                }
             },
             "Kambing Boer": {
                 "formula_name": "New Zealand", 
                 "factor": 1.1,
                 "gender_factor": {"Jantan": 1.15, "Betina": 0.9},
                 "chest_range": {"min": 75, "max": 120},
-                "length_range": {"min": 65, "max": 105}
+                "length_range": {"min": 65, "max": 105},
+                "age_range": {
+                    "Dewasa": {"min": 15, "max": 60, "unit": "bulan"},
+                    "Muda": {"min": 8, "max": 15, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 8, "unit": "bulan"}
+                }
             },
             "Kambing Jawarandu": {
                 "formula_name": "Arjodarmoko", 
                 "factor": 0.95,
                 "gender_factor": {"Jantan": 1.12, "Betina": 0.92},
                 "chest_range": {"min": 60, "max": 95},
-                "length_range": {"min": 50, "max": 85}
+                "length_range": {"min": 50, "max": 85},
+                "age_range": {
+                    "Dewasa": {"min": 12, "max": 48, "unit": "bulan"},
+                    "Muda": {"min": 6, "max": 12, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 6, "unit": "bulan"}
+                }
             },
             "Kambing Bligon": {
                 "formula_name": "Khan", 
                 "factor": 0.92,
                 "gender_factor": {"Jantan": 1.1, "Betina": 0.92},
                 "chest_range": {"min": 55, "max": 90},
-                "length_range": {"min": 45, "max": 80}
+                "length_range": {"min": 45, "max": 80},
+                "age_range": {
+                    "Dewasa": {"min": 12, "max": 48, "unit": "bulan"},
+                    "Muda": {"min": 6, "max": 12, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 6, "unit": "bulan"}
+                }
             },
         },
         "icon": "🐐"
@@ -227,42 +297,72 @@ ANIMAL_DATA = {
                 "factor": 0.95,
                 "gender_factor": {"Jantan": 1.12, "Betina": 0.9},
                 "chest_range": {"min": 55, "max": 85},
-                "length_range": {"min": 45, "max": 75}
+                "length_range": {"min": 45, "max": 75},
+                "age_range": {
+                    "Dewasa": {"min": 12, "max": 42, "unit": "bulan"},
+                    "Muda": {"min": 6, "max": 12, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 6, "unit": "bulan"}
+                }
             },
             "Domba Ekor Gemuk": {
                 "formula_name": "Lambourne", 
                 "factor": 1.1,
                 "gender_factor": {"Jantan": 1.15, "Betina": 0.88},
                 "chest_range": {"min": 65, "max": 95},
-                "length_range": {"min": 55, "max": 85}
+                "length_range": {"min": 55, "max": 85},
+                "age_range": {
+                    "Dewasa": {"min": 12, "max": 48, "unit": "bulan"},
+                    "Muda": {"min": 6, "max": 12, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 6, "unit": "bulan"}
+                }
             },
             "Domba Merino": {
                 "formula_name": "NSA Australia", 
                 "factor": 1.05,
                 "gender_factor": {"Jantan": 1.2, "Betina": 0.85},
                 "chest_range": {"min": 75, "max": 110},
-                "length_range": {"min": 65, "max": 95}
+                "length_range": {"min": 65, "max": 95},
+                "age_range": {
+                    "Dewasa": {"min": 15, "max": 54, "unit": "bulan"},
+                    "Muda": {"min": 8, "max": 15, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 8, "unit": "bulan"}
+                }
             },
             "Domba Garut": {
                 "formula_name": "Lambourne", 
                 "factor": 1.0,
                 "gender_factor": {"Jantan": 1.25, "Betina": 0.85},
                 "chest_range": {"min": 70, "max": 105},
-                "length_range": {"min": 60, "max": 90}
+                "length_range": {"min": 60, "max": 90},
+                "age_range": {
+                    "Dewasa": {"min": 12, "max": 48, "unit": "bulan"},
+                    "Muda": {"min": 6, "max": 12, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 6, "unit": "bulan"}
+                }
             },
             "Domba Suffolk": {
                 "formula_name": "Valdez", 
                 "factor": 1.15,
                 "gender_factor": {"Jantan": 1.15, "Betina": 0.9},
                 "chest_range": {"min": 85, "max": 130},
-                "length_range": {"min": 75, "max": 115}
+                "length_range": {"min": 75, "max": 115},
+                "age_range": {
+                    "Dewasa": {"min": 15, "max": 54, "unit": "bulan"},
+                    "Muda": {"min": 8, "max": 15, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 8, "unit": "bulan"}
+                }
             },
             "Domba Texel": {
                 "formula_name": "Valdez", 
                 "factor": 1.2,
                 "gender_factor": {"Jantan": 1.18, "Betina": 0.9},
                 "chest_range": {"min": 90, "max": 135},
-                "length_range": {"min": 80, "max": 120}
+                "length_range": {"min": 80, "max": 120},
+                "age_range": {
+                    "Dewasa": {"min": 15, "max": 54, "unit": "bulan"},
+                    "Muda": {"min": 8, "max": 15, "unit": "bulan"},
+                    "Anak": {"min": 1, "max": 8, "unit": "bulan"}
+                }
             },
         },
         "icon": "🐑"
