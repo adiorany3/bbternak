@@ -117,48 +117,56 @@ ANIMAL_DATA = {
             "Sapi Bali": {
                 "formula_name": "Schoorl (Indonesia)", 
                 "factor": 1.0,
+                "gender_factor": {"Jantan": 1.1, "Betina": 0.9},
                 "chest_range": {"min": 140, "max": 210},
                 "length_range": {"min": 120, "max": 180}
             },
             "Sapi Madura": {
                 "formula_name": "Schoorl (Indonesia)", 
                 "factor": 0.95,
+                "gender_factor": {"Jantan": 1.15, "Betina": 0.92},
                 "chest_range": {"min": 130, "max": 200},
                 "length_range": {"min": 110, "max": 170}
             },
             "Sapi Limousin": {
                 "formula_name": "Winter (Eropa)", 
                 "factor": 1.2,
+                "gender_factor": {"Jantan": 1.12, "Betina": 0.95},
                 "chest_range": {"min": 180, "max": 260},
                 "length_range": {"min": 160, "max": 230}
             },
             "Sapi Simental": {
                 "formula_name": "Winter (Eropa)", 
                 "factor": 1.25,
+                "gender_factor": {"Jantan": 1.1, "Betina": 0.93},
                 "chest_range": {"min": 190, "max": 270},
                 "length_range": {"min": 170, "max": 240}
             },
             "Sapi Brahman": {
                 "formula_name": "Winter (Eropa)", 
                 "factor": 1.15,
+                "gender_factor": {"Jantan": 1.18, "Betina": 0.9},
                 "chest_range": {"min": 180, "max": 250},
                 "length_range": {"min": 160, "max": 220}
             },
             "Sapi Peranakan Ongole (PO)": {
                 "formula_name": "Lambourne (Sapi Kecil)", 
                 "factor": 1.05,
+                "gender_factor": {"Jantan": 1.12, "Betina": 0.9},
                 "chest_range": {"min": 150, "max": 230},
                 "length_range": {"min": 130, "max": 200}
             },
             "Sapi Friesian Holstein (FH)": {
                 "formula_name": "Denmark", 
                 "factor": 1.1,
+                "gender_factor": {"Jantan": 1.08, "Betina": 0.97},
                 "chest_range": {"min": 180, "max": 250},
                 "length_range": {"min": 160, "max": 220}
             },
             "Sapi Aceh": {
                 "formula_name": "Schoorl (Indonesia)", 
                 "factor": 0.9,
+                "gender_factor": {"Jantan": 1.14, "Betina": 0.92},
                 "chest_range": {"min": 120, "max": 190},
                 "length_range": {"min": 100, "max": 160}
             },
@@ -170,36 +178,42 @@ ANIMAL_DATA = {
             "Kambing Kacang": {
                 "formula_name": "Arjodarmoko", 
                 "factor": 0.9,
+                "gender_factor": {"Jantan": 1.15, "Betina": 0.9},
                 "chest_range": {"min": 50, "max": 80},
                 "length_range": {"min": 40, "max": 70}
             },
             "Kambing Ettawa": {
                 "formula_name": "New Zealand", 
                 "factor": 1.05,
+                "gender_factor": {"Jantan": 1.2, "Betina": 0.88},
                 "chest_range": {"min": 70, "max": 110},
                 "length_range": {"min": 60, "max": 95}
             },
             "Kambing Peranakan Ettawa (PE)": {
                 "formula_name": "Arjodarmoko", 
                 "factor": 1.0,
+                "gender_factor": {"Jantan": 1.18, "Betina": 0.9},
                 "chest_range": {"min": 65, "max": 100},
                 "length_range": {"min": 55, "max": 90}
             },
             "Kambing Boer": {
                 "formula_name": "New Zealand", 
                 "factor": 1.1,
+                "gender_factor": {"Jantan": 1.15, "Betina": 0.9},
                 "chest_range": {"min": 75, "max": 120},
                 "length_range": {"min": 65, "max": 105}
             },
             "Kambing Jawarandu": {
                 "formula_name": "Arjodarmoko", 
                 "factor": 0.95,
+                "gender_factor": {"Jantan": 1.12, "Betina": 0.92},
                 "chest_range": {"min": 60, "max": 95},
                 "length_range": {"min": 50, "max": 85}
             },
             "Kambing Bligon": {
                 "formula_name": "Khan", 
                 "factor": 0.92,
+                "gender_factor": {"Jantan": 1.1, "Betina": 0.92},
                 "chest_range": {"min": 55, "max": 90},
                 "length_range": {"min": 45, "max": 80}
             },
@@ -211,36 +225,42 @@ ANIMAL_DATA = {
             "Domba Ekor Tipis": {
                 "formula_name": "Lambourne", 
                 "factor": 0.95,
+                "gender_factor": {"Jantan": 1.12, "Betina": 0.9},
                 "chest_range": {"min": 55, "max": 85},
                 "length_range": {"min": 45, "max": 75}
             },
             "Domba Ekor Gemuk": {
                 "formula_name": "Lambourne", 
                 "factor": 1.1,
+                "gender_factor": {"Jantan": 1.15, "Betina": 0.88},
                 "chest_range": {"min": 65, "max": 95},
                 "length_range": {"min": 55, "max": 85}
             },
             "Domba Merino": {
                 "formula_name": "NSA Australia", 
                 "factor": 1.05,
+                "gender_factor": {"Jantan": 1.2, "Betina": 0.85},
                 "chest_range": {"min": 75, "max": 110},
                 "length_range": {"min": 65, "max": 95}
             },
             "Domba Garut": {
                 "formula_name": "Lambourne", 
                 "factor": 1.0,
+                "gender_factor": {"Jantan": 1.25, "Betina": 0.85},
                 "chest_range": {"min": 70, "max": 105},
                 "length_range": {"min": 60, "max": 90}
             },
             "Domba Suffolk": {
                 "formula_name": "Valdez", 
                 "factor": 1.15,
+                "gender_factor": {"Jantan": 1.15, "Betina": 0.9},
                 "chest_range": {"min": 85, "max": 130},
                 "length_range": {"min": 75, "max": 115}
             },
             "Domba Texel": {
                 "formula_name": "Valdez", 
                 "factor": 1.2,
+                "gender_factor": {"Jantan": 1.18, "Betina": 0.9},
                 "chest_range": {"min": 90, "max": 135},
                 "length_range": {"min": 80, "max": 120}
             },
@@ -249,7 +269,7 @@ ANIMAL_DATA = {
     }
 }
 
-def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa):
+def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_kelamin):
     """
     Menghitung berat badan ternak menggunakan rumus yang sesuai dengan jenis dan bangsanya.
     
@@ -258,6 +278,7 @@ def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa):
         panjang_badan (float): Panjang badan ternak dalam sentimeter
         jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
         bangsa (str): Bangsa ternak
+        jenis_kelamin (str): Jenis kelamin ternak (Jantan atau Betina)
         
     Returns:
         float: Berat badan ternak dalam kilogram
@@ -268,6 +289,7 @@ def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa):
     breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa]
     formula_name = breed_data["formula_name"]
     factor = breed_data["factor"]
+    gender_factor = breed_data["gender_factor"][jenis_kelamin]
     
     # Ambil detail formula
     formula_data = ANIMAL_FORMULAS[jenis_ternak]["formulas"][formula_name]
@@ -277,8 +299,8 @@ def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa):
     # Hitung berat badan sesuai rumus
     berat_badan = calculation_func(lingkar_dada, panjang_badan)
     
-    # Terapkan faktor koreksi berdasarkan bangsa
-    berat_badan *= factor
+    # Terapkan faktor koreksi berdasarkan bangsa dan jenis kelamin
+    berat_badan = berat_badan * factor * gender_factor
     
     return berat_badan, formula_name, formula_text
 
@@ -310,6 +332,13 @@ bangsa_ternak = st.sidebar.selectbox(
     help="Pilih bangsa ternak yang sesuai."
 )
 
+# Pilih jenis kelamin ternak
+jenis_kelamin = st.sidebar.selectbox(
+    "Jenis Kelamin",
+    options=["Jantan", "Betina"],
+    help="Pilih jenis kelamin ternak."
+)
+
 # Dapatkan rentang ukuran untuk bangsa ternak yang dipilih
 breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
 chest_range = breed_data["chest_range"]
@@ -338,7 +367,7 @@ panjang_badan = st.sidebar.number_input(
 # Tombol untuk menghitung berat badan
 if st.sidebar.button("Hitung Berat Badan", type="primary"):
     # Hitung berat badan
-    berat_badan, formula_name, formula_text = hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
+    berat_badan, formula_name, formula_text = hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)
     
     # Tampilkan hasil dalam kotak
     st.success(f"## Prediksi Berat Badan: **{berat_badan:.2f} kg**")
@@ -352,6 +381,7 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     st.markdown(f"""
     - Jenis Ternak: **{jenis_ternak}**
     - Bangsa Ternak: **{bangsa_ternak}**
+    - Jenis Kelamin: **{jenis_kelamin}**
     - Rumus yang Digunakan: **{formula_name}**
     - Formula: **{formula_text}**
     - Referensi: **{formula_reference}**
@@ -369,7 +399,7 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     with col1:
         # Grafik hubungan lingkar dada dan berat badan
         ld_range = np.linspace(chest_range['min'] * 0.9, chest_range['max'] * 1.1, 50)
-        bb_range = [hitung_berat_badan(ld, panjang_badan, jenis_ternak, bangsa_ternak)[0] for ld in ld_range]
+        bb_range = [hitung_berat_badan(ld, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for ld in ld_range]
         
         fig1, ax1 = plt.subplots()
         ax1.plot(ld_range, bb_range)
@@ -388,7 +418,7 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     with col2:
         # Grafik hubungan panjang badan dan berat badan
         pb_range = np.linspace(length_range['min'] * 0.9, length_range['max'] * 1.1, 50)
-        bb_range = [hitung_berat_badan(lingkar_dada, pb, jenis_ternak, bangsa_ternak)[0] for pb in pb_range]
+        bb_range = [hitung_berat_badan(lingkar_dada, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for pb in pb_range]
         
         fig2, ax2 = plt.subplots()
         ax2.plot(pb_range, bb_range)
@@ -414,7 +444,7 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     
     for ld in ld_variations:
         for pb in pb_variations:
-            bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa_ternak)
+            bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)
             data.append({
                 "Lingkar Dada (cm)": f"{ld:.1f}",
                 "Panjang Badan (cm)": f"{pb:.1f}",
