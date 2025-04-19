@@ -380,6 +380,222 @@ ANIMAL_DATA = {
     }
 }
 
+# Data untuk persentase karkas, non-karkas, dan daging
+SLAUGHTER_DATA = {
+    "Sapi": {
+        "breeds": {
+            "Sapi Bali": {
+                "karkas_percent": {"Jantan": 52.5, "Betina": 49.0},
+                "non_karkas_percent": {
+                    "Kepala": 6.5, "Kulit": 8.0, "Kaki": 2.3, "Ekor": 0.5,
+                    "Darah": 3.5, "Jantung": 0.5, "Hati": 1.5, "Paru-paru": 1.0,
+                    "Limpa": 0.3, "Saluran Pencernaan": 15.0, "Lemak": 5.0
+                },
+                "meat_percent_of_carcass": 75.0,
+                "reference": "Soeparno. (2011). Ilmu Nutrisi dan Teknologi Daging. Gadjah Mada University Press."
+            },
+            "Sapi Madura": {
+                "karkas_percent": {"Jantan": 51.0, "Betina": 48.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.0, "Kulit": 8.5, "Kaki": 2.5, "Ekor": 0.5,
+                    "Darah": 3.5, "Jantung": 0.4, "Hati": 1.4, "Paru-paru": 1.0,
+                    "Limpa": 0.3, "Saluran Pencernaan": 16.0, "Lemak": 5.0
+                },
+                "meat_percent_of_carcass": 72.0,
+                "reference": "Hafid, H. dan R. Priyanto. (2006). Pertumbuhan dan Distribusi Potongan Komersial Karkas Sapi Madura. J. Ilmiah Ilmu-Ilmu Peternakan, 9(2), 65-73."
+            },
+            "Sapi Limousin": {
+                "karkas_percent": {"Jantan": 58.0, "Betina": 54.0},
+                "non_karkas_percent": {
+                    "Kepala": 5.5, "Kulit": 7.2, "Kaki": 2.0, "Ekor": 0.4,
+                    "Darah": 3.0, "Jantung": 0.4, "Hati": 1.2, "Paru-paru": 0.8,
+                    "Limpa": 0.2, "Saluran Pencernaan": 12.0, "Lemak": 4.0
+                },
+                "meat_percent_of_carcass": 80.0,
+                "reference": "Chambaz, A., et al. (2003). Meat quality of Angus, Simmental, Charolais and Limousin steers. Animal Science, 77, 119-129."
+            },
+            "Sapi Simental": {
+                "karkas_percent": {"Jantan": 57.0, "Betina": 53.0},
+                "non_karkas_percent": {
+                    "Kepala": 5.6, "Kulit": 7.4, "Kaki": 2.0, "Ekor": 0.4,
+                    "Darah": 3.2, "Jantung": 0.4, "Hati": 1.3, "Paru-paru": 0.9,
+                    "Limpa": 0.2, "Saluran Pencernaan": 12.5, "Lemak": 4.5
+                },
+                "meat_percent_of_carcass": 78.0,
+                "reference": "Chambaz, A., et al. (2003). Meat quality of Angus, Simmental, Charolais and Limousin steers. Animal Science, 77, 119-129."
+            },
+            "Sapi Brahman": {
+                "karkas_percent": {"Jantan": 55.0, "Betina": 51.0},
+                "non_karkas_percent": {
+                    "Kepala": 6.0, "Kulit": 7.8, "Kaki": 2.1, "Ekor": 0.4,
+                    "Darah": 3.2, "Jantung": 0.4, "Hati": 1.3, "Paru-paru": 0.9,
+                    "Limpa": 0.2, "Saluran Pencernaan": 13.5, "Lemak": 4.0
+                },
+                "meat_percent_of_carcass": 77.0,
+                "reference": "Cole, J.W., et al. (1964). Effects of Type and Breed of British, Zebu and Dairy Cattle on Production, Carcass Composition and Palatability. J Animal Science, 23, 115-120."
+            },
+            "Sapi Peranakan Ongole (PO)": {
+                "karkas_percent": {"Jantan": 50.0, "Betina": 47.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.0, "Kulit": 8.5, "Kaki": 2.5, "Ekor": 0.5,
+                    "Darah": 3.5, "Jantung": 0.4, "Hati": 1.4, "Paru-paru": 1.0,
+                    "Limpa": 0.3, "Saluran Pencernaan": 16.5, "Lemak": 5.5
+                },
+                "meat_percent_of_carcass": 70.0,
+                "reference": "Priyanto, R., et al. (1999). Karakteristik Karkas dan Non-Karkas Sapi Peranakan Ongole. Media Veteriner, 6(4), 13-17."
+            },
+            "Sapi Friesian Holstein (FH)": {
+                "karkas_percent": {"Jantan": 53.0, "Betina": 48.0},
+                "non_karkas_percent": {
+                    "Kepala": 6.2, "Kulit": 8.0, "Kaki": 2.2, "Ekor": 0.5,
+                    "Darah": 3.3, "Jantung": 0.4, "Hati": 1.4, "Paru-paru": 1.0,
+                    "Limpa": 0.3, "Saluran Pencernaan": 15.0, "Lemak": 6.0
+                },
+                "meat_percent_of_carcass": 72.0,
+                "reference": "Purchas, R.W., et al. (2002). Effects of growth potential and growth path on tenderness of beef. J Animal Science, 80, 3211-3221."
+            },
+            "Sapi Aceh": {
+                "karkas_percent": {"Jantan": 49.0, "Betina": 46.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.2, "Kulit": 8.8, "Kaki": 2.7, "Ekor": 0.5,
+                    "Darah": 3.5, "Jantung": 0.4, "Hati": 1.4, "Paru-paru": 1.0,
+                    "Limpa": 0.3, "Saluran Pencernaan": 17.0, "Lemak": 5.5
+                },
+                "meat_percent_of_carcass": 68.0,
+                "reference": "Abdullah, M., et al. (2007). Karakteristik Karkas dan Non Karkas Sapi Aceh. J. Agripet, 7(1), 41-45."
+            },
+        }
+    },
+    "Kambing": {
+        "breeds": {
+            "Kambing Kacang": {
+                "karkas_percent": {"Jantan": 48.0, "Betina": 45.0},
+                "non_karkas_percent": {
+                    "Kepala": 8.0, "Kulit": 8.5, "Kaki": 3.0, "Ekor": 0.3,
+                    "Darah": 3.5, "Jantung": 0.5, "Hati": 1.5, "Paru-paru": 1.2,
+                    "Limpa": 0.3, "Saluran Pencernaan": 18.0, "Lemak": 4.0
+                },
+                "meat_percent_of_carcass": 70.0,
+                "reference": "Sunarlim, R., et al. (1999). Karakteristik Karkas Kambing Kacang dengan Kambing PE. Buletin Peternakan, 23(1), 1-6."
+            },
+            "Kambing Ettawa": {
+                "karkas_percent": {"Jantan": 50.0, "Betina": 47.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.5, "Kulit": 8.0, "Kaki": 2.8, "Ekor": 0.3,
+                    "Darah": 3.3, "Jantung": 0.5, "Hati": 1.4, "Paru-paru": 1.1,
+                    "Limpa": 0.3, "Saluran Pencernaan": 17.0, "Lemak": 3.8
+                },
+                "meat_percent_of_carcass": 72.0,
+                "reference": "Dhanda, J.S., et al. (2003). Carcass characteristics of Boer × Angora and Boer × Feral goats. Small Ruminant Research, 48(2), 163-169."
+            },
+            "Kambing Peranakan Ettawa (PE)": {
+                "karkas_percent": {"Jantan": 49.0, "Betina": 46.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.8, "Kulit": 8.2, "Kaki": 2.9, "Ekor": 0.3,
+                    "Darah": 3.4, "Jantung": 0.5, "Hati": 1.5, "Paru-paru": 1.1,
+                    "Limpa": 0.3, "Saluran Pencernaan": 17.5, "Lemak": 3.9
+                },
+                "meat_percent_of_carcass": 71.0,
+                "reference": "Sunarlim, R., et al. (1999). Karakteristik Karkas Kambing Kacang dengan Kambing PE. Buletin Peternakan, 23(1), 1-6."
+            },
+            "Kambing Boer": {
+                "karkas_percent": {"Jantan": 52.0, "Betina": 49.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.0, "Kulit": 7.8, "Kaki": 2.5, "Ekor": 0.3,
+                    "Darah": 3.2, "Jantung": 0.5, "Hati": 1.4, "Paru-paru": 1.0,
+                    "Limpa": 0.3, "Saluran Pencernaan": 16.0, "Lemak": 4.0
+                },
+                "meat_percent_of_carcass": 75.0,
+                "reference": "Van Niekerk, W.A. and N.H. Casey. (1988). The Boer Goat II. Growth, nutrient requirements, carcass and meat quality. Small Ruminant Research, 1(4), 355-368."
+            },
+            "Kambing Jawarandu": {
+                "karkas_percent": {"Jantan": 47.5, "Betina": 45.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.9, "Kulit": 8.4, "Kaki": 3.0, "Ekor": 0.3,
+                    "Darah": 3.4, "Jantung": 0.5, "Hati": 1.5, "Paru-paru": 1.2,
+                    "Limpa": 0.3, "Saluran Pencernaan": 18.0, "Lemak": 4.2
+                },
+                "meat_percent_of_carcass": 69.0,
+                "reference": "Astuti, D.A. (2005). Performa Produksi dan Reproduksi Kambing Jawarandu. J. Pengembangan Peternakan Tropis, 30(2), 89-95."
+            },
+            "Kambing Bligon": {
+                "karkas_percent": {"Jantan": 47.0, "Betina": 44.5},
+                "non_karkas_percent": {
+                    "Kepala": 8.0, "Kulit": 8.5, "Kaki": 3.0, "Ekor": 0.3,
+                    "Darah": 3.5, "Jantung": 0.5, "Hati": 1.5, "Paru-paru": 1.2,
+                    "Limpa": 0.3, "Saluran Pencernaan": 18.2, "Lemak": 4.2
+                },
+                "meat_percent_of_carcass": 68.0,
+                "reference": "Budisatria, I.G.S. (2006). Karakteristik Kambing Bligon dan Produktivitasnya. Buletin Peternakan, 30(4), 178-187."
+            },
+        }
+    },
+    "Domba": {
+        "breeds": {
+            "Domba Ekor Tipis": {
+                "karkas_percent": {"Jantan": 48.0, "Betina": 45.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.5, "Kulit": 9.0, "Kaki": 2.8, "Ekor": 0.5,
+                    "Darah": 3.5, "Jantung": 0.5, "Hati": 1.5, "Paru-paru": 1.2,
+                    "Limpa": 0.3, "Saluran Pencernaan": 18.0, "Lemak": 4.0
+                },
+                "meat_percent_of_carcass": 70.0,
+                "reference": "Sumantri, C., et al. (2007). Keragaan dan Hubungan Phylogenik Antar Domba Lokal Indonesia. J. Ilmu Ternak dan Veteriner, 12(1), 42-48."
+            },
+            "Domba Ekor Gemuk": {
+                "karkas_percent": {"Jantan": 49.0, "Betina": 46.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.2, "Kulit": 8.8, "Kaki": 2.7, "Ekor": 2.5,
+                    "Darah": 3.5, "Jantung": 0.5, "Hati": 1.5, "Paru-paru": 1.2,
+                    "Limpa": 0.3, "Saluran Pencernaan": 17.0, "Lemak": 5.0
+                },
+                "meat_percent_of_carcass": 68.0,
+                "reference": "Sumantri, C., et al. (2007). Keragaan dan Hubungan Phylogenik Antar Domba Lokal Indonesia. J. Ilmu Ternak dan Veteriner, 12(1), 42-48."
+            },
+            "Domba Merino": {
+                "karkas_percent": {"Jantan": 52.0, "Betina": 49.0},
+                "non_karkas_percent": {
+                    "Kepala": 6.8, "Kulit": 10.5, "Kaki": 2.5, "Ekor": 0.5,
+                    "Darah": 3.3, "Jantung": 0.5, "Hati": 1.4, "Paru-paru": 1.1,
+                    "Limpa": 0.3, "Saluran Pencernaan": 16.0, "Lemak": 4.5
+                },
+                "meat_percent_of_carcass": 72.0,
+                "reference": "Brand, T.S., et al. (2009). Merino and Dohne Merino Lambs Reared under Feedlot Conditions. S. African J. Animal Science, 39(1), 50-59."
+            },
+            "Domba Garut": {
+                "karkas_percent": {"Jantan": 50.0, "Betina": 47.0},
+                "non_karkas_percent": {
+                    "Kepala": 7.2, "Kulit": 9.0, "Kaki": 2.7, "Ekor": 0.7,
+                    "Darah": 3.4, "Jantung": 0.5, "Hati": 1.5, "Paru-paru": 1.1,
+                    "Limpa": 0.3, "Saluran Pencernaan": 17.5, "Lemak": 4.2
+                },
+                "meat_percent_of_carcass": 71.0,
+                "reference": "Heriyadi, D. (2005). Karakteristik Morfologis dan Performans Domba Garut. Prosiding Seminar Nasional Teknologi Peternakan dan Veteriner, pp.425-430."
+            },
+            "Domba Suffolk": {
+                "karkas_percent": {"Jantan": 53.0, "Betina": 50.0},
+                "non_karkas_percent": {
+                    "Kepala": 6.5, "Kulit": 8.5, "Kaki": 2.4, "Ekor": 0.5,
+                    "Darah": 3.3, "Jantung": 0.5, "Hati": 1.4, "Paru-paru": 1.0,
+                    "Limpa": 0.3, "Saluran Pencernaan": 15.5, "Lemak": 5.0
+                },
+                "meat_percent_of_carcass": 74.0,
+                "reference": "Snowder, G.D., et al. (1994). Carcass characteristics and optimal slaughter weights in four breeds of sheep. J. Animal Science, 72(4), 932-937."
+            },
+            "Domba Texel": {
+                "karkas_percent": {"Jantan": 54.0, "Betina": 51.0},
+                "non_karkas_percent": {
+                    "Kepala": 6.2, "Kulit": 8.3, "Kaki": 2.3, "Ekor": 0.5,
+                    "Darah": 3.2, "Jantung": 0.5, "Hati": 1.3, "Paru-paru": 1.0,
+                    "Limpa": 0.3, "Saluran Pencernaan": 15.0, "Lemak": 4.8
+                },
+                "meat_percent_of_carcass": 76.0,
+                "reference": "Johnson, P.L., et al. (2005). Muscle traits and meat quality in Texel sired lambs. Proceedings of the New Zealand Society of Animal Production, 65, 239-243."
+            },
+        }
+    }
+}
+
 def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_kelamin):
     """
     Menghitung berat badan ternak menggunakan rumus yang sesuai dengan jenis dan bangsanya.
@@ -414,6 +630,55 @@ def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_
     berat_badan = berat_badan * factor * gender_factor
     
     return berat_badan, formula_name, formula_text
+
+def hitung_komponen_karkas(berat_badan, jenis_ternak, bangsa, jenis_kelamin):
+    """
+    Menghitung berat komponen karkas, non-karkas, dan daging berdasarkan berat badan ternak.
+    
+    Args:
+        berat_badan (float): Berat badan ternak dalam kilogram
+        jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
+        bangsa (str): Bangsa ternak
+        jenis_kelamin (str): Jenis kelamin ternak (Jantan atau Betina)
+        
+    Returns:
+        dict: Berisi berat karkas, non-karkas, dan daging
+    """
+    # Ambil data ternak
+    slaughter_data = SLAUGHTER_DATA[jenis_ternak]["breeds"][bangsa]
+    karkas_percent = slaughter_data["karkas_percent"][jenis_kelamin]
+    non_karkas_percent = slaughter_data["non_karkas_percent"]
+    meat_percent = slaughter_data["meat_percent_of_carcass"]
+    
+    # Hitung berat karkas
+    karkas_weight = (berat_badan * karkas_percent) / 100
+    
+    # Hitung berat daging
+    meat_weight = (karkas_weight * meat_percent) / 100
+    
+    # Hitung berat tulang dan lemak karkas
+    bone_and_fat_weight = karkas_weight - meat_weight
+    
+    # Hitung berat komponen non-karkas
+    non_karkas_weights = {}
+    for component, percent in non_karkas_percent.items():
+        non_karkas_weights[component] = (berat_badan * percent) / 100
+    
+    # Tambahkan komponen lain-lain untuk menyeimbangkan total
+    total_accounted = karkas_percent + sum(non_karkas_percent.values())
+    if total_accounted < 100:
+        non_karkas_weights["Lain-lain"] = (berat_badan * (100 - total_accounted)) / 100
+    
+    return {
+        "karkas_weight": karkas_weight,
+        "karkas_percent": karkas_percent,
+        "meat_weight": meat_weight,
+        "meat_percent_of_carcass": meat_percent,
+        "meat_percent_of_body": (meat_weight / berat_badan) * 100,
+        "bone_and_fat_weight": bone_and_fat_weight,
+        "non_karkas_weights": non_karkas_weights,
+        "reference": slaughter_data["reference"]
+    }
 
 # Helper function untuk membandingkan rumus-rumus yang berbeda
 def compare_formulas(animal_type, chest_size, body_length, gender, breed):
@@ -723,6 +988,9 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     # Hitung berat badan
     berat_badan, formula_name, formula_text = hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)
     
+    # Hitung komponen karkas
+    karkas_data = hitung_komponen_karkas(berat_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)
+    
     # Tampilkan hasil dalam kotak
     st.success(f"## Prediksi Berat Badan: **{berat_badan:.2f} kg**")
     
@@ -744,7 +1012,195 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     - Berat Badan (BB) = **{berat_badan:.2f} kg**
     """)
     
-    # Visualisasi Data Detail
+    # Tampilkan prediksi karkas, non-karkas, dan daging
+    st.subheader("Prediksi Hasil Pemotongan:")
+    
+    # Buat layout kolom
+    col1, col2 = st.columns([1, 1])
+    
+    with col1:
+        # Informasi karkas dan daging
+        st.markdown(f"""
+        #### Karkas
+        - Persentase karkas: **{karkas_data['karkas_percent']:.1f}%**
+        - Berat karkas: **{karkas_data['karkas_weight']:.2f} kg**
+        
+        #### Daging
+        - Persentase daging dari karkas: **{karkas_data['meat_percent_of_carcass']:.1f}%**
+        - Persentase daging dari berat hidup: **{karkas_data['meat_percent_of_body']:.1f}%**
+        - Berat daging total: **{karkas_data['meat_weight']:.2f} kg**
+        - Berat tulang dan lemak karkas: **{karkas_data['bone_and_fat_weight']:.2f} kg**
+        
+        > *Referensi data: {karkas_data['reference']}*
+        """)
+    
+    with col2:
+        # Informasi komponen non-karkas
+        st.markdown("#### Komponen Non-Karkas")
+        
+        # Buat dataframe untuk komponen non-karkas
+        non_karkas_df = pd.DataFrame({
+            "Komponen": list(karkas_data["non_karkas_weights"].keys()),
+            "Berat (kg)": [f"{w:.2f}" for w in karkas_data["non_karkas_weights"].values()],
+            "Persentase (%)": [f"{(w/berat_badan)*100:.1f}" for w in karkas_data["non_karkas_weights"].values()]
+        })
+        
+        # Tampilkan tabel
+        st.dataframe(non_karkas_df, hide_index=True)
+    
+    # Visualisasi proporsi karkas dan non-karkas
+    st.subheader("Visualisasi Proporsi Pemotongan")
+    
+    # Buat data untuk pie chart
+    labels = ["Daging", "Tulang & Lemak Karkas"]
+    values = [karkas_data["meat_weight"], karkas_data["bone_and_fat_weight"]]
+    
+    # Tambahkan komponen non-karkas
+    for component, weight in karkas_data["non_karkas_weights"].items():
+        if weight > 0.01 * berat_badan:  # Tampilkan hanya komponen yang signifikan (>1%)
+            labels.append(component)
+            values.append(weight)
+    
+    # Buat 2 kolom untuk visualisasi yang berbeda
+    viz_col1, viz_col2 = st.columns([1, 1])
+    
+    with viz_col1:
+        # Buat pie chart dengan plotly
+        fig = go.Figure(data=[go.Pie(
+            labels=labels,
+            values=values,
+            hole=.3,
+            textinfo='label+percent',
+            insidetextorientation='radial',
+            pull=[0.1 if x == "Daging" else 0 for x in labels],
+            marker_colors=px.colors.qualitative.Pastel
+        )])
+        
+        fig.update_layout(
+            title_text=f"Proporsi Komponen Pemotongan<br>{jenis_ternak} {bangsa_ternak} {jenis_kelamin}",
+            annotations=[dict(text=f'Total: {berat_badan:.1f} kg', x=0.5, y=0.5, font_size=12, showarrow=False)]
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with viz_col2:
+        # Buat treemap dengan plotly
+        fig = px.treemap(
+            names=labels,
+            parents=["" for _ in labels],
+            values=values,
+            color=values,
+            color_continuous_scale='Viridis',
+            title=f"Treemap Komponen Pemotongan<br>{jenis_ternak} {bangsa_ternak} {jenis_kelamin}"
+        )
+        
+        fig.update_traces(textinfo="label+value+percent parent")
+        fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
+        
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Perbandingan dengan bangsa lain
+    st.subheader("Perbandingan Hasil Karkas dengan Bangsa Lain")
+    
+    # Kumpulkan data karkas untuk semua bangsa dari jenis ternak yang sama
+    breeds = SLAUGHTER_DATA[jenis_ternak]["breeds"]
+    breed_names = []
+    karkas_percents = []
+    meat_percents = []
+    
+    for breed_name, breed_data in breeds.items():
+        breed_names.append(breed_name)
+        karkas_percents.append(breed_data["karkas_percent"][jenis_kelamin])
+        meat_of_karkas = breed_data["meat_percent_of_carcass"]
+        meat_of_live = (breed_data["karkas_percent"][jenis_kelamin] * meat_of_karkas) / 100
+        meat_percents.append(meat_of_live)
+    
+    # Buat dataframe
+    comparison_df = pd.DataFrame({
+        "Bangsa": breed_names,
+        "Persentase Karkas (%)": karkas_percents,
+        "Persentase Daging dari Berat Hidup (%)": meat_percents
+    })
+    
+    # Tambahkan kolom berat karkas dan daging untuk berat badan saat ini
+    comparison_df["Berat Karkas (kg)"] = [(p * berat_badan) / 100 for p in karkas_percents]
+    comparison_df["Berat Daging (kg)"] = [(p * berat_badan) / 100 for p in meat_percents]
+    
+    # Highlight bangsa yang dipilih
+    def highlight_selected_breed(x):
+        df_highlight = pd.DataFrame('', index=x.index, columns=x.columns)
+        df_highlight.loc[x['Bangsa'] == bangsa_ternak, :] = 'background-color: rgba(144, 238, 144, 0.5);'
+        return df_highlight
+    
+    # Tampilkan tabel dengan highlight
+    st.dataframe(comparison_df.sort_values(by="Persentase Karkas (%)", ascending=False), 
+                 hide_index=True,
+                 use_container_width=True,
+                 column_config={
+                     "Persentase Karkas (%)": st.column_config.NumberColumn(format="%.1f%%"),
+                     "Persentase Daging dari Berat Hidup (%)": st.column_config.NumberColumn(format="%.1f%%"),
+                     "Berat Karkas (kg)": st.column_config.NumberColumn(format="%.2f kg"),
+                     "Berat Daging (kg)": st.column_config.NumberColumn(format="%.2f kg")
+                 },
+                 style=highlight_selected_breed)
+    
+    # Visualisasi perbandingan
+    fig = go.Figure()
+    
+    # Tambahkan bar untuk persentase karkas
+    fig.add_trace(go.Bar(
+        x=breed_names,
+        y=karkas_percents,
+        name='Persentase Karkas',
+        marker_color='skyblue',
+        text=[f"{p:.1f}%" for p in karkas_percents],
+        textposition='auto'
+    ))
+    
+    # Tambahkan bar untuk persentase daging
+    fig.add_trace(go.Bar(
+        x=breed_names,
+        y=meat_percents,
+        name='Persentase Daging dari Berat Hidup',
+        marker_color='salmon',
+        text=[f"{p:.1f}%" for p in meat_percents],
+        textposition='auto'
+    ))
+    
+    # Highlight bangsa saat ini
+    selected_idx = breed_names.index(bangsa_ternak)
+    
+    # Update layout
+    fig.update_layout(
+        title=f"Perbandingan Persentase Karkas dan Daging Antar Bangsa {jenis_ternak}",
+        xaxis_title="Bangsa",
+        yaxis_title="Persentase (%)",
+        barmode='group',
+        xaxis={'categoryorder':'total descending'}
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Tambahkan informasi tambahan
+    st.info("""
+    ##### Penjelasan Komponen Hasil Pemotongan:
+    
+    **Karkas** adalah bagian dari tubuh ternak yang telah disembelih setelah dipisahkan dari kepala, kaki, kulit, ekor, 
+    organ dalam (jeroan) dan darah. Pada sapi, karkas terdiri dari daging, tulang, dan lemak.
+    
+    **Non-karkas** adalah semua bagian tubuh selain karkas, terdiri dari:
+    - Kepala, kulit, kaki, ekor
+    - Organ dalam (jantung, hati, paru-paru, limpa)
+    - Saluran pencernaan (lambung, usus)
+    - Darah dan lemak non-karkas
+    
+    **Daging** adalah bagian utama dari karkas yang dapat dikonsumsi, tidak termasuk tulang dan lemak.
+    
+    > **Catatan**: Nilai-nilai di atas adalah prediksi berdasarkan persentase rata-rata untuk setiap bangsa dan jenis kelamin ternak.
+    > Hasil aktual dapat bervariasi tergantung umur, kondisi, tingkat kegemukan, dan faktor lainnya.
+    """)
+    
+    # Visualisasi Data Detail (ekspansi dari fitur sebelumnya)
     st.subheader("Visualisasi Data Detail")
     
     # Tampilkan tabs untuk berbagai visualisasi detail
