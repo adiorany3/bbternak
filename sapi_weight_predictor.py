@@ -1063,28 +1063,33 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     atau untuk memahami bagaimana perubahan kecil pada pengukuran dapat mempengaruhi hasil prediksi berat.
     """)
     
+    # Buat container untuk memperbarui konten tabel saat slider berubah
+    table_container = st.container()
+    
     # Opsi untuk kustomisasi tabel
     col1, col2 = st.columns([1, 1])
     with col1:
         variation_percent = st.slider("Rentang Variasi (%)", min_value=5, max_value=30, value=15, 
-                                      help="Persentase variasi ukuran dari nilai tengah")
+                                      help="Persentase variasi ukuran dari nilai tengah", key="variation_percent_slider")
     with col2:
         steps = st.slider("Jumlah Langkah Variasi", min_value=3, max_value=9, value=5, step=2,
-                          help="Jumlah langkah variasi ukuran (kolom dan baris)")
+                          help="Jumlah langkah variasi ukuran (kolom dan baris)", key="steps_slider")
     
-    # Buat dan tampilkan tabel prediksi
-    prediction_table = create_prediction_table(
-        lingkar_dada=lingkar_dada,
-        panjang_badan=panjang_badan,
-        jenis_ternak=jenis_ternak,
-        bangsa=bangsa_ternak,
-        jenis_kelamin=jenis_kelamin,
-        steps=steps,
-        variation_percent=variation_percent
-    )
-    
-    # Tampilkan tabel dengan highlight pada nilai tengah
-    st.dataframe(prediction_table, use_container_width=True, hide_index=True)
+    # Buat dan tampilkan tabel prediksi dalam container yang akan diperbarui saat slider berubah
+    with table_container:
+        # Buat tabel baru setiap kali slider berubah
+        prediction_table = create_prediction_table(
+            lingkar_dada=lingkar_dada,
+            panjang_badan=panjang_badan,
+            jenis_ternak=jenis_ternak,
+            bangsa=bangsa_ternak,
+            jenis_kelamin=jenis_kelamin,
+            steps=steps,
+            variation_percent=variation_percent
+        )
+        
+        # Tampilkan tabel dengan highlight pada nilai tengah
+        st.dataframe(prediction_table, use_container_width=True, hide_index=True)
     
     # Tambahkan penjelasan dan tips penggunaan
     st.info("""
@@ -1099,53 +1104,57 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     > karena dalam rumus perhitungan, lingkar dada dikuadratkan sedangkan panjang badan tidak.
     """)
     
+    # Buat container untuk memperbarui heatmap saat slider berubah
+    heatmap_container = st.container()
+    
     # Tampilkan visualisasi heatmap berat badan
-    st.subheader("Peta Panas Prediksi Berat Badan")
-    st.write("Visualisasi di bawah ini menunjukkan hubungan antara lingkar dada, panjang badan, dan prediksi berat badan dalam bentuk peta panas (heatmap).")
-    
-    # Buat array untuk heatmap
-    ld_values = np.linspace(lingkar_dada * (1 - variation_percent/100), 
-                           lingkar_dada * (1 + variation_percent/100), 
-                           20)  # Lebih banyak titik untuk visualisasi yang lebih halus
-    pb_values = np.linspace(panjang_badan * (1 - variation_percent/100), 
-                           panjang_badan * (1 + variation_percent/100), 
-                           20)
-    
-    # Buat grid untuk heatmap
-    ld_grid, pb_grid = np.meshgrid(ld_values, pb_values)
-    weights = np.zeros(ld_grid.shape)
-    
-    # Hitung berat untuk setiap kombinasi ukuran
-    for i in range(ld_grid.shape[0]):
-        for j in range(ld_grid.shape[1]):
-            weights[i, j], _, _ = hitung_berat_badan(ld_grid[i, j], pb_grid[i, j], 
-                                                    jenis_ternak, bangsa_ternak, jenis_kelamin)
-    
-    # Buat heatmap dengan Plotly
-    fig = go.Figure(data=go.Heatmap(
-        z=weights,
-        x=ld_values,
-        y=pb_values,
-        colorscale='Viridis',
-        colorbar=dict(title='Berat (kg)')
-    ))
-    
-    # Tambahkan marker untuk nilai saat ini
-    fig.add_trace(go.Scatter(
-        x=[lingkar_dada],
-        y=[panjang_badan],
-        mode='markers',
-        marker=dict(size=12, color='red', symbol='x'),
-        name='Ukuran Saat Ini'
-    ))
-    
-    # Konfigurasi layout
-    fig.update_layout(
-        title=f"Peta Panas Prediksi Berat {jenis_ternak} {bangsa_ternak} ({jenis_kelamin})",
-        xaxis_title="Lingkar Dada (cm)",
-        yaxis_title="Panjang Badan (cm)",
-        height=500
-    )
-    
-    # Tampilkan heatmap
-    st.plotly_chart(fig, use_container_width=True)
+    with heatmap_container:
+        st.subheader("Peta Panas Prediksi Berat Badan")
+        st.write("Visualisasi di bawah ini menunjukkan hubungan antara lingkar dada, panjang badan, dan prediksi berat badan dalam bentuk peta panas (heatmap).")
+        
+        # Buat array untuk heatmap (gunakan nilai slider terbaru)
+        ld_values = np.linspace(lingkar_dada * (1 - variation_percent/100), 
+                               lingkar_dada * (1 + variation_percent/100), 
+                               20)  # Lebih banyak titik untuk visualisasi yang lebih halus
+        pb_values = np.linspace(panjang_badan * (1 - variation_percent/100), 
+                               panjang_badan * (1 + variation_percent/100), 
+                               20)
+        
+        # Buat grid untuk heatmap
+        ld_grid, pb_grid = np.meshgrid(ld_values, pb_values)
+        weights = np.zeros(ld_grid.shape)
+        
+        # Hitung berat untuk setiap kombinasi ukuran
+        for i in range(ld_grid.shape[0]):
+            for j in range(ld_grid.shape[1]):
+                weights[i, j], _, _ = hitung_berat_badan(ld_grid[i, j], pb_grid[i, j], 
+                                                        jenis_ternak, bangsa_ternak, jenis_kelamin)
+        
+        # Buat heatmap dengan Plotly
+        fig = go.Figure(data=go.Heatmap(
+            z=weights,
+            x=ld_values,
+            y=pb_values,
+            colorscale='Viridis',
+            colorbar=dict(title='Berat (kg)')
+        ))
+        
+        # Tambahkan marker untuk nilai saat ini
+        fig.add_trace(go.Scatter(
+            x=[lingkar_dada],
+            y=[panjang_badan],
+            mode='markers',
+            marker=dict(size=12, color='red', symbol='x'),
+            name='Ukuran Saat Ini'
+        ))
+        
+        # Konfigurasi layout
+        fig.update_layout(
+            title=f"Peta Panas Prediksi Berat {jenis_ternak} {bangsa_ternak} ({jenis_kelamin})<br>Rentang Variasi: {variation_percent}%, Langkah: {steps}",
+            xaxis_title="Lingkar Dada (cm)",
+            yaxis_title="Panjang Badan (cm)",
+            height=500
+        )
+        
+        # Tampilkan heatmap
+        st.plotly_chart(fig, use_container_width=True)
