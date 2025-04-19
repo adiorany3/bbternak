@@ -23,7 +23,6 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.figure_factory as ff
 from datetime import datetime
-from scipy import stats
 
 # Get current year for the footer
 current_year = datetime.now().year
@@ -416,267 +415,244 @@ def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_
     
     return berat_badan, formula_name, formula_text
 
-def create_weight_distribution_chart(jenis_ternak, bangsa, jenis_kelamin, current_weight):
+# Helper function untuk memprediksi berat karkas
+def hitung_berat_karkas(berat_badan, jenis_ternak, bangsa, jenis_kelamin):
     """
-    Membuat visualisasi distribusi berat badan untuk bangsa dan jenis kelamin ternak yang dipilih.
+    Menghitung prediksi berat karkas berdasarkan berat badan hidup ternak.
     
     Args:
+        berat_badan (float): Berat badan hidup ternak dalam kilogram
         jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
         bangsa (str): Bangsa ternak
         jenis_kelamin (str): Jenis kelamin ternak (Jantan atau Betina)
-        current_weight (float): Berat badan ternak saat ini (kg)
         
     Returns:
-        plotly.graph_objects.Figure: Visualisasi distribusi berat badan
+        float: Berat karkas ternak dalam kilogram
+        float: Persentase karkas
     """
-    # Rentang berat berdasarkan jenis ternak
-    if jenis_ternak == "Sapi":
-        if jenis_kelamin == "Jantan":
-            weight_range = {"min": 200, "max": 1000, "mean": 500, "std": 150}
-        else:
-            weight_range = {"min": 180, "max": 800, "mean": 400, "std": 120}
-    elif jenis_ternak == "Kambing":
-        if jenis_kelamin == "Jantan":
-            weight_range = {"min": 20, "max": 120, "mean": 60, "std": 20}
-        else:
-            weight_range = {"min": 15, "max": 80, "mean": 45, "std": 15}
-    else:  # Domba
-        if jenis_kelamin == "Jantan":
-            weight_range = {"min": 25, "max": 150, "mean": 70, "std": 25}
-        else:
-            weight_range = {"min": 20, "max": 100, "mean": 55, "std": 20}
+    # Persentase karkas berdasarkan jenis dan bangsa ternak
+    persentase_karkas = {
+        "Sapi": {
+            "Sapi Bali": {"Jantan": 0.58, "Betina": 0.53},
+            "Sapi Madura": {"Jantan": 0.54, "Betina": 0.50},
+            "Sapi Limousin": {"Jantan": 0.63, "Betina": 0.59},
+            "Sapi Simental": {"Jantan": 0.62, "Betina": 0.58},
+            "Sapi Brahman": {"Jantan": 0.60, "Betina": 0.56},
+            "Sapi Peranakan Ongole (PO)": {"Jantan": 0.56, "Betina": 0.52},
+            "Sapi Friesian Holstein (FH)": {"Jantan": 0.57, "Betina": 0.53},
+            "Sapi Aceh": {"Jantan": 0.53, "Betina": 0.49}
+        },
+        "Kambing": {
+            "Kambing Kacang": {"Jantan": 0.53, "Betina": 0.49},
+            "Kambing Ettawa": {"Jantan": 0.55, "Betina": 0.51},
+            "Kambing Peranakan Ettawa (PE)": {"Jantan": 0.54, "Betina": 0.50},
+            "Kambing Boer": {"Jantan": 0.60, "Betina": 0.55},
+            "Kambing Jawarandu": {"Jantan": 0.53, "Betina": 0.49},
+            "Kambing Bligon": {"Jantan": 0.52, "Betina": 0.48}
+        },
+        "Domba": {
+            "Domba Ekor Tipis": {"Jantan": 0.52, "Betina": 0.48},
+            "Domba Ekor Gemuk": {"Jantan": 0.56, "Betina": 0.52},
+            "Domba Merino": {"Jantan": 0.54, "Betina": 0.50},
+            "Domba Garut": {"Jantan": 0.57, "Betina": 0.53},
+            "Domba Suffolk": {"Jantan": 0.58, "Betina": 0.54},
+            "Domba Texel": {"Jantan": 0.60, "Betina": 0.56}
+        }
+    }
     
-    # Sesuaikan dengan faktor bangsa
-    breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa]
-    factor = breed_data["factor"]
-    weight_range["min"] *= factor
-    weight_range["max"] *= factor
-    weight_range["mean"] *= factor
-    weight_range["std"] *= factor
+    # Ambil persentase karkas sesuai jenis, bangsa, dan jenis kelamin
+    persentase = persentase_karkas[jenis_ternak][bangsa][jenis_kelamin]
     
-    # Buat distribusi normal untuk berat
-    weights = np.linspace(weight_range["min"], weight_range["max"], 100)
-    dist = stats.norm.pdf(weights, weight_range["mean"], weight_range["std"])
+    # Hitung berat karkas
+    berat_karkas = berat_badan * persentase
     
-    # Normalisasi distribusi
-    dist = dist / np.max(dist)
+    return berat_karkas, persentase
+
+# Helper function untuk memprediksi berat komponen non karkas
+def hitung_berat_non_karkas(berat_badan, berat_karkas):
+    """
+    Menghitung prediksi berat komponen non karkas berdasarkan berat badan dan berat karkas.
     
-    # Tentukan percentile dari berat saat ini
-    percentile = stats.norm.cdf(current_weight, weight_range["mean"], weight_range["std"]) * 100
+    Args:
+        berat_badan (float): Berat badan hidup ternak dalam kilogram
+        berat_karkas (float): Berat karkas ternak dalam kilogram
+        
+    Returns:
+        dict: Berat berbagai komponen non karkas dalam kilogram
+    """
+    # Berat total non karkas
+    berat_non_karkas_total = berat_badan - berat_karkas
     
-    # Buat visualisasi
-    fig = go.Figure()
+    # Persentase berbagai komponen non karkas dari total non karkas
+    # Nilai ini adalah perkiraan umum dan dapat bervariasi antar bangsa dan kondisi ternak
+    komponen_non_karkas = {
+        "Kulit": 0.12,  # 12% dari total non karkas
+        "Darah": 0.10,  # 10% dari total non karkas
+        "Kepala": 0.16,  # 16% dari total non karkas
+        "Kaki": 0.07,  # 7% dari total non karkas
+        "Viscera (Organ Dalam)": 0.38,  # 38% dari total non karkas
+        "Lainnya": 0.17  # 17% dari total non karkas
+    }
     
-    # Tambahkan distribusi
-    fig.add_trace(go.Scatter(
-        x=weights,
-        y=dist,
-        mode='lines',
-        fill='tozeroy',
-        name='Distribusi Berat',
-        line=dict(color='rgba(55, 128, 191, 0.7)', width=3)
-    ))
+    # Hitung berat setiap komponen
+    hasil_non_karkas = {}
+    for komponen, persentase in komponen_non_karkas.items():
+        hasil_non_karkas[komponen] = berat_non_karkas_total * persentase
     
-    # Tambahkan marker untuk nilai saat ini
-    fig.add_trace(go.Scatter(
-        x=[current_weight],
-        y=[stats.norm.pdf(current_weight, weight_range["mean"], weight_range["std"]) / np.max(dist)],
-        mode='markers',
-        name=f'Berat Saat Ini: {current_weight:.1f} kg',
-        marker=dict(size=12, color='red', symbol='star')
-    ))
+    # Tambahkan total non karkas
+    hasil_non_karkas["Total Non Karkas"] = berat_non_karkas_total
     
-    # Tambahkan anotasi untuk percentile
-    fig.add_annotation(
-        x=current_weight,
-        y=stats.norm.pdf(current_weight, weight_range["mean"], weight_range["std"]) / np.max(dist) + 0.1,
-        text=f"Persentil ke-{percentile:.1f}",
-        showarrow=True,
-        arrowhead=2,
-        arrowsize=1,
-        arrowwidth=2,
-        arrowcolor="red",
-        font=dict(size=12, color="red"),
-        align="center"
-    )
+    return hasil_non_karkas
+
+# Helper function untuk memprediksi meat bone ratio
+def hitung_meat_bone_ratio(berat_karkas, jenis_ternak, bangsa, jenis_kelamin):
+    """
+    Menghitung prediksi meat bone ratio (rasio daging dengan tulang) dari karkas.
+    
+    Args:
+        berat_karkas (float): Berat karkas ternak dalam kilogram
+        jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
+        bangsa (str): Bangsa ternak
+        jenis_kelamin (str): Jenis kelamin ternak (Jantan atau Betina)
+        
+    Returns:
+        float: Meat bone ratio (rasio daging dengan tulang)
+        dict: Komposisi karkas (daging, tulang, lemak) dalam kg
+    """
+    # Rasio daging:tulang:lemak berdasarkan jenis dan bangsa ternak
+    # Format: {Daging, Tulang, Lemak} sebagai proporsi dari karkas
+    rasio_karkas = {
+        "Sapi": {
+            "Sapi Bali": {"Jantan": [0.68, 0.18, 0.14], "Betina": [0.65, 0.17, 0.18]},
+            "Sapi Madura": {"Jantan": [0.66, 0.19, 0.15], "Betina": [0.63, 0.18, 0.19]},
+            "Sapi Limousin": {"Jantan": [0.72, 0.16, 0.12], "Betina": [0.70, 0.15, 0.15]},
+            "Sapi Simental": {"Jantan": [0.71, 0.16, 0.13], "Betina": [0.69, 0.15, 0.16]},
+            "Sapi Brahman": {"Jantan": [0.70, 0.17, 0.13], "Betina": [0.67, 0.16, 0.17]},
+            "Sapi Peranakan Ongole (PO)": {"Jantan": [0.67, 0.19, 0.14], "Betina": [0.64, 0.18, 0.18]},
+            "Sapi Friesian Holstein (FH)": {"Jantan": [0.65, 0.20, 0.15], "Betina": [0.62, 0.19, 0.19]},
+            "Sapi Aceh": {"Jantan": [0.65, 0.20, 0.15], "Betina": [0.62, 0.19, 0.19]}
+        },
+        "Kambing": {
+            "Kambing Kacang": {"Jantan": [0.64, 0.21, 0.15], "Betina": [0.61, 0.20, 0.19]},
+            "Kambing Ettawa": {"Jantan": [0.65, 0.20, 0.15], "Betina": [0.62, 0.19, 0.19]},
+            "Kambing Peranakan Ettawa (PE)": {"Jantan": [0.64, 0.21, 0.15], "Betina": [0.61, 0.20, 0.19]},
+            "Kambing Boer": {"Jantan": [0.68, 0.19, 0.13], "Betina": [0.65, 0.18, 0.17]},
+            "Kambing Jawarandu": {"Jantan": [0.63, 0.22, 0.15], "Betina": [0.60, 0.21, 0.19]},
+            "Kambing Bligon": {"Jantan": [0.62, 0.22, 0.16], "Betina": [0.59, 0.21, 0.20]}
+        },
+        "Domba": {
+            "Domba Ekor Tipis": {"Jantan": [0.61, 0.22, 0.17], "Betina": [0.58, 0.21, 0.21]},
+            "Domba Ekor Gemuk": {"Jantan": [0.60, 0.21, 0.19], "Betina": [0.57, 0.20, 0.23]},
+            "Domba Merino": {"Jantan": [0.63, 0.20, 0.17], "Betina": [0.60, 0.19, 0.21]},
+            "Domba Garut": {"Jantan": [0.64, 0.20, 0.16], "Betina": [0.61, 0.19, 0.20]},
+            "Domba Suffolk": {"Jantan": [0.66, 0.19, 0.15], "Betina": [0.63, 0.18, 0.19]},
+            "Domba Texel": {"Jantan": [0.67, 0.18, 0.15], "Betina": [0.64, 0.17, 0.19]}
+        }
+    }
+    
+    # Ambil rasio sesuai jenis, bangsa, dan jenis kelamin
+    rasio = rasio_karkas[jenis_ternak][bangsa][jenis_kelamin]
+    
+    # Proporsi daging, tulang, lemak
+    proporsi_daging = rasio[0]
+    proporsi_tulang = rasio[1]
+    proporsi_lemak = rasio[2]
+    
+    # Hitung berat komponen karkas
+    berat_daging = berat_karkas * proporsi_daging
+    berat_tulang = berat_karkas * proporsi_tulang
+    berat_lemak = berat_karkas * proporsi_lemak
+    
+    # Hitung meat bone ratio
+    meat_bone_ratio = berat_daging / berat_tulang
+    
+    # Komposisi karkas
+    komposisi_karkas = {
+        "Daging": berat_daging,
+        "Tulang": berat_tulang,
+        "Lemak": berat_lemak
+    }
+    
+    return meat_bone_ratio, komposisi_karkas
+
+# Helper function untuk visualisasi komposisi karkas
+def create_carcass_composition_chart(komposisi_karkas):
+    """
+    Membuat visualisasi komposisi karkas (daging, tulang, lemak)
+    
+    Args:
+        komposisi_karkas (dict): Komposisi karkas (daging, tulang, lemak) dalam kg
+        
+    Returns:
+        plotly.graph_objects.Figure: Visualisasi komposisi karkas
+    """
+    # Data untuk visualisasi
+    labels = list(komposisi_karkas.keys())
+    values = list(komposisi_karkas.values())
+    
+    # Warna untuk masing-masing komponen
+    colors = ['#FF6B6B', '#4ECDC4', '#FFD166']
+    
+    # Buat visualisasi pie chart
+    fig = go.Figure(data=[go.Pie(
+        labels=labels,
+        values=values,
+        hole=.4,
+        marker=dict(colors=colors)
+    )])
     
     # Konfigurasi layout
     fig.update_layout(
-        title=f"Distribusi Berat {jenis_ternak} {bangsa} ({jenis_kelamin})",
-        xaxis_title="Berat Badan (kg)",
-        yaxis_title="Densitas Relatif",
-        showlegend=True,
+        title="Komposisi Karkas",
+        annotations=[dict(
+            text=f"Total:<br>{sum(values):.2f} kg",
+            x=0.5, y=0.5,
+            font_size=14,
+            showarrow=False
+        )],
         height=400
     )
     
-    # Tambahkan garis untuk kuartil
-    quartiles = [
-        stats.norm.ppf(0.25, weight_range["mean"], weight_range["std"]),
-        stats.norm.ppf(0.5, weight_range["mean"], weight_range["std"]),
-        stats.norm.ppf(0.75, weight_range["mean"], weight_range["std"])
-    ]
-    
-    labels = ["Kuartil 1 (25%)", "Median (50%)", "Kuartil 3 (75%)"]
-    colors = ["green", "blue", "purple"]
-    
-    for i, (q, label, color) in enumerate(zip(quartiles, labels, colors)):
-        fig.add_shape(
-            type="line",
-            x0=q, y0=0,
-            x1=q, y1=0.9,
-            line=dict(color=color, width=2, dash="dash")
-        )
-        
-        fig.add_annotation(
-            x=q,
-            y=0.95,
-            text=f"{label}: {q:.1f} kg",
-            showarrow=False,
-            font=dict(size=10, color=color)
-        )
-    
     return fig
 
-def create_breed_comparison_chart(jenis_ternak, lingkar_dada, panjang_badan, jenis_kelamin):
+# Helper function untuk visualisasi komponen non karkas
+def create_non_carcass_chart(komponen_non_karkas):
     """
-    Membuat visualisasi perbandingan berat badan antar bangsa ternak
+    Membuat visualisasi komponen non karkas
     
     Args:
-        jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
-        lingkar_dada (float): Ukuran lingkar dada (cm)
-        panjang_badan (float): Ukuran panjang badan (cm)
-        jenis_kelamin (str): Jenis kelamin ternak
+        komponen_non_karkas (dict): Komponen non karkas dalam kg
         
     Returns:
-        plotly.graph_objects.Figure: Visualisasi perbandingan bangsa
+        plotly.graph_objects.Figure: Visualisasi komponen non karkas
     """
-    # Dapatkan semua bangsa untuk jenis ternak
-    breeds = ANIMAL_DATA[jenis_ternak]["breeds"]
+    # Data untuk visualisasi
+    # Hilangkan 'Total Non Karkas' dari pie chart
+    komponen = {k: v for k, v in komponen_non_karkas.items() if k != "Total Non Karkas"}
+    labels = list(komponen.keys())
+    values = list(komponen.values())
     
-    # Hitung berat untuk setiap bangsa
-    breed_names = []
-    weights = []
-    formulas = []
+    # Warna untuk masing-masing komponen
+    colors = px.colors.qualitative.Pastel
     
-    for breed_name, breed_data in breeds.items():
-        formula_name = breed_data["formula_name"]
-        formula_text = ANIMAL_FORMULAS[jenis_ternak]["formulas"][formula_name]["formula"]
-        formula_func = ANIMAL_FORMULAS[jenis_ternak]["formulas"][formula_name]["calculation"]
-        
-        # Hitung berat dasar
-        raw_weight = formula_func(lingkar_dada, panjang_badan)
-        
-        # Terapkan faktor koreksi
-        factor = breed_data["factor"]
-        gender_factor = breed_data["gender_factor"][jenis_kelamin]
-        corrected_weight = raw_weight * factor * gender_factor
-        
-        breed_names.append(breed_name)
-        weights.append(corrected_weight)
-        formulas.append(formula_name)
-    
-    # Buat dataframe untuk visualisasi
-    data = {
-        'Bangsa': breed_names,
-        'Berat (kg)': weights,
-        'Rumus': formulas
-    }
-    
-    # Urutkan berdasarkan berat
-    sorted_indices = np.argsort(weights)[::-1]  # Descending order
-    sorted_breeds = [breed_names[i] for i in sorted_indices]
-    sorted_weights = [weights[i] for i in sorted_indices]
-    sorted_formulas = [formulas[i] for i in sorted_indices]
-    
-    # Buat visualisasi
-    fig = go.Figure()
-    
-    # Tambahkan batang untuk setiap bangsa
-    fig.add_trace(go.Bar(
-        x=sorted_breeds,
-        y=sorted_weights,
-        text=[f"{w:.1f} kg<br>{f}" for w, f in zip(sorted_weights, sorted_formulas)],
-        textposition='auto',
-        marker_color='rgba(55, 83, 109, 0.7)',
-        hoverinfo='text',
-        hovertext=[f"Bangsa: {b}<br>Berat: {w:.1f} kg<br>Rumus: {f}" 
-                   for b, w, f in zip(sorted_breeds, sorted_weights, sorted_formulas)]
-    ))
-    
-    # Tambahkan garis rata-rata
-    average_weight = np.mean(weights)
-    fig.add_shape(
-        type="line",
-        x0=-0.5,
-        y0=average_weight,
-        x1=len(breed_names) - 0.5,
-        y1=average_weight,
-        line=dict(color="red", width=2, dash="dash")
-    )
-    
-    # Tambahkan anotasi untuk rata-rata
-    fig.add_annotation(
-        x=len(breed_names) - 1,
-        y=average_weight,
-        text=f"Rata-rata: {average_weight:.1f} kg",
-        showarrow=False,
-        font=dict(size=12, color="red"),
-        bgcolor="white",
-        bordercolor="red",
-        borderwidth=1
-    )
+    # Buat visualisasi pie chart
+    fig = go.Figure(data=[go.Pie(
+        labels=labels,
+        values=values,
+        hole=.4,
+        marker=dict(colors=colors)
+    )])
     
     # Konfigurasi layout
     fig.update_layout(
-        title=f"Perbandingan Berat {jenis_ternak} dengan LD={lingkar_dada} cm, PB={panjang_badan} cm ({jenis_kelamin})",
-        xaxis_title="Bangsa",
-        yaxis_title="Berat Badan (kg)",
-        height=500
+        title="Komposisi Non Karkas",
+        annotations=[dict(
+            text=f"Total:<br>{komponen_non_karkas['Total Non Karkas']:.2f} kg",
+            x=0.5, y=0.5,
+            font_size=14,
+            showarrow=False
+        )],
+        height=400
     )
     
     return fig
-
-def compare_formulas(animal_type, chest_size, body_length, gender, breed):
-    """
-    Membandingkan berbagai rumus perhitungan berat badan untuk jenis ternak yang sama
-    
-    Args:
-        animal_type (str): Jenis ternak (Sapi, Kambing, Domba)
-        chest_size (float): Ukuran lingkar dada ternak
-        body_length (float): Ukuran panjang badan ternak
-        gender (str): Jenis kelamin (Jantan, Betina)
-        breed (str): Bangsa ternak
-        
-    Returns:
-        dict: Dictionary berisi hasil dari berbagai rumus perhitungan
-    """
-    # Ambil semua rumus yang tersedia untuk jenis ternak
-    formulas = ANIMAL_FORMULAS[animal_type]["formulas"]
-    
-    # Ambil data breed untuk faktor koreksi
-    breed_data = ANIMAL_DATA[animal_type]["breeds"][breed]
-    factor = breed_data["factor"]
-    gender_factor = breed_data["gender_factor"][gender]
-    
-    # Kumpulkan hasil perhitungan dari berbagai rumus
-    results = {}
-    
-    for formula_name, formula_data in formulas.items():
-        # Ambil fungsi perhitungan
-        calculation_func = formula_data["calculation"]
-        
-        # Hitung berat dasar (tanpa faktor koreksi)
-        raw_weight = calculation_func(chest_size, body_length)
-        
-        # Hitung berat terkoreksi (dengan faktor koreksi)
-        corrected_weight = raw_weight * factor * gender_factor
-        
-        # Tambahkan hasil ke dict
-        results[formula_name] = {
-            "raw_weight": raw_weight,
-            "corrected_weight": corrected_weight,
-            "formula": formula_data["formula"],
-            "description": formula_data["description"]
-        }
-    
-    return results
