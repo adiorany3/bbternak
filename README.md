@@ -61,7 +61,7 @@ BBTernak adalah aplikasi berbasis web yang dibangun dengan Streamlit untuk memba
 
 1. Clone repository ini:
    ```
-   git clone https://github.com/yourusername/bbternak.git
+   git clone https://github.com/adiorany3/bbternak.git
    cd bbternak
    ```
 
