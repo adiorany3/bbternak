@@ -104,36 +104,136 @@ ANIMAL_FORMULAS = {
 ANIMAL_DATA = {
     "Sapi": {
         "breeds": {
-            "Sapi Bali": {"formula_name": "Schoorl (Indonesia)", "factor": 1.0},
-            "Sapi Madura": {"formula_name": "Schoorl (Indonesia)", "factor": 0.95},
-            "Sapi Limousin": {"formula_name": "Winter (Eropa)", "factor": 1.2},
-            "Sapi Simental": {"formula_name": "Winter (Eropa)", "factor": 1.25},
-            "Sapi Brahman": {"formula_name": "Winter (Eropa)", "factor": 1.15},
-            "Sapi Peranakan Ongole (PO)": {"formula_name": "Lambourne (Sapi Kecil)", "factor": 1.05},
-            "Sapi Friesian Holstein (FH)": {"formula_name": "Denmark", "factor": 1.1},
-            "Sapi Aceh": {"formula_name": "Schoorl (Indonesia)", "factor": 0.9},
+            "Sapi Bali": {
+                "formula_name": "Schoorl (Indonesia)", 
+                "factor": 1.0,
+                "chest_range": {"min": 140, "max": 210},
+                "length_range": {"min": 120, "max": 180}
+            },
+            "Sapi Madura": {
+                "formula_name": "Schoorl (Indonesia)", 
+                "factor": 0.95,
+                "chest_range": {"min": 130, "max": 200},
+                "length_range": {"min": 110, "max": 170}
+            },
+            "Sapi Limousin": {
+                "formula_name": "Winter (Eropa)", 
+                "factor": 1.2,
+                "chest_range": {"min": 180, "max": 260},
+                "length_range": {"min": 160, "max": 230}
+            },
+            "Sapi Simental": {
+                "formula_name": "Winter (Eropa)", 
+                "factor": 1.25,
+                "chest_range": {"min": 190, "max": 270},
+                "length_range": {"min": 170, "max": 240}
+            },
+            "Sapi Brahman": {
+                "formula_name": "Winter (Eropa)", 
+                "factor": 1.15,
+                "chest_range": {"min": 180, "max": 250},
+                "length_range": {"min": 160, "max": 220}
+            },
+            "Sapi Peranakan Ongole (PO)": {
+                "formula_name": "Lambourne (Sapi Kecil)", 
+                "factor": 1.05,
+                "chest_range": {"min": 150, "max": 230},
+                "length_range": {"min": 130, "max": 200}
+            },
+            "Sapi Friesian Holstein (FH)": {
+                "formula_name": "Denmark", 
+                "factor": 1.1,
+                "chest_range": {"min": 180, "max": 250},
+                "length_range": {"min": 160, "max": 220}
+            },
+            "Sapi Aceh": {
+                "formula_name": "Schoorl (Indonesia)", 
+                "factor": 0.9,
+                "chest_range": {"min": 120, "max": 190},
+                "length_range": {"min": 100, "max": 160}
+            },
         },
         "icon": "🐄"
     },
     "Kambing": {
         "breeds": {
-            "Kambing Kacang": {"formula_name": "Arjodarmoko", "factor": 0.9},
-            "Kambing Ettawa": {"formula_name": "New Zealand", "factor": 1.05},
-            "Kambing Peranakan Ettawa (PE)": {"formula_name": "Arjodarmoko", "factor": 1.0},
-            "Kambing Boer": {"formula_name": "New Zealand", "factor": 1.1},
-            "Kambing Jawarandu": {"formula_name": "Arjodarmoko", "factor": 0.95},
-            "Kambing Bligon": {"formula_name": "Khan", "factor": 0.92},
+            "Kambing Kacang": {
+                "formula_name": "Arjodarmoko", 
+                "factor": 0.9,
+                "chest_range": {"min": 50, "max": 80},
+                "length_range": {"min": 40, "max": 70}
+            },
+            "Kambing Ettawa": {
+                "formula_name": "New Zealand", 
+                "factor": 1.05,
+                "chest_range": {"min": 70, "max": 110},
+                "length_range": {"min": 60, "max": 95}
+            },
+            "Kambing Peranakan Ettawa (PE)": {
+                "formula_name": "Arjodarmoko", 
+                "factor": 1.0,
+                "chest_range": {"min": 65, "max": 100},
+                "length_range": {"min": 55, "max": 90}
+            },
+            "Kambing Boer": {
+                "formula_name": "New Zealand", 
+                "factor": 1.1,
+                "chest_range": {"min": 75, "max": 120},
+                "length_range": {"min": 65, "max": 105}
+            },
+            "Kambing Jawarandu": {
+                "formula_name": "Arjodarmoko", 
+                "factor": 0.95,
+                "chest_range": {"min": 60, "max": 95},
+                "length_range": {"min": 50, "max": 85}
+            },
+            "Kambing Bligon": {
+                "formula_name": "Khan", 
+                "factor": 0.92,
+                "chest_range": {"min": 55, "max": 90},
+                "length_range": {"min": 45, "max": 80}
+            },
         },
         "icon": "🐐"
     },
     "Domba": {
         "breeds": {
-            "Domba Ekor Tipis": {"formula_name": "Lambourne", "factor": 0.95},
-            "Domba Ekor Gemuk": {"formula_name": "Lambourne", "factor": 1.1},
-            "Domba Merino": {"formula_name": "NSA Australia", "factor": 1.05},
-            "Domba Garut": {"formula_name": "Lambourne", "factor": 1.0},
-            "Domba Suffolk": {"formula_name": "Valdez", "factor": 1.15},
-            "Domba Texel": {"formula_name": "Valdez", "factor": 1.2},
+            "Domba Ekor Tipis": {
+                "formula_name": "Lambourne", 
+                "factor": 0.95,
+                "chest_range": {"min": 55, "max": 85},
+                "length_range": {"min": 45, "max": 75}
+            },
+            "Domba Ekor Gemuk": {
+                "formula_name": "Lambourne", 
+                "factor": 1.1,
+                "chest_range": {"min": 65, "max": 95},
+                "length_range": {"min": 55, "max": 85}
+            },
+            "Domba Merino": {
+                "formula_name": "NSA Australia", 
+                "factor": 1.05,
+                "chest_range": {"min": 75, "max": 110},
+                "length_range": {"min": 65, "max": 95}
+            },
+            "Domba Garut": {
+                "formula_name": "Lambourne", 
+                "factor": 1.0,
+                "chest_range": {"min": 70, "max": 105},
+                "length_range": {"min": 60, "max": 90}
+            },
+            "Domba Suffolk": {
+                "formula_name": "Valdez", 
+                "factor": 1.15,
+                "chest_range": {"min": 85, "max": 130},
+                "length_range": {"min": 75, "max": 115}
+            },
+            "Domba Texel": {
+                "formula_name": "Valdez", 
+                "factor": 1.2,
+                "chest_range": {"min": 90, "max": 135},
+                "length_range": {"min": 80, "max": 120}
+            },
         },
         "icon": "🐑"
     }
@@ -197,24 +297,29 @@ bangsa_ternak = st.sidebar.selectbox(
     help="Pilih bangsa ternak yang sesuai."
 )
 
-# Input lingkar dada
+# Dapatkan rentang ukuran untuk bangsa ternak yang dipilih
+breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+chest_range = breed_data["chest_range"]
+length_range = breed_data["length_range"]
+
+# Input lingkar dada dengan rentang sesuai bangsa ternak
 lingkar_dada = st.sidebar.number_input(
     "Lingkar Dada (cm)",
-    min_value=0.1,
-    max_value=500.0,
-    value=180.0,
-    step=0.1,
-    help="Ukur lingkar dada ternak dengan pita ukur, yaitu mengukur keliling dada ternak tepat di belakang bahu."
+    min_value=chest_range["min"] * 0.8,  # Sedikit di bawah minimum untuk fleksibilitas
+    max_value=chest_range["max"] * 1.2,  # Sedikit di atas maksimum untuk fleksibilitas
+    value=chest_range["min"] + (chest_range["max"] - chest_range["min"]) / 2,  # Nilai default di tengah rentang
+    step=0.5,
+    help=f"Ukur lingkar dada ternak dengan pita ukur, yaitu mengukur keliling dada ternak tepat di belakang bahu. Rentang normal untuk {bangsa_ternak}: {chest_range['min']}-{chest_range['max']} cm."
 )
 
-# Input panjang badan
+# Input panjang badan dengan rentang sesuai bangsa ternak
 panjang_badan = st.sidebar.number_input(
     "Panjang Badan (cm)",
-    min_value=0.1,
-    max_value=500.0,
-    value=150.0,
-    step=0.1,
-    help="Ukur panjang badan ternak, yaitu dari ujung hidung hingga pangkal ekor."
+    min_value=length_range["min"] * 0.8,  # Sedikit di bawah minimum untuk fleksibilitas
+    max_value=length_range["max"] * 1.2,  # Sedikit di atas maksimum untuk fleksibilitas
+    value=length_range["min"] + (length_range["max"] - length_range["min"]) / 2,  # Nilai default di tengah rentang
+    step=0.5,
+    help=f"Ukur panjang badan ternak, yaitu dari ujung bahu hingga tulang duduk (tuber ischii). Rentang normal untuk {bangsa_ternak}: {length_range['min']}-{length_range['max']} cm."
 )
 
 # Tombol untuk menghitung berat badan
@@ -232,8 +337,8 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     - Bangsa Ternak: **{bangsa_ternak}**
     - Rumus yang Digunakan: **{formula_name}**
     - Formula: **{formula_text}**
-    - Lingkar Dada (LD): **{lingkar_dada} cm**
-    - Panjang Badan (PB): **{panjang_badan} cm**
+    - Lingkar Dada (LD): **{lingkar_dada} cm** (Rentang normal: {chest_range['min']}-{chest_range['max']} cm)
+    - Panjang Badan (PB): **{panjang_badan} cm** (Rentang normal: {length_range['min']}-{length_range['max']} cm)
     - Berat Badan (BB) = **{berat_badan:.2f} kg**
     """)
     
@@ -245,30 +350,40 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
     
     with col1:
         # Grafik hubungan lingkar dada dan berat badan
-        ld_range = np.linspace(lingkar_dada * 0.7, lingkar_dada * 1.3, 50)
+        ld_range = np.linspace(chest_range['min'] * 0.9, chest_range['max'] * 1.1, 50)
         bb_range = [hitung_berat_badan(ld, panjang_badan, jenis_ternak, bangsa_ternak)[0] for ld in ld_range]
         
         fig1, ax1 = plt.subplots()
         ax1.plot(ld_range, bb_range)
         ax1.scatter([lingkar_dada], [berat_badan], color='red', s=100)
+        
+        # Tambahkan area rentang normal
+        ax1.axvspan(chest_range['min'], chest_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
+        
         ax1.set_xlabel('Lingkar Dada (cm)')
         ax1.set_ylabel('Berat Badan (kg)')
         ax1.set_title('Hubungan Lingkar Dada dan Berat Badan')
         ax1.grid(True)
+        ax1.legend()
         st.pyplot(fig1)
     
     with col2:
         # Grafik hubungan panjang badan dan berat badan
-        pb_range = np.linspace(panjang_badan * 0.7, panjang_badan * 1.3, 50)
+        pb_range = np.linspace(length_range['min'] * 0.9, length_range['max'] * 1.1, 50)
         bb_range = [hitung_berat_badan(lingkar_dada, pb, jenis_ternak, bangsa_ternak)[0] for pb in pb_range]
         
         fig2, ax2 = plt.subplots()
         ax2.plot(pb_range, bb_range)
         ax2.scatter([panjang_badan], [berat_badan], color='red', s=100)
+        
+        # Tambahkan area rentang normal
+        ax2.axvspan(length_range['min'], length_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
+        
         ax2.set_xlabel('Panjang Badan (cm)')
         ax2.set_ylabel('Berat Badan (kg)')
         ax2.set_title('Hubungan Panjang Badan dan Berat Badan')
         ax2.grid(True)
+        ax2.legend()
         st.pyplot(fig2)
     
     # Tabel perbandingan
