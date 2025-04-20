@@ -938,7 +938,7 @@ with col1:
         > timbangan ternak tetap merupakan alat ukur yang paling tepat.
         """)
 with col2:
-    st.image("panjangbadan.png", caption="Panduan Pengukuran Panjang Badan", use_column_width=True)
+    st.image("panjangbadan.png", caption="Panduan Pengukuran Panjang Badan", use_container_width=True)
 
 # Sidebar untuk input pengguna
 st.sidebar.header("Input Data Ternak")
