@@ -925,14 +925,20 @@ def create_breed_comparison_chart(animal_type, chest_size, body_length, gender):
 
 # Judul dan deskripsi aplikasi
 st.title("🐄 Prediksi Berat Badan Ternak")
-st.markdown(f"""
-    Aplikasi ini menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan 
-    menggunakan **Rumus Formula** yang spesifik untuk jenis dan bangsa ternak yang berbeda. 
-    Silakan pilih jenis dan bangsa ternak yang sesuai di sidebar untuk mendapatkan hasil yang lebih akurat.
-    
-    > **Catatan**: Metode ini adalah prediksi pendekatan. Untuk mendapatkan data berat badan yang akurat, 
-    > timbangan ternak tetap merupakan alat ukur yang paling tepat.
-    """)
+
+# Tambahkan gambar panduan pengukuran
+col1, col2 = st.columns([2,1])
+with col1:
+    st.markdown(f"""
+        Aplikasi ini menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan 
+        menggunakan **Rumus Formula** yang spesifik untuk jenis dan bangsa ternak yang berbeda. 
+        Silakan pilih jenis dan bangsa ternak yang sesuai di sidebar untuk mendapatkan hasil yang lebih akurat.
+        
+        > **Catatan**: Metode ini adalah prediksi pendekatan. Untuk mendapatkan data berat badan yang akurat, 
+        > timbangan ternak tetap merupakan alat ukur yang paling tepat.
+        """)
+with col2:
+    st.image("panjangbadan.png", caption="Panduan Pengukuran Panjang Badan", use_column_width=True)
 
 # Sidebar untuk input pengguna
 st.sidebar.header("Input Data Ternak")
