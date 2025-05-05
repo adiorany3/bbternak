@@ -988,6 +988,9 @@ panjang_badan = st.sidebar.number_input(
 
 # Tombol untuk menghitung berat badan
 if st.sidebar.button("Hitung Berat Badan", type="primary"):
+    # Add info message to guide users
+    st.sidebar.info("👉 Silakan geser ke kanan untuk melihat hasil perhitungan detail, visualisasi data, dan analisis komponen karkas.")
+    
     # Hitung berat badan
     berat_badan, formula_name, formula_text = hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)
     
@@ -1462,7 +1465,7 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
         
         Perbandingan ini berguna untuk memahami potensi produksi dari berbagai bangsa ternak dan membantu dalam keputusan pemilihan bangsa untuk program peternakan.
         """)
-    
+
     # Tabel perbandingan
     st.subheader("Tabel Prediksi dengan Variasi Ukuran")
     
