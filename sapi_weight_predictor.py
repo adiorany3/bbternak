@@ -906,7 +906,7 @@ with guide_tab1:
         > **Catatan Penting**: Pengukuran sebaiknya dilakukan pada pagi hari sebelum ternak diberi makan untuk menghindari pengembangan perut yang dapat mempengaruhi hasil pengukuran. Selain itu, pastikan ternak dalam keadaan seimbang dan tidak terlalu gelisah.
         """)
     with col2:
-        st.image("version/V3/assets/lingkardada.png", caption="Cara mengukur lingkar dada ternak. Pastikan pita ukur melingkar tepat di belakang bahu.", use_container_width=True)
+        st.image("version/V3/assets/panjangbadan.png", caption="Cara mengukur lingkar dada ternak. Pastikan pita ukur melingkar tepat di belakang bahu.", use_container_width=True)
 
 with guide_tab2:
     col1, col2 = st.columns([1, 1])
