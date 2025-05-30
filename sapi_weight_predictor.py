@@ -58,7 +58,7 @@ ANIMAL_FORMULAS = {
             "Schoorl (Indonesia)": {
                 "formula": "(LD + 22)² / 100",
                 "description": "Rumus Schoorl lebih cocok untuk sapi-sapi lokal Indonesia",
-                "calculation": lambda ld, pb: ((ld + 22) ** 2) / 100,
+                "calculation": lambda ld: ((ld + 22) ** 2) / 100, # pb argument removed
                 "reference": "Schoorl, P. (1922). Pendugaan Bobot Badan Ternak. Jurnal Peternakan Indonesia, 3(1), 23-31."
             },
             "Denmark": {
@@ -108,7 +108,7 @@ ANIMAL_FORMULAS = {
             "NSA Australia": {
                 "formula": "(0.0000627 × LD × PB) - 3.91",
                 "description": "Rumus NSA Australia untuk domba tipe medium",
-                "calculation": lambda ld, pb: (0.0000627 * ld * pb) - 3.91,
+                "calculation": lambda ld, pb: max(0.0, (0.0000627 * ld * pb) - 3.91),
                 "reference": "National Sheep Association of Australia. (1985). Standard Methods for Sheep Weight Prediction. Australian Veterinary Journal, 62(11), 382-385."
             },
             "Valdez": {
@@ -620,7 +620,11 @@ def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak,
     formula_text = ANIMAL_FORMULAS[jenis_ternak]["formulas"][formula_name]["formula"]
     
     # Hitung berat badan dasar berdasarkan rumus
-    raw_weight = formula_calculation(lingkar_dada, panjang_badan)
+    # Conditional call for Schoorl (Indonesia) formula
+    if formula_name == "Schoorl (Indonesia)":
+        raw_weight = formula_calculation(lingkar_dada)
+    else:
+        raw_weight = formula_calculation(lingkar_dada, panjang_badan)
     
     # Terapkan faktor koreksi spesifik bangsa
     breed_factor = breed_data["factor"]
@@ -644,8 +648,24 @@ def hitung_komponen_karkas(berat_badan, jenis_ternak, bangsa_ternak, jenis_kelam
     Returns:
         dict: Dictionary berisi informasi karkas dan non-karkas
     """
+    slaughter_data_breed = SLAUGHTER_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+
+    if berat_badan == 0:
+        zero_non_karkas_weights = {key: 0.0 for key in slaughter_data_breed["non_karkas_percent"].keys()}
+        return {
+            "karkas_percent": slaughter_data_breed["karkas_percent"][jenis_kelamin],
+            "karkas_weight": 0.0,
+            "meat_percent_of_carcass": slaughter_data_breed["meat_percent_of_carcass"],
+            "meat_percent_of_body": 0.0,
+            "meat_weight": 0.0,
+            "bone_and_fat_weight": 0.0,
+            "non_karkas_weights": zero_non_karkas_weights,
+            "reference": slaughter_data_breed["reference"]
+        }
+
     # Dapatkan data persentase karkas untuk jenis dan bangsa ternak ini
-    slaughter_data = SLAUGHTER_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+    # Now use slaughter_data_breed which was fetched above
+    slaughter_data = slaughter_data_breed 
     
     # Persentase karkas berdasarkan jenis kelamin
     karkas_percent = slaughter_data["karkas_percent"][jenis_kelamin]
@@ -789,7 +809,11 @@ def compare_formulas(jenis_ternak, lingkar_dada, panjang_badan, jenis_kelamin, c
     # Hitung berat dengan setiap formula
     for formula_name, formula_data in formulas.items():
         # Hitung berat dasar
-        raw_weight = formula_data["calculation"](lingkar_dada, panjang_badan)
+        # Conditional call for Schoorl (Indonesia) formula
+        if formula_name == "Schoorl (Indonesia)":
+            raw_weight = formula_data["calculation"](lingkar_dada)
+        else:
+            raw_weight = formula_data["calculation"](lingkar_dada, panjang_badan)
         
         # Hitung berat terkoreksi
         corrected_weight = raw_weight * breed_factor * gender_factor
@@ -882,7 +906,7 @@ with guide_tab1:
         > **Catatan Penting**: Pengukuran sebaiknya dilakukan pada pagi hari sebelum ternak diberi makan untuk menghindari pengembangan perut yang dapat mempengaruhi hasil pengukuran. Selain itu, pastikan ternak dalam keadaan seimbang dan tidak terlalu gelisah.
         """)
     with col2:
-        st.image("panjangbadan.png", caption="Cara mengukur lingkar dada ternak, ref : https://vetmedicinae.com/cara-menghitung-berat-badan-sapi/", use_container_width=True)
+        st.image("version/V3/assets/lingkardada.png", caption="Cara mengukur lingkar dada ternak. Pastikan pita ukur melingkar tepat di belakang bahu.", use_container_width=True)
 
 with guide_tab2:
     col1, col2 = st.columns([1, 1])
@@ -925,17 +949,17 @@ with guide_tab3:
     """)
 
 # Tambahkan gambar panduan pengukuran
-col1, col2 = st.columns([2,1])
-with col1:
-    st.markdown(f"""
+# col1, col2 = st.columns([2,1]) # Removing this redundant image section
+# with col1:
+st.markdown(f"""
         =======================================
         > Aplikasi ini menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan 
         menggunakan **Rumus Formula** yang spesifik untuk jenis dan bangsa ternak yang berbeda. 
         Silakan pilih jenis dan bangsa ternak yang sesuai di sidebar untuk mendapatkan hasil yang lebih akurat.
         
         """)
-with col2:
-    st.image("panjangbadan.png", caption="Panduan Pengukuran Panjang Badan, ref : https://vetmedicinae.com/cara-menghitung-berat-badan-sapi/", use_container_width=True)
+# with col2: # Removing this redundant image section
+# st.image("panjangbadan.png", caption="Panduan Pengukuran Panjang Badan, ref : https://vetmedicinae.com/cara-menghitung-berat-badan-sapi/", use_container_width=True)
 
 # Sidebar untuk input pengguna
 st.sidebar.header("Input Data Ternak")
