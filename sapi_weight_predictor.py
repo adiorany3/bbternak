@@ -918,7 +918,7 @@ with guide_tab2:
         
         1. **Posisikan ternak** pada permukaan yang datar dan pastikan ternak berdiri dengan keempat kaki sejajar
         2. **Gunakan pita ukur** atau meteran yang kaku/rigid
-        3. **Ukur jarak** dari tonjolan bahu (*tuberculum humeri*) sampai ke tonjolan tulang duduk (*tuberculum ischiadicum*)
+        3. **Ukur jarak** dari tonjolan bahu (*tuberculum humeri*) sampai ke tonjolan tulang duduk (*tuberculum ischiadicum*) (*Gunakan Panjang Badan Absolut*)
         4. **Pastikan pengukuran** dilakukan dalam garis lurus dan horizontal (sejajar dengan tanah)
         5. **Catat hasil pengukuran** dalam satuan sentimeter (cm)
         
