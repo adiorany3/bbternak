@@ -1146,7 +1146,199 @@ def calculate_maintenance_metrics(
         "roi_percent": roi_percent,
     }
 
-def generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin, kelas_pasar=None, margin_error=None, estimasi_keuntungan=None):
+
+
+def calculate_input_accuracy_score(
+    lingkar_dada,
+    panjang_badan,
+    berat_badan,
+    jenis_ternak,
+    bangsa_ternak,
+    bcs_option="Tidak dinilai",
+):
+    """Menghitung skor kualitas input pengukuran dalam rentang 0-100."""
+    score = 100
+    notes = []
+
+    breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+    chest_range = breed_data["chest_range"]
+    length_range = breed_data["length_range"]
+
+    ld_in_range = chest_range["min"] <= lingkar_dada <= chest_range["max"]
+    pb_in_range = length_range["min"] <= panjang_badan <= length_range["max"]
+
+    if not ld_in_range:
+        score -= 18
+        notes.append("Lingkar dada berada di luar rentang normal bangsa ternak.")
+    else:
+        notes.append("Lingkar dada berada dalam rentang normal.")
+
+    if not pb_in_range:
+        score -= 14
+        notes.append("Panjang badan berada di luar rentang normal bangsa ternak.")
+    else:
+        notes.append("Panjang badan berada dalam rentang normal.")
+
+    ld_mid = (chest_range["min"] + chest_range["max"]) / 2
+    pb_mid = (length_range["min"] + length_range["max"]) / 2
+    ld_ratio = lingkar_dada / ld_mid if ld_mid else 1
+    pb_ratio = panjang_badan / pb_mid if pb_mid else 1
+
+    if abs(ld_ratio - pb_ratio) > 0.25:
+        score -= 12
+        notes.append("Perbandingan lingkar dada dan panjang badan terlihat kurang seimbang.")
+    else:
+        notes.append("Perbandingan lingkar dada dan panjang badan masih seimbang.")
+
+    if not validate_weight_result(berat_badan, jenis_ternak):
+        score -= 20
+        notes.append("Prediksi berat berada di luar rentang wajar jenis ternak.")
+    else:
+        notes.append("Prediksi berat masih berada dalam rentang wajar.")
+
+    if bcs_option in ["1 - Sangat Kurus", "5 - Sangat Gemuk"]:
+        score -= 12
+        notes.append("BCS ekstrem dapat menurunkan akurasi estimasi.")
+    elif bcs_option in ["2 - Kurus", "4 - Gemuk"]:
+        score -= 6
+        notes.append("BCS agak menyimpang dari ideal; hasil perlu dibaca sebagai estimasi.")
+    elif bcs_option == "3 - Sedang/Ideal":
+        notes.append("BCS ideal mendukung stabilitas estimasi.")
+    else:
+        score -= 3
+        notes.append("BCS belum dinilai, sehingga akurasi kondisi tubuh belum terverifikasi.")
+
+    score = max(0, min(100, int(round(score))))
+
+    if score >= 85:
+        category = "Sangat Baik"
+    elif score >= 70:
+        category = "Baik"
+    elif score >= 55:
+        category = "Cukup"
+    else:
+        category = "Perlu Cek Ulang"
+
+    return score, category, notes
+
+
+def estimate_dimensions_for_target_weight(
+    target_weight,
+    current_lingkar_dada,
+    current_panjang_badan,
+    jenis_ternak,
+    bangsa_ternak,
+    jenis_kelamin,
+):
+    """Mengestimasi LD dan PB untuk target berat dengan mempertahankan proporsi ukuran saat ini."""
+    target_weight = max(0.0, float(target_weight or 0))
+    current_lingkar_dada = max(0.1, float(current_lingkar_dada or 0.1))
+    current_panjang_badan = max(0.1, float(current_panjang_badan or 0.1))
+
+    if target_weight <= 0:
+        return {
+            "lingkar_dada": 0,
+            "panjang_badan": 0,
+            "estimated_weight": 0,
+            "status": "Target belum valid",
+            "note": "Masukkan target berat lebih dari 0 kg.",
+        }
+
+    low_scale = 0.40
+    high_scale = 2.50
+
+    for _ in range(60):
+        mid_scale = (low_scale + high_scale) / 2
+        candidate_ld = current_lingkar_dada * mid_scale
+        candidate_pb = current_panjang_badan * mid_scale
+        candidate_weight, _, _ = hitung_berat_badan(
+            candidate_ld,
+            candidate_pb,
+            jenis_ternak,
+            bangsa_ternak,
+            jenis_kelamin,
+        )
+
+        if candidate_weight < target_weight:
+            low_scale = mid_scale
+        else:
+            high_scale = mid_scale
+
+    scale = (low_scale + high_scale) / 2
+    estimated_ld = current_lingkar_dada * scale
+    estimated_pb = current_panjang_badan * scale
+    estimated_weight, _, _ = hitung_berat_badan(
+        estimated_ld,
+        estimated_pb,
+        jenis_ternak,
+        bangsa_ternak,
+        jenis_kelamin,
+    )
+
+    breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+    chest_range = breed_data["chest_range"]
+    length_range = breed_data["length_range"]
+
+    ld_ok = chest_range["min"] <= estimated_ld <= chest_range["max"]
+    pb_ok = length_range["min"] <= estimated_pb <= length_range["max"]
+
+    if ld_ok and pb_ok:
+        status = "Realistis"
+        note = "Perkiraan ukuran masih berada dalam rentang normal bangsa ternak."
+    elif estimated_ld <= chest_range["max"] * 1.2 and estimated_pb <= length_range["max"] * 1.2:
+        status = "Masih Mungkin"
+        note = "Perkiraan ukuran sedikit di luar rentang normal; perlu verifikasi kondisi lapangan."
+    else:
+        status = "Kurang Realistis"
+        note = "Target berat membutuhkan ukuran yang cukup jauh dari rentang umum bangsa ternak."
+
+    return {
+        "lingkar_dada": estimated_ld,
+        "panjang_badan": estimated_pb,
+        "estimated_weight": estimated_weight,
+        "status": status,
+        "note": note,
+    }
+
+
+def create_target_simulation_table(
+    base_weight,
+    lingkar_dada,
+    panjang_badan,
+    jenis_ternak,
+    bangsa_ternak,
+    jenis_kelamin,
+):
+    """Membuat tabel simulasi beberapa target berat dari berat dasar."""
+    targets = [
+        base_weight * 0.90,
+        base_weight,
+        base_weight * 1.10,
+        base_weight * 1.20,
+    ]
+
+    rows = []
+    for target in targets:
+        estimate = estimate_dimensions_for_target_weight(
+            target,
+            lingkar_dada,
+            panjang_badan,
+            jenis_ternak,
+            bangsa_ternak,
+            jenis_kelamin,
+        )
+        rows.append({
+            "Target Berat (kg)": round(target, 2),
+            "Estimasi LD (cm)": round(estimate["lingkar_dada"], 1),
+            "Estimasi PB (cm)": round(estimate["panjang_badan"], 1),
+            "Estimasi Ulang BB (kg)": round(estimate["estimated_weight"], 2),
+            "Status": estimate["status"],
+            "Catatan": estimate["note"],
+        })
+
+    return pd.DataFrame(rows)
+
+def generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin, kelas_pasar=None, margin_error=None, estimasi_keuntungan=None, bcs_option=None, accuracy_score=None):
     """Membuat rekomendasi otomatis berdasarkan hasil prediksi."""
     status, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
     recommendations = [
@@ -1166,6 +1358,17 @@ def generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ter
             recommendations.append("Estimasi usaha masih positif berdasarkan harga jual dan biaya yang dimasukkan.")
         else:
             recommendations.append("Estimasi usaha negatif. Cek kembali harga beli, biaya pakan, dan target harga jual.")
+
+    if bcs_option:
+        recommendations.append(f"BCS/kondisi tubuh: {bcs_option}. {BCS_NOTES.get(bcs_option, '')}")
+
+    if accuracy_score is not None:
+        if accuracy_score >= 85:
+            recommendations.append("Skor akurasi input sangat baik. Data pengukuran relatif layak digunakan sebagai estimasi awal.")
+        elif accuracy_score >= 70:
+            recommendations.append("Skor akurasi input baik, tetapi tetap lakukan pengukuran ulang untuk memastikan.")
+        else:
+            recommendations.append("Skor akurasi input belum optimal. Disarankan cek ulang LD, PB, dan kondisi tubuh ternak.")
 
     if berat_badan <= 0:
         recommendations.insert(0, "Hasil prediksi belum wajar. Cek kembali rumus, satuan, dan data input.")
@@ -1213,6 +1416,8 @@ def create_pdf_report(report_data):
         ("Jenis Ternak", report_data.get("jenis_ternak", "-")),
         ("Bangsa Ternak", report_data.get("bangsa_ternak", "-")),
         ("Jenis Kelamin", report_data.get("jenis_kelamin", "-")),
+        ("BCS / Kondisi Tubuh", report_data.get("bcs_option", "-")),
+        ("Skor Akurasi Input", f"{report_data.get('accuracy_score', 0)}/100 ({report_data.get('accuracy_category', '-')})"),
         ("Kelas Pasar", report_data.get("kelas_pasar", "-")),
         ("Margin Error", f"±{report_data.get('margin_error', 0)}%"),
         ("Lingkar Dada", f"{report_data.get('lingkar_dada', 0):.1f} cm"),
@@ -1315,6 +1520,21 @@ def process_batch_dataframe(df):
             karkas = hitung_komponen_karkas(berat, jenis, bangsa, kelamin)
             status, _ = get_size_status(ld, pb, jenis, bangsa)
 
+            bcs_batch = str(row.get("BCS / Kondisi Tubuh", "Tidak dinilai")).strip()
+            if not bcs_batch or bcs_batch.lower() == "nan":
+                bcs_batch = "Tidak dinilai"
+            if bcs_batch not in BCS_OPTIONS:
+                bcs_batch = "Tidak dinilai"
+
+            accuracy_score_batch, accuracy_category_batch, _ = calculate_input_accuracy_score(
+                ld,
+                pb,
+                berat,
+                jenis,
+                bangsa,
+                bcs_batch,
+            )
+
             kelas_input = str(row.get("Kelas Pasar", "Otomatis")).strip()
             if not kelas_input or kelas_input.lower() == "nan":
                 kelas_input = "Otomatis"
@@ -1369,6 +1589,9 @@ def process_batch_dataframe(df):
                 "Berat Karkas (kg)": round(karkas["karkas_weight"], 2),
                 "Berat Daging (kg)": round(karkas["meat_weight"], 2),
                 "Status Ukuran": status,
+                "BCS / Kondisi Tubuh": bcs_batch,
+                "Skor Akurasi Input": accuracy_score_batch,
+                "Kategori Akurasi": accuracy_category_batch,
                 "Kelas Pasar": kelas_pasar_batch,
                 "Multiplier Kelas": kelas_multiplier_batch,
                 "Margin Error (%)": margin_error_batch,
@@ -1400,6 +1623,9 @@ def process_batch_dataframe(df):
                 "Berat Karkas (kg)": 0,
                 "Berat Daging (kg)": 0,
                 "Status Ukuran": "-",
+                "BCS / Kondisi Tubuh": row.get("BCS / Kondisi Tubuh", "Tidak dinilai"),
+                "Skor Akurasi Input": 0,
+                "Kategori Akurasi": "-",
                 "Kelas Pasar": row.get("Kelas Pasar", "Otomatis"),
                 "Multiplier Kelas": 0,
                 "Margin Error (%)": row.get("Margin Error (%)", 10),
@@ -1633,8 +1859,9 @@ if st.session_state.show_results:
     # Area hasil dibuat bertab agar fokus utama tetap pada hitung berat badan.
     status_ukuran, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
 
-    hasil_tab, ekonomi_tab, biaya_tab = st.tabs([
+    hasil_tab, target_tab, ekonomi_tab, biaya_tab = st.tabs([
         "⚖️ Hitung Berat Badan",
+        "🎯 Simulasi Target Berat",
         "💰 Estimasi Ekonomi",
         "📊 Biaya & Keuntungan",
     ])
@@ -1652,11 +1879,28 @@ if st.session_state.show_results:
             help="Rentang estimasi bawah dan atas untuk menghindari hasil dianggap sebagai angka pasti."
         )
 
+        bcs_option = st.selectbox(
+            "BCS / Kondisi Tubuh",
+            options=BCS_OPTIONS,
+            index=0,
+            key="bcs_hasil_tab",
+            help="BCS membantu membaca kualitas estimasi. Pilih Tidak dinilai jika belum melakukan penilaian kondisi tubuh."
+        )
+
         bb_min, bb_max = calculate_error_range(berat_badan, margin_error)
         karkas_min, karkas_max = calculate_error_range(karkas_data["karkas_weight"], margin_error)
         daging_min, daging_max = calculate_error_range(karkas_data["meat_weight"], margin_error)
 
-        summary_col1, summary_col2, summary_col3 = st.columns(3)
+        accuracy_score, accuracy_category, accuracy_notes = calculate_input_accuracy_score(
+            lingkar_dada,
+            panjang_badan,
+            berat_badan,
+            jenis_ternak,
+            bangsa_ternak,
+            bcs_option,
+        )
+
+        summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
         with summary_col1:
             st.metric("Prediksi Berat", f"{berat_badan:.2f} kg")
             st.caption(f"Rentang ±{margin_error}%: {bb_min:.2f}–{bb_max:.2f} kg")
@@ -1664,8 +1908,17 @@ if st.session_state.show_results:
             st.metric("Status Ukuran", status_ukuran)
             st.caption(status_note)
         with summary_col3:
+            st.metric("Skor Akurasi Input", f"{accuracy_score}/100")
+            st.caption(accuracy_category)
+        with summary_col4:
             st.metric("Rumus", formula_name)
             st.caption(formula_text)
+
+        with st.expander("Lihat catatan skor akurasi dan BCS"):
+            st.write(f"**BCS/Kondisi tubuh:** {bcs_option}")
+            st.write(BCS_NOTES.get(bcs_option, ""))
+            for note in accuracy_notes:
+                st.write(f"- {note}")
 
         st.markdown("#### Input Utama")
         input_summary_df = pd.DataFrame([
@@ -1683,6 +1936,71 @@ if st.session_state.show_results:
             f"Fokus utama aplikasi adalah estimasi berat badan. "
             f"Hasil saat ini berada pada rentang **{bb_min:.2f}–{bb_max:.2f} kg** dengan margin error ±{margin_error}%."
         )
+
+    with target_tab:
+        st.markdown("#### Simulasi Target Berat")
+        st.write(
+            "Gunakan fitur ini untuk memperkirakan lingkar dada dan panjang badan yang diperlukan "
+            "agar ternak mendekati target berat tertentu. Perhitungan mempertahankan proporsi ukuran saat ini."
+        )
+
+        target_default = max(1.0, float(berat_badan) * 1.10)
+        target_weight = st.number_input(
+            "Target Berat Badan (kg)",
+            min_value=0.0,
+            value=float(round(target_default, 2)),
+            step=5.0 if jenis_ternak == "Sapi" else 1.0,
+            key="target_berat_tab",
+        )
+
+        target_estimate = estimate_dimensions_for_target_weight(
+            target_weight,
+            lingkar_dada,
+            panjang_badan,
+            jenis_ternak,
+            bangsa_ternak,
+            jenis_kelamin,
+        )
+
+        target_col1, target_col2, target_col3, target_col4 = st.columns(4)
+        with target_col1:
+            st.metric("Target Berat", f"{target_weight:.2f} kg")
+        with target_col2:
+            st.metric("Estimasi LD", f"{target_estimate['lingkar_dada']:.1f} cm")
+        with target_col3:
+            st.metric("Estimasi PB", f"{target_estimate['panjang_badan']:.1f} cm")
+        with target_col4:
+            st.metric("Status Target", target_estimate["status"])
+
+        st.info(target_estimate["note"])
+
+        target_compare_df = pd.DataFrame([
+            {"Parameter": "Berat Saat Ini", "Nilai": f"{berat_badan:.2f} kg"},
+            {"Parameter": "Target Berat", "Nilai": f"{target_weight:.2f} kg"},
+            {"Parameter": "Selisih Berat", "Nilai": f"{target_weight - berat_badan:.2f} kg"},
+            {"Parameter": "LD Saat Ini", "Nilai": f"{lingkar_dada:.1f} cm"},
+            {"Parameter": "Estimasi LD Target", "Nilai": f"{target_estimate['lingkar_dada']:.1f} cm"},
+            {"Parameter": "PB Saat Ini", "Nilai": f"{panjang_badan:.1f} cm"},
+            {"Parameter": "Estimasi PB Target", "Nilai": f"{target_estimate['panjang_badan']:.1f} cm"},
+        ])
+        st.dataframe(target_compare_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Tabel Simulasi Target")
+        target_table = create_target_simulation_table(
+            berat_badan,
+            lingkar_dada,
+            panjang_badan,
+            jenis_ternak,
+            bangsa_ternak,
+            jenis_kelamin,
+        )
+        st.dataframe(target_table, use_container_width=True, hide_index=True)
+
+        st.caption(
+            "Catatan: simulasi ini adalah pendekatan matematis dari rumus yang digunakan aplikasi, "
+            "bukan prediksi pertumbuhan biologis. Faktor pakan, umur, kesehatan, dan genetik tetap berpengaruh."
+        )
+
 
     with ekonomi_tab:
         st.markdown("#### Estimasi Ekonomi")
@@ -1871,6 +2189,9 @@ if st.session_state.show_results:
             "Berat Karkas (kg)": round(karkas_data["karkas_weight"], 2),
             "Berat Daging (kg)": round(karkas_data["meat_weight"], 2),
             "Status Ukuran": status_ukuran,
+            "BCS / Kondisi Tubuh": bcs_option,
+            "Skor Akurasi Input": accuracy_score,
+            "Kategori Akurasi": accuracy_category,
             "Kelas Pasar": kelas_pasar,
             "Margin Error (%)": margin_error,
             "BB Min (kg)": round(bb_min, 2),
@@ -1898,6 +2219,10 @@ if st.session_state.show_results:
     - Jenis Ternak: **{jenis_ternak}**
     - Bangsa Ternak: **{bangsa_ternak}**
     - Jenis Kelamin: **{jenis_kelamin}**
+    - BCS / Kondisi Tubuh: **{bcs_option}**
+    - Skor Akurasi Input: **{accuracy_score}/100 ({accuracy_category})**
+    - BCS / Kondisi Tubuh: **{bcs_option}**
+    - Skor Akurasi Input: **{accuracy_score}/100 ({accuracy_category})**
     - Kelas Pasar: **{kelas_pasar}** (penyesuaian harga x{kelas_multiplier:.2f})
     - Margin Error: **±{margin_error}%** (rentang BB: {bb_min:.2f}–{bb_max:.2f} kg)
     - Rumus yang Digunakan: **{formula_name}**
@@ -1919,6 +2244,8 @@ if st.session_state.show_results:
         kelas_pasar=kelas_pasar,
         margin_error=margin_error,
         estimasi_keuntungan=business_metrics["estimasi_keuntungan"],
+        bcs_option=bcs_option,
+        accuracy_score=accuracy_score,
     ):
         st.write(f"- {recommendation}")
 
@@ -1935,6 +2262,9 @@ if st.session_state.show_results:
         "meat_weight": karkas_data["meat_weight"],
         "bone_and_fat_weight": karkas_data["bone_and_fat_weight"],
         "status_ukuran": status_ukuran,
+        "bcs_option": bcs_option,
+        "accuracy_score": accuracy_score,
+        "accuracy_category": accuracy_category,
         "kelas_pasar": kelas_pasar,
         "margin_error": margin_error,
         "bb_min": bb_min,
@@ -2601,6 +2931,7 @@ with batch_tab:
     - `Panjang Badan`
 
     Kolom opsional:
+    - `BCS / Kondisi Tubuh` (`Tidak dinilai`, `1 - Sangat Kurus`, `2 - Kurus`, `3 - Sedang/Ideal`, `4 - Gemuk`, `5 - Sangat Gemuk`)
     - `Kelas Pasar` (`Otomatis`, `Kelas A / Super`, `Kelas B / Normal`, `Kelas C / Kurus`)
     - `Margin Error (%)`
     - `Harga per Kg`
@@ -2658,6 +2989,7 @@ with batch_tab:
         prices = get_latest_price_defaults(row["Jenis Ternak"], row["Bangsa Ternak"])
         prices = apply_market_class_to_prices(prices, multiplier_template, kelas_template)
 
+        row["BCS / Kondisi Tubuh"] = "Tidak dinilai"
         row["Kelas Pasar"] = "Otomatis"
         row["Margin Error (%)"] = 10
         row["Harga per Kg"] = prices["harga_bobot_hidup"]
