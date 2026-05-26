@@ -396,14 +396,265 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Hide default Streamlit elements
+
+# Hide default Streamlit elements and apply adaptive light/dark design
 hide_st_style = """
-        <style>
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        header {visibility: hidden;}
-        </style>
-        """
+<style>
+:root {
+    --app-bg: #f7f8f5;
+    --app-surface: #ffffff;
+    --app-surface-2: #f0f4ed;
+    --app-border: rgba(38, 64, 47, 0.14);
+    --app-text: #17231b;
+    --app-text-soft: #44524a;
+    --app-muted: #66756d;
+    --app-accent: #2e7d32;
+    --app-accent-2: #7a4f20;
+    --app-accent-soft: rgba(46, 125, 50, 0.11);
+    --app-warn-soft: rgba(255, 179, 0, 0.16);
+    --app-danger-soft: rgba(211, 47, 47, 0.12);
+    --app-success-soft: rgba(46, 125, 50, 0.13);
+    --app-shadow: 0 10px 28px rgba(30, 45, 35, 0.08);
+    --app-radius: 18px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --app-bg: #0d1110;
+        --app-surface: #151a18;
+        --app-surface-2: #1d2521;
+        --app-border: rgba(214, 233, 219, 0.14);
+        --app-text: #eef5ef;
+        --app-text-soft: #c9d6cd;
+        --app-muted: #9aaaa1;
+        --app-accent: #7ccf82;
+        --app-accent-2: #e0b36f;
+        --app-accent-soft: rgba(124, 207, 130, 0.14);
+        --app-warn-soft: rgba(255, 202, 40, 0.15);
+        --app-danger-soft: rgba(239, 83, 80, 0.14);
+        --app-success-soft: rgba(124, 207, 130, 0.13);
+        --app-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+}
+
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+.stApp {
+    background:
+        radial-gradient(circle at top left, var(--app-accent-soft), transparent 34rem),
+        radial-gradient(circle at bottom right, rgba(122, 79, 32, 0.10), transparent 30rem),
+        var(--app-bg);
+    color: var(--app-text);
+}
+
+.block-container {
+    padding-top: 2.2rem;
+    padding-bottom: 3rem;
+    max-width: 1380px;
+}
+
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, var(--app-surface), var(--app-surface-2));
+    border-right: 1px solid var(--app-border);
+}
+
+[data-testid="stSidebar"] * {
+    color: var(--app-text);
+}
+
+h1, h2, h3, h4, h5, h6,
+p, li, span, label,
+[data-testid="stMarkdownContainer"] {
+    color: var(--app-text);
+}
+
+small, .caption, [data-testid="stCaptionContainer"], .stCaptionContainer {
+    color: var(--app-muted) !important;
+}
+
+.app-hero {
+    border: 1px solid var(--app-border);
+    background:
+        linear-gradient(135deg, var(--app-surface), var(--app-surface-2));
+    border-radius: 24px;
+    padding: 1.35rem 1.55rem;
+    margin-bottom: 1.2rem;
+    box-shadow: var(--app-shadow);
+}
+
+.app-hero-title {
+    font-size: clamp(1.85rem, 3vw, 2.65rem);
+    line-height: 1.1;
+    font-weight: 800;
+    margin: 0 0 .45rem 0;
+    color: var(--app-text);
+    letter-spacing: -0.03em;
+}
+
+.app-hero-subtitle {
+    font-size: 1.02rem;
+    line-height: 1.6;
+    margin: 0;
+    color: var(--app-text-soft);
+}
+
+.app-pill {
+    display: inline-block;
+    padding: .28rem .65rem;
+    border-radius: 999px;
+    background: var(--app-accent-soft);
+    color: var(--app-accent);
+    border: 1px solid var(--app-border);
+    font-size: .82rem;
+    font-weight: 700;
+    margin-bottom: .65rem;
+}
+
+[data-testid="stMetric"] {
+    background: linear-gradient(180deg, var(--app-surface), var(--app-surface-2));
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    padding: 1rem 1.05rem;
+    box-shadow: var(--app-shadow);
+}
+
+[data-testid="stMetric"] label,
+[data-testid="stMetric"] [data-testid="stMetricLabel"] {
+    color: var(--app-muted) !important;
+    font-weight: 700;
+}
+
+[data-testid="stMetricValue"] {
+    color: var(--app-text) !important;
+    font-weight: 800;
+}
+
+div[data-testid="stTabs"] button {
+    border-radius: 999px !important;
+    color: var(--app-text-soft) !important;
+    font-weight: 700;
+}
+
+div[data-testid="stTabs"] button[aria-selected="true"] {
+    color: var(--app-text) !important;
+    background: var(--app-accent-soft) !important;
+    border: 1px solid var(--app-border) !important;
+}
+
+div[data-testid="stTabs"] [data-baseweb="tab-highlight"] {
+    background-color: var(--app-accent) !important;
+}
+
+[data-testid="stExpander"] {
+    background: var(--app-surface);
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    box-shadow: var(--app-shadow);
+}
+
+[data-testid="stExpander"] summary,
+[data-testid="stExpander"] summary * {
+    color: var(--app-text) !important;
+    font-weight: 700;
+}
+
+[data-testid="stDataFrame"],
+[data-testid="stTable"] {
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    overflow: hidden;
+    box-shadow: var(--app-shadow);
+    background: var(--app-surface);
+}
+
+button[kind="primary"],
+.stButton > button,
+.stDownloadButton > button {
+    border-radius: 999px !important;
+    border: 1px solid var(--app-border) !important;
+    background: linear-gradient(135deg, var(--app-accent), #3fa34d) !important;
+    color: white !important;
+    font-weight: 800 !important;
+    box-shadow: 0 8px 20px rgba(46, 125, 50, 0.22) !important;
+}
+
+.stButton > button:hover,
+.stDownloadButton > button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.03);
+}
+
+[data-baseweb="input"],
+[data-baseweb="select"],
+[data-baseweb="textarea"],
+[data-baseweb="base-input"] {
+    background-color: var(--app-surface) !important;
+    border-color: var(--app-border) !important;
+    color: var(--app-text) !important;
+    border-radius: 14px !important;
+}
+
+input, textarea {
+    color: var(--app-text) !important;
+}
+
+[data-baseweb="select"] span {
+    color: var(--app-text) !important;
+}
+
+[data-testid="stAlert"] {
+    border-radius: var(--app-radius);
+    border: 1px solid var(--app-border);
+    box-shadow: var(--app-shadow);
+}
+
+[data-testid="stAlert"] * {
+    color: var(--app-text) !important;
+}
+
+hr {
+    border: none;
+    height: 1px;
+    background: var(--app-border);
+    margin: 1.8rem 0;
+}
+
+a {
+    color: var(--app-accent) !important;
+    font-weight: 700;
+}
+
+code {
+    color: var(--app-accent-2);
+    background: var(--app-surface-2);
+    border-radius: 8px;
+    padding: .12rem .35rem;
+}
+
+.footer-card {
+    text-align: center;
+    padding: 1rem;
+    margin-top: 1rem;
+    margin-bottom: 1.6rem;
+    border: 1px solid var(--app-border);
+    border-radius: var(--app-radius);
+    background: var(--app-surface);
+    box-shadow: var(--app-shadow);
+}
+
+.footer-card p {
+    color: var(--app-text-soft);
+    margin: .2rem 0;
+}
+
+.footer-card .muted {
+    color: var(--app-muted);
+    font-size: .78rem;
+}
+</style>
+"""
 st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # Data untuk jenis dan rumus ternak
@@ -2622,7 +2873,15 @@ def process_batch_dataframe(df):
 
 
 # Judul dan deskripsi aplikasi
-st.title("🐄 Prediksi Berat Badan Ternak")
+st.markdown("""
+<div class="app-hero">
+    <div class="app-pill">Prediksi Bobot • Karkas • Jagal • Blantik</div>
+    <div class="app-hero-title">🐄 Prediksi Berat Badan Ternak</div>
+    <p class="app-hero-subtitle">
+        Hitung estimasi bobot hidup berdasarkan lingkar dada dan panjang badan, lalu baca hasilnya dari sudut pandang peternak, jagal, dan blantik berdasarkan jenis serta bangsa ternak.
+    </p>
+</div>
+""", unsafe_allow_html=True)
 
 # Tambahkan panduan pengukuran
 st.markdown("### Panduan Pengukuran Ternak")
@@ -4528,23 +4787,16 @@ with batch_tab:
         except Exception as exc:
             st.error(f"Gagal memproses file: {exc}")
 
-# Footer with LinkedIn profile link and improved styling
-st.markdown("""
-<hr style="height:1px;border:none;color:#333;background-color:#333;margin-top:30px;margin-bottom:20px">
-""", unsafe_allow_html=True)
-
+# Footer with adaptive light/dark styling
 st.markdown(f"""
-<div style="text-align:center; padding:15px; margin-top:10px; margin-bottom:20px">
-    <p style="font-size:16px; color:#555">
-        &copy; {current_year} Developed by: 
-        <a href="https://www.linkedin.com/in/galuh-adi-insani-1aa0a5105/" target="_blank" 
-           style="text-decoration:none; color:#0077B5; font-weight:bold">
-            <img src="https://content.linkedin.com/content/dam/me/business/en-us/amp/brand-site/v2/bg/LI-Bug.svg.original.svg" 
-                 width="16" height="16" style="vertical-align:middle; margin-right:5px">
+<div class="footer-card">
+    <p>
+        &copy; {current_year} Developed by:
+        <a href="https://www.linkedin.com/in/galuh-adi-insani-1aa0a5105/" target="_blank">
             Galuh Adi Insani
-        </a> 
+        </a>
         with <span style="color:#e25555">❤️</span>
     </p>
-    <p style="font-size:12px; color:#777">All rights reserved.</p>
+    <p class="muted">All rights reserved.</p>
 </div>
 """, unsafe_allow_html=True)

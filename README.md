@@ -2,6 +2,19 @@
 
 Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi analisis berdasarkan **jenis ternak + bangsa ternak**.
 
+
+## Penyempurnaan Desain
+
+Versi ini sudah dilengkapi desain adaptif untuk **light mode** dan **dark mode**:
+
+- Warna teks otomatis menyesuaikan mode tampilan.
+- Background menggunakan palet lembut yang tetap kontras.
+- Sidebar dibuat lebih bersih.
+- Metric card lebih jelas dan konsisten.
+- Tab dibuat seperti pill agar mudah dibaca.
+- Tabel, expander, tombol, alert, dan footer dibuat adaptif.
+- Footer tidak lagi memakai warna statis yang berisiko kurang terbaca di dark mode.
+
 ## Fokus Versi Ini
 
 Versi ini memperluas sudut pandang aplikasi. Analisis tidak lagi hanya berdasarkan jenis ternak umum, tetapi juga disesuaikan dengan karakter **bangsa ternak**.
