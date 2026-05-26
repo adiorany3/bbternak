@@ -2565,6 +2565,109 @@ def estimate_dimensions_for_target_weight(
     }
 
 
+
+
+def estimate_weight_from_breed_percentile(jenis_ternak, bangsa_ternak, jenis_kelamin, percentile):
+    """Menghitung estimasi berat dari posisi persentil rentang LD/PB bangsa ternak."""
+    breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+    chest_range = breed_data["chest_range"]
+    length_range = breed_data["length_range"]
+
+    percentile = max(0.0, min(1.0, float(percentile)))
+    ld = chest_range["min"] + ((chest_range["max"] - chest_range["min"]) * percentile)
+    pb = length_range["min"] + ((length_range["max"] - length_range["min"]) * percentile)
+    weight, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)
+
+    return {
+        "lingkar_dada": ld,
+        "panjang_badan": pb,
+        "berat": weight,
+    }
+
+
+def get_breed_target_examples(jenis_ternak, bangsa_ternak, jenis_kelamin):
+    """Membuat contoh target berat yang disesuaikan dengan rentang normal jenis + bangsa ternak."""
+    profile = get_breed_business_profile(jenis_ternak, bangsa_ternak)
+
+    base_examples = [
+        {
+            "label": "Target Ringan",
+            "percentile": 0.25,
+            "tujuan": "Ternak ukuran bawah-menengah; cocok untuk evaluasi awal atau penggemukan lanjutan.",
+        },
+        {
+            "label": "Target Standar",
+            "percentile": 0.50,
+            "tujuan": "Titik tengah rentang normal bangsa ternak; cocok sebagai target aman.",
+        },
+        {
+            "label": "Target Optimal",
+            "percentile": 0.75,
+            "tujuan": "Ukuran atas-menengah; cocok untuk pasar yang mengutamakan bobot.",
+        },
+        {
+            "label": "Target Maksimal Normal",
+            "percentile": 0.95,
+            "tujuan": "Mendekati batas atas normal; cocok jika pasar dan pakan mendukung.",
+        },
+    ]
+
+    rows = []
+    for item in base_examples:
+        estimate = estimate_weight_from_breed_percentile(
+            jenis_ternak,
+            bangsa_ternak,
+            jenis_kelamin,
+            item["percentile"],
+        )
+
+        if profile.get("premium_factor", 1.0) >= 1.10 and item["label"] in ["Target Optimal", "Target Maksimal Normal"]:
+            segment = "Premium / jagal / pembeli berbobot besar"
+        elif profile.get("liquidity_bonus", 5) >= 8 and item["label"] in ["Target Standar", "Target Optimal"]:
+            segment = "Pasar umum / kurban / jual cepat"
+        elif profile.get("fattening_fit", 5) >= 8 and item["label"] in ["Target Standar", "Target Optimal"]:
+            segment = "Penggemukan / jual ulang"
+        else:
+            segment = ", ".join(profile.get("primary_buyers", [])[:2])
+
+        rows.append({
+            "Contoh Target": item["label"],
+            "Target Berat (kg)": round(estimate["berat"], 2),
+            "Estimasi LD (cm)": round(estimate["lingkar_dada"], 1),
+            "Estimasi PB (cm)": round(estimate["panjang_badan"], 1),
+            "Segmen Cocok": segment,
+            "Catatan": item["tujuan"],
+        })
+
+    return pd.DataFrame(rows)
+
+
+def get_recommended_target_weight_by_breed(current_weight, jenis_ternak, bangsa_ternak, jenis_kelamin):
+    """Memilih contoh target terdekat di atas berat saat ini berdasarkan bangsa ternak."""
+    examples_df = get_breed_target_examples(jenis_ternak, bangsa_ternak, jenis_kelamin)
+    current_weight = float(current_weight or 0)
+
+    above_current = examples_df[examples_df["Target Berat (kg)"] > current_weight]
+    if not above_current.empty:
+        selected = above_current.iloc[0]
+    else:
+        selected = examples_df.iloc[-1].copy()
+        selected["Target Berat (kg)"] = max(current_weight * 1.05, selected["Target Berat (kg)"])
+
+    return float(selected["Target Berat (kg)"])
+
+
+def create_breed_target_option_labels(examples_df):
+    """Membuat pilihan label yang mudah dibaca untuk selectbox target."""
+    labels = []
+    for _, row in examples_df.iterrows():
+        labels.append(
+            f"{row['Contoh Target']} - {row['Target Berat (kg)']:.2f} kg"
+        )
+    return labels
+
+
+
 def create_target_simulation_table(
     base_weight,
     lingkar_dada,
@@ -2573,16 +2676,12 @@ def create_target_simulation_table(
     bangsa_ternak,
     jenis_kelamin,
 ):
-    """Membuat tabel simulasi beberapa target berat dari berat dasar."""
-    targets = [
-        base_weight * 0.90,
-        base_weight,
-        base_weight * 1.10,
-        base_weight * 1.20,
-    ]
+    """Membuat tabel simulasi target berbasis jenis + bangsa ternak."""
+    examples_df = get_breed_target_examples(jenis_ternak, bangsa_ternak, jenis_kelamin)
 
     rows = []
-    for target in targets:
+    for _, target_row in examples_df.iterrows():
+        target = float(target_row["Target Berat (kg)"])
         estimate = estimate_dimensions_for_target_weight(
             target,
             lingkar_dada,
@@ -2592,15 +2691,32 @@ def create_target_simulation_table(
             jenis_kelamin,
         )
         rows.append({
+            "Contoh Target": target_row["Contoh Target"],
             "Target Berat (kg)": round(target, 2),
             "Estimasi LD (cm)": round(estimate["lingkar_dada"], 1),
             "Estimasi PB (cm)": round(estimate["panjang_badan"], 1),
             "Estimasi Ulang BB (kg)": round(estimate["estimated_weight"], 2),
+            "Selisih dari BB Saat Ini (kg)": round(target - base_weight, 2),
             "Status": estimate["status"],
-            "Catatan": estimate["note"],
+            "Segmen Cocok": target_row["Segmen Cocok"],
+            "Catatan": target_row["Catatan"],
         })
 
-    return pd.DataFrame(rows)
+    current_row = {
+        "Contoh Target": "Posisi Saat Ini",
+        "Target Berat (kg)": round(base_weight, 2),
+        "Estimasi LD (cm)": round(lingkar_dada, 1),
+        "Estimasi PB (cm)": round(panjang_badan, 1),
+        "Estimasi Ulang BB (kg)": round(base_weight, 2),
+        "Selisih dari BB Saat Ini (kg)": 0.0,
+        "Status": "Aktual Input",
+        "Segmen Cocok": "Pembanding",
+        "Catatan": "Posisi berdasarkan pengukuran yang dimasukkan pengguna.",
+    }
+
+    result_df = pd.DataFrame([current_row] + rows)
+    return result_df
+
 
 def generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin, kelas_pasar=None, margin_error=None, estimasi_keuntungan=None, bcs_option=None, accuracy_score=None):
     """Membuat rekomendasi otomatis berdasarkan hasil prediksi."""
@@ -3241,16 +3357,58 @@ if st.session_state.show_results:
         st.markdown("#### Simulasi Target Berat")
         st.write(
             "Gunakan fitur ini untuk memperkirakan lingkar dada dan panjang badan yang diperlukan "
-            "agar ternak mendekati target berat tertentu. Perhitungan mempertahankan proporsi ukuran saat ini."
+            "agar ternak mendekati target berat tertentu. Contoh target sudah disesuaikan dengan "
+            "**jenis ternak + bangsa ternak** yang dipilih."
         )
 
-        target_default = max(1.0, float(berat_badan) * 1.10)
+        breed_target_examples = get_breed_target_examples(
+            jenis_ternak,
+            bangsa_ternak,
+            jenis_kelamin,
+        )
+
+        st.markdown("#### Contoh Target Berdasarkan Jenis dan Bangsa")
+        st.dataframe(breed_target_examples, use_container_width=True, hide_index=True)
+
+        target_option_labels = create_breed_target_option_labels(breed_target_examples)
+        recommended_target = get_recommended_target_weight_by_breed(
+            berat_badan,
+            jenis_ternak,
+            bangsa_ternak,
+            jenis_kelamin,
+        )
+
+        selected_target_label = st.selectbox(
+            "Pilih contoh target",
+            options=target_option_labels,
+            index=min(
+                len(target_option_labels) - 1,
+                max(
+                    0,
+                    next(
+                        (
+                            i for i, label in enumerate(target_option_labels)
+                            if float(label.split(" - ")[1].replace(" kg", "")) >= recommended_target
+                        ),
+                        1,
+                    )
+                )
+            ),
+            key=f"target_option_{jenis_ternak}_{bangsa_ternak}_{jenis_kelamin}",
+            help="Contoh target dihitung dari rentang normal lingkar dada dan panjang badan bangsa ternak."
+        )
+
+        selected_target_weight = float(
+            selected_target_label.split(" - ")[1].replace(" kg", "")
+        )
+
         target_weight = st.number_input(
             "Target Berat Badan (kg)",
             min_value=0.0,
-            value=float(round(target_default, 2)),
+            value=float(round(selected_target_weight, 2)),
             step=5.0 if jenis_ternak == "Sapi" else 1.0,
-            key="target_berat_tab",
+            key=f"target_berat_tab_{jenis_ternak}_{bangsa_ternak}_{jenis_kelamin}_{selected_target_label}",
+            help="Anda tetap bisa mengubah angka target secara manual."
         )
 
         target_estimate = estimate_dimensions_for_target_weight(

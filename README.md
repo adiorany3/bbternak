@@ -15,6 +15,27 @@ Versi ini dirapikan agar lebih sistematis dan mudah dipahami. Urutan penggunaan 
 6. Simpan PDF/CSV atau gunakan mode banyak ternak
 ```
 
+
+## Penyempurnaan Target Berat
+
+Tab **2️⃣ Target Berat** sudah disesuaikan berdasarkan **jenis ternak + bangsa ternak**.
+
+Perubahan:
+- Contoh target tidak lagi hanya memakai persentase umum dari berat saat ini.
+- Target dihitung dari rentang normal lingkar dada dan panjang badan setiap bangsa ternak.
+- Aplikasi menampilkan contoh:
+  - Target Ringan
+  - Target Standar
+  - Target Optimal
+  - Target Maksimal Normal
+- Setiap target menampilkan:
+  - Target berat
+  - Estimasi lingkar dada
+  - Estimasi panjang badan
+  - Segmen pasar yang cocok
+  - Catatan penggunaan
+- Pengguna tetap bisa mengubah angka target secara manual.
+
 ## Penyempurnaan Struktur
 
 - Panduan pengukuran dipindahkan ke expander agar halaman utama tidak terlalu panjang.
