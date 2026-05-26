@@ -68,3 +68,8 @@ sapi_weight_predictor.py
 - Jika ingin mengganti gambar, gunakan nama file yang sama atau sesuaikan pemanggilan gambar pada kode.
 - Harga default bersifat acuan dan tetap dapat diubah manual oleh pengguna.
 - Hasil prediksi tetap estimasi, bukan pengganti timbangan ternak.
+
+
+## Update Estimasi Harga
+
+Versi ini memakai default harga yang lebih spesifik berdasarkan **jenis ternak** dan **bangsa ternak**. Contoh: Sapi Bali, Sapi Limousin, Kambing Boer, dan Domba Garut dapat memiliki default harga berbeda. Harga tetap dapat diedit manual karena harga pasar berbeda menurut daerah dan waktu.

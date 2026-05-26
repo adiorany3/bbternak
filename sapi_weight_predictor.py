@@ -55,6 +55,39 @@ LATEST_PRICE_DEFAULTS = {
     }
 }
 
+# Faktor penyesuaian harga berdasarkan bangsa ternak.
+# Nilai ini dipakai untuk membuat default harga lebih spesifik per bangsa ternak,
+# tetapi pengguna tetap dapat mengubah harga secara manual sesuai pasar daerah.
+BREED_PRICE_FACTORS = {
+    "Sapi": {
+        "Sapi Bali": 1.00,
+        "Sapi Madura": 0.96,
+        "Sapi Limousin": 1.18,
+        "Sapi Simental": 1.16,
+        "Sapi Brahman": 1.10,
+        "Sapi Peranakan Ongole (PO)": 1.02,
+        "Sapi Friesian Holstein (FH)": 0.98,
+        "Sapi Aceh": 0.94,
+    },
+    "Kambing": {
+        "Kambing Kacang": 0.95,
+        "Kambing Ettawa": 1.08,
+        "Kambing Peranakan Ettawa (PE)": 1.04,
+        "Kambing Boer": 1.15,
+        "Kambing Jawarandu": 1.00,
+        "Kambing Bligon": 0.98,
+    },
+    "Domba": {
+        "Domba Ekor Tipis": 0.96,
+        "Domba Ekor Gemuk": 1.02,
+        "Domba Merino": 1.10,
+        "Domba Garut": 1.08,
+        "Domba Suffolk": 1.13,
+        "Domba Texel": 1.15,
+    },
+}
+
+
 # Path helper agar gambar tetap aman saat aplikasi dipindahkan/deploy
 BASE_DIR = Path(__file__).resolve().parent
 ASSET_DIR = BASE_DIR / "assets"
@@ -943,9 +976,46 @@ def format_rupiah(value):
     return "Rp{:,.0f}".format(value).replace(",", ".")
 
 
-def get_latest_price_defaults(jenis_ternak):
-    """Mengambil harga default terbaru berdasarkan jenis ternak."""
-    return LATEST_PRICE_DEFAULTS.get(jenis_ternak, LATEST_PRICE_DEFAULTS["Sapi"])
+def round_price_to_nearest(value, nearest=500):
+    """Membulatkan harga agar angka default lebih rapi untuk input pengguna."""
+    try:
+        return int(round(float(value) / nearest) * nearest)
+    except (TypeError, ValueError):
+        return 0
+
+
+def get_latest_price_defaults(jenis_ternak, bangsa_ternak=None):
+    """Mengambil harga default terbaru berdasarkan jenis dan bangsa ternak."""
+    base = LATEST_PRICE_DEFAULTS.get(jenis_ternak, LATEST_PRICE_DEFAULTS["Sapi"]).copy()
+    factor = BREED_PRICE_FACTORS.get(jenis_ternak, {}).get(bangsa_ternak, 1.0)
+
+    harga_bobot_hidup = round_price_to_nearest(base["harga_bobot_hidup"] * factor)
+    harga_karkas = round_price_to_nearest(base["harga_karkas"] * factor)
+    harga_daging = round_price_to_nearest(base["harga_daging"] * factor)
+
+    if bangsa_ternak:
+        label = (
+            f"Acuan {jenis_ternak} - {bangsa_ternak}: "
+            f"bobot hidup {format_rupiah(harga_bobot_hidup)}/kg, "
+            f"karkas {format_rupiah(harga_karkas)}/kg, "
+            f"daging {format_rupiah(harga_daging)}/kg."
+        )
+        source = (
+            base.get("source", "Acuan harga terbaru.")
+            + f" Faktor penyesuaian bangsa: {factor:.2f}; sesuaikan lagi dengan harga daerah."
+        )
+    else:
+        label = base.get("label", "Acuan harga terbaru.")
+        source = base.get("source", "Sesuaikan dengan harga daerah.")
+
+    return {
+        "harga_bobot_hidup": harga_bobot_hidup,
+        "harga_karkas": harga_karkas,
+        "harga_daging": harga_daging,
+        "label": label,
+        "source": source,
+        "price_factor": factor,
+    }
 
 
 def clean_price_value(value, fallback=0):
@@ -1123,7 +1193,7 @@ def process_batch_dataframe(df):
             kelamin = str(row["Jenis Kelamin"]).strip()
             ld = float(row["Lingkar Dada"])
             pb = float(row["Panjang Badan"])
-            price_defaults = get_latest_price_defaults(jenis)
+            price_defaults = get_latest_price_defaults(jenis, bangsa)
             harga_hidup = clean_price_value(row.get("Harga per Kg", 0), price_defaults["harga_bobot_hidup"])
             harga_karkas_batch = clean_price_value(row.get("Harga per Kg Karkas", 0), price_defaults["harga_karkas"])
             harga_daging_batch = clean_price_value(row.get("Harga per Kg Daging", 0), price_defaults["harga_daging"])
@@ -1318,30 +1388,35 @@ panjang_badan = st.sidebar.number_input(
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Estimasi Ekonomi")
-latest_prices = get_latest_price_defaults(jenis_ternak)
+latest_prices = get_latest_price_defaults(jenis_ternak, bangsa_ternak)
 st.sidebar.caption(latest_prices["label"])
 st.sidebar.caption(f"Sumber/acuan: {latest_prices['source']}")
+
+price_key_suffix = f"{jenis_ternak}_{bangsa_ternak}".replace(" ", "_").replace("(", "").replace(")", "")
 
 harga_bobot_hidup = st.sidebar.number_input(
     "Harga per kg bobot hidup (Rp)",
     min_value=0,
     value=int(latest_prices["harga_bobot_hidup"]),
     step=1000,
-    help="Harga default mengikuti acuan terbaru yang tersedia. Ubah manual jika harga daerah berbeda."
+    key=f"harga_bobot_hidup_{price_key_suffix}",
+    help="Harga default mengikuti jenis dan bangsa ternak. Ubah manual jika harga daerah berbeda."
 )
 harga_karkas = st.sidebar.number_input(
     "Harga per kg karkas (Rp)",
     min_value=0,
     value=int(latest_prices["harga_karkas"]),
     step=1000,
-    help="Harga default mengikuti acuan terbaru yang tersedia. Ubah manual jika harga daerah berbeda."
+    key=f"harga_karkas_{price_key_suffix}",
+    help="Harga default mengikuti jenis dan bangsa ternak. Ubah manual jika harga daerah berbeda."
 )
 harga_daging = st.sidebar.number_input(
     "Harga per kg daging (Rp)",
     min_value=0,
     value=int(latest_prices["harga_daging"]),
     step=1000,
-    help="Harga default mengikuti acuan terbaru yang tersedia. Ubah manual jika harga daerah berbeda."
+    key=f"harga_daging_{price_key_suffix}",
+    help="Harga default mengikuti jenis dan bangsa ternak. Ubah manual jika harga daerah berbeda."
 )
 
 # Tombol untuk menghitung berat badan
@@ -2109,19 +2184,47 @@ with batch_tab:
     - `Harga per Kg Karkas`
     - `Harga per Kg Daging`
 
-    Jika kolom harga dikosongkan atau diisi 0, aplikasi memakai harga default terbaru berdasarkan jenis ternak.
+    Jika kolom harga dikosongkan atau diisi 0, aplikasi memakai harga default terbaru berdasarkan jenis ternak dan bangsa ternak.
     """)
 
-    template_df = pd.DataFrame({
-        "Jenis Ternak": ["Sapi", "Kambing", "Domba"],
-        "Bangsa Ternak": ["Sapi Bali", "Kambing Kacang", "Domba Garut"],
-        "Jenis Kelamin": ["Jantan", "Betina", "Jantan"],
-        "Lingkar Dada": [175, 65, 80],
-        "Panjang Badan": [150, 55, 70],
-        "Harga per Kg": [LATEST_PRICE_DEFAULTS["Sapi"]["harga_bobot_hidup"], LATEST_PRICE_DEFAULTS["Kambing"]["harga_bobot_hidup"], LATEST_PRICE_DEFAULTS["Domba"]["harga_bobot_hidup"]],
-        "Harga per Kg Karkas": [LATEST_PRICE_DEFAULTS["Sapi"]["harga_karkas"], LATEST_PRICE_DEFAULTS["Kambing"]["harga_karkas"], LATEST_PRICE_DEFAULTS["Domba"]["harga_karkas"]],
-        "Harga per Kg Daging": [LATEST_PRICE_DEFAULTS["Sapi"]["harga_daging"], LATEST_PRICE_DEFAULTS["Kambing"]["harga_daging"], LATEST_PRICE_DEFAULTS["Domba"]["harga_daging"]],
-    })
+    template_rows = [
+        {
+            "Jenis Ternak": "Sapi",
+            "Bangsa Ternak": "Sapi Bali",
+            "Jenis Kelamin": "Jantan",
+            "Lingkar Dada": 175,
+            "Panjang Badan": 150,
+        },
+        {
+            "Jenis Ternak": "Sapi",
+            "Bangsa Ternak": "Sapi Limousin",
+            "Jenis Kelamin": "Jantan",
+            "Lingkar Dada": 215,
+            "Panjang Badan": 190,
+        },
+        {
+            "Jenis Ternak": "Kambing",
+            "Bangsa Ternak": "Kambing Boer",
+            "Jenis Kelamin": "Betina",
+            "Lingkar Dada": 85,
+            "Panjang Badan": 75,
+        },
+        {
+            "Jenis Ternak": "Domba",
+            "Bangsa Ternak": "Domba Garut",
+            "Jenis Kelamin": "Jantan",
+            "Lingkar Dada": 80,
+            "Panjang Badan": 70,
+        },
+    ]
+
+    for row in template_rows:
+        prices = get_latest_price_defaults(row["Jenis Ternak"], row["Bangsa Ternak"])
+        row["Harga per Kg"] = prices["harga_bobot_hidup"]
+        row["Harga per Kg Karkas"] = prices["harga_karkas"]
+        row["Harga per Kg Daging"] = prices["harga_daging"]
+
+    template_df = pd.DataFrame(template_rows)
 
     st.download_button(
         label="⬇️ Download Template CSV",
