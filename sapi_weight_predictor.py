@@ -2718,6 +2718,209 @@ def create_target_simulation_table(
     return result_df
 
 
+
+
+def build_ai_prompt_from_results(
+    prompt_mode,
+    jenis_ternak,
+    bangsa_ternak,
+    jenis_kelamin,
+    lingkar_dada,
+    panjang_badan,
+    berat_badan,
+    bb_min,
+    bb_max,
+    margin_error,
+    formula_name,
+    formula_text,
+    status_ukuran,
+    status_note,
+    bcs_option,
+    accuracy_score,
+    accuracy_category,
+    karkas_data,
+    breed_profile,
+    target_table=None,
+    harga_bobot_hidup=0,
+    harga_karkas=0,
+    harga_daging=0,
+    nilai_hidup=0,
+    nilai_karkas=0,
+    nilai_daging=0,
+    business_metrics=None,
+    jagal_metrics=None,
+    trader_insights=None,
+    insights=None,
+):
+    """Menyusun prompt siap salin untuk AI lain berdasarkan hasil perhitungan aplikasi."""
+    business_metrics = business_metrics or {}
+    jagal_metrics = jagal_metrics or {}
+    trader_insights = trader_insights or {}
+    insights = insights or {}
+
+    target_text = "Belum tersedia."
+    if target_table is not None:
+        try:
+            target_text = target_table.to_string(index=False)
+        except Exception:
+            target_text = str(target_table)
+
+    non_karkas_total = sum((karkas_data.get("non_karkas_weights", {}) or {}).values())
+
+    role_map = {
+        "Peternak": "Anda adalah konsultan peternakan ruminansia yang fokus pada manajemen bobot, BCS, pakan, kesehatan umum, dan strategi pemeliharaan.",
+        "Jagal": "Anda adalah analis usaha jagal/pemotongan ternak yang fokus pada estimasi karkas, daging, susut, omzet, biaya, dan margin.",
+        "Blantik": "Anda adalah analis transaksi blantik ternak yang fokus pada harga beli, harga jual ulang, daya jual, risiko transaksi, dan strategi negosiasi.",
+        "Analisis Lengkap": "Anda adalah konsultan peternakan, jagal, dan perdagangan ternak yang mampu membaca data teknis, ekonomi, pasar, dan risiko transaksi secara terpadu.",
+    }
+
+    instruction_map = {
+        "Peternak": """
+Tugas Anda:
+1. Jelaskan kondisi ternak dari sisi bobot, ukuran tubuh, BCS, dan skor akurasi input.
+2. Berikan interpretasi apakah target berat realistis berdasarkan jenis dan bangsa ternak.
+3. Berikan saran pemeliharaan umum: pakan, pengukuran ulang, pencatatan, dan hal yang perlu diperiksa.
+4. Berikan strategi apakah ternak lebih cocok dijual sekarang, ditahan, atau digemukkan.
+5. Berikan catatan risiko, terutama jika BCS ekstrem atau skor akurasi rendah.
+""",
+        "Jagal": """
+Tugas Anda:
+1. Analisis kelayakan ternak dari sudut pandang jagal.
+2. Jelaskan potensi karkas, daging bersih, tulang/lemak, dan non-karkas.
+3. Hitung ulang secara konseptual apakah omzet, biaya, profit, dan ROI masih masuk akal.
+4. Berikan batas harga beli aman dan risiko susut.
+5. Berikan rekomendasi: layak dipotong, perlu negosiasi harga, atau berisiko rugi.
+""",
+        "Blantik": """
+Tugas Anda:
+1. Analisis ternak dari sudut pandang blantik/pedagang ternak.
+2. Jelaskan estimasi harga jual kembali, margin bersih, ROI, dan batas harga nego.
+3. Nilai daya jual ternak berdasarkan jenis, bangsa, bobot, BCS, dan segmentasi pembeli.
+4. Berikan strategi jual: jual cepat, tahan 2–4 minggu, penggemukan lanjutan, atau jangan deal.
+5. Buat checklist negosiasi dan hal yang harus dicek sebelum transaksi.
+""",
+        "Analisis Lengkap": """
+Tugas Anda:
+1. Buat analisis lengkap dari sudut pandang peternak, jagal, dan blantik.
+2. Rangkum kondisi bobot, ukuran, BCS, skor akurasi, target berat, hasil potong, ekonomi, profit, dan risiko.
+3. Berikan rekomendasi tindakan prioritas.
+4. Berikan skenario keputusan: jual sekarang, tahan/penggemukan, potong, atau negosiasi.
+5. Buat tabel ringkas kesimpulan dan checklist pemeriksaan lapangan.
+""",
+    }
+
+    mode = prompt_mode if prompt_mode in role_map else "Analisis Lengkap"
+
+    prompt = f"""
+{role_map[mode]}
+
+Saya memiliki data hasil perhitungan aplikasi prediksi berat badan ternak. Tolong analisis data berikut secara detail, praktis, dan mudah dipahami untuk konteks Indonesia.
+
+DATA IDENTITAS TERNAK
+- Jenis ternak: {jenis_ternak}
+- Bangsa ternak: {bangsa_ternak}
+- Jenis kelamin: {jenis_kelamin}
+- Lingkar dada: {lingkar_dada:.1f} cm
+- Panjang badan: {panjang_badan:.1f} cm
+- Rumus yang digunakan: {formula_name}
+- Formula: {formula_text}
+
+HASIL PREDIKSI BERAT
+- Prediksi berat badan: {berat_badan:.2f} kg
+- Rentang estimasi dengan margin error ±{margin_error}%: {bb_min:.2f}–{bb_max:.2f} kg
+- Status ukuran: {status_ukuran}
+- Catatan status ukuran: {status_note}
+- BCS/kondisi tubuh: {bcs_option}
+- Skor akurasi input: {accuracy_score}/100 ({accuracy_category})
+
+PROFIL JENIS DAN BANGSA TERNAK
+- Posisi pasar: {breed_profile.get('market_position', '-')}
+- Pembeli potensial: {', '.join(breed_profile.get('primary_buyers', []))}
+- Sudut pandang jagal: {breed_profile.get('butcher_view', '-')}
+- Sudut pandang blantik: {breed_profile.get('trader_view', '-')}
+- Strategi umum: {breed_profile.get('strategy', '-')}
+- Risiko khusus bangsa: {'; '.join(breed_profile.get('risks', []))}
+- Likuiditas pasar: {breed_profile.get('liquidity_bonus', '-')}/10
+- Kesesuaian jagal: {breed_profile.get('butcher_fit', '-')}/10
+- Kesesuaian penggemukan: {breed_profile.get('fattening_fit', '-')}/10
+- Faktor premium harga: {breed_profile.get('premium_factor', '-')}
+
+HASIL POTONG / KARKAS
+- Persentase karkas: {karkas_data.get('karkas_percent', 0):.1f}%
+- Estimasi berat karkas: {karkas_data.get('karkas_weight', 0):.2f} kg
+- Persentase daging dari karkas: {karkas_data.get('meat_percent_of_carcass', 0):.1f}%
+- Persentase daging dari bobot hidup: {karkas_data.get('meat_percent_of_body', 0):.1f}%
+- Estimasi daging bersih: {karkas_data.get('meat_weight', 0):.2f} kg
+- Estimasi tulang dan lemak karkas: {karkas_data.get('bone_and_fat_weight', 0):.2f} kg
+- Estimasi non-karkas total: {non_karkas_total:.2f} kg
+
+TARGET BERAT BERDASARKAN JENIS DAN BANGSA
+{target_text}
+
+DATA EKONOMI TERNAK
+- Harga/kg bobot hidup: {format_rupiah(harga_bobot_hidup)}
+- Estimasi nilai bobot hidup: {format_rupiah(nilai_hidup)}
+- Harga/kg karkas: {format_rupiah(harga_karkas)}
+- Estimasi nilai karkas: {format_rupiah(nilai_karkas)}
+- Harga/kg daging: {format_rupiah(harga_daging)}
+- Estimasi nilai daging: {format_rupiah(nilai_daging)}
+
+DATA BIAYA & PROFIT PETERNAK
+- Total biaya pemeliharaan: {format_rupiah(business_metrics.get('total_biaya_pemeliharaan', 0))}
+- Total modal: {format_rupiah(business_metrics.get('total_modal', 0))}
+- Estimasi keuntungan: {format_rupiah(business_metrics.get('estimasi_keuntungan', 0))}
+- ROI: {business_metrics.get('roi_percent', 0):.1f}%
+
+DATA JAGAL
+- Omzet total jagal: {format_rupiah(jagal_metrics.get('omzet_total', 0))}
+- Total modal jagal: {format_rupiah(jagal_metrics.get('total_modal', 0))}
+- Profit jagal: {format_rupiah(jagal_metrics.get('profit', 0))}
+- ROI jagal: {jagal_metrics.get('roi_percent', 0):.1f}%
+- Harga beli impas jagal: {format_rupiah(jagal_metrics.get('break_even_buy_price', 0))}
+- Harga beli maksimal target margin jagal: {format_rupiah(max(0, jagal_metrics.get('max_buy_price', 0)))}
+- Keputusan jagal: {jagal_metrics.get('decision', '-')}
+
+DATA BLANTIK
+- Estimasi harga jual kembali: {format_rupiah(trader_insights.get('estimasi_harga_jual', 0))}
+- Margin bersih blantik: {format_rupiah(trader_insights.get('margin_bersih', 0))}
+- ROI blantik: {trader_insights.get('roi', 0):.1f}%
+- Skor daya jual: {trader_insights.get('resale_score', 0)}/100 ({trader_insights.get('resale_category', '-')})
+- Harga ideal beli: {format_rupiah(max(0, trader_insights.get('harga_beli_ideal', 0)))}
+- Harga maksimal beli: {format_rupiah(max(0, trader_insights.get('harga_beli_maksimal', 0)))}
+- Harga impas: {format_rupiah(max(0, trader_insights.get('harga_beli_impas', 0)))}
+- Strategi blantik: {trader_insights.get('strategy', '-')}
+- Keputusan blantik: {trader_insights.get('decision', '-')}
+- Risiko transaksi blantik: {trader_insights.get('risk_level', '-')}
+- Segmen pembeli: {', '.join(trader_insights.get('buyer_segments', [])) if trader_insights else '-'}
+
+INSIGHT OTOMATIS APLIKASI
+- Efisiensi karkas: {insights.get('karkas_yield', 0):.1f}%
+- Daging terhadap bobot hidup: {insights.get('meat_yield_live', 0):.1f}%
+- Daging terhadap karkas: {insights.get('meat_yield_carcass', 0):.1f}%
+- Non-karkas terhadap bobot hidup: {insights.get('non_karkas_ratio', 0):.1f}%
+- Kategori efisiensi karkas: {insights.get('karkas_category', '-')}
+- Kategori daging: {insights.get('meat_category', '-')}
+
+{instruction_map[mode]}
+
+Format jawaban yang saya inginkan:
+1. Ringkasan kondisi ternak dalam 5–7 poin.
+2. Tabel interpretasi angka utama.
+3. Insight berdasarkan jenis dan bangsa ternak.
+4. Risiko utama dan cara menguranginya.
+5. Rekomendasi tindakan praktis.
+6. Checklist pemeriksaan lapangan sebelum keputusan.
+7. Kesimpulan akhir dengan status: Aman / Perlu Cek Ulang / Perlu Negosiasi / Berisiko.
+
+Catatan penting:
+- Jangan menganggap angka ini sebagai hasil timbangan pasti.
+- Jelaskan jika ada data yang perlu diverifikasi ulang.
+- Gunakan bahasa Indonesia yang jelas, praktis, dan mudah dipahami peternak.
+- Jika memberikan rekomendasi harga, sebutkan bahwa harga pasar lokal tetap harus dicek.
+""".strip()
+
+    return prompt
+
 def generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin, kelas_pasar=None, margin_error=None, estimasi_keuntungan=None, bcs_option=None, accuracy_score=None):
     """Membuat rekomendasi otomatis berdasarkan hasil prediksi."""
     status, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
@@ -3267,7 +3470,7 @@ if st.session_state.show_results:
     </div>
     """, unsafe_allow_html=True)
 
-    hasil_tab, target_tab, ekonomi_tab, biaya_tab, jagal_tab, blantik_tab, insight_tab = st.tabs([
+    hasil_tab, target_tab, ekonomi_tab, biaya_tab, jagal_tab, blantik_tab, insight_tab, prompt_tab = st.tabs([
         "1️⃣ Berat & Akurasi",
         "2️⃣ Target Berat",
         "3️⃣ Ekonomi Ternak",
@@ -3275,6 +3478,7 @@ if st.session_state.show_results:
         "5️⃣ Jagal",
         "6️⃣ Blantik",
         "7️⃣ Insight",
+        "8️⃣ Prompt AI",
     ])
 
     with hasil_tab:
@@ -4132,6 +4336,106 @@ if st.session_state.show_results:
             "Catatan: insight blantik memakai estimasi bobot hidup dan harga jual ulang. "
             "Tetap cek fisik, umur, kesehatan, dan harga pasar setempat sebelum deal."
         )
+
+
+
+    with prompt_tab:
+        st.markdown("#### Generator Prompt untuk AI Lain")
+        st.write(
+            "Fitur ini membuat prompt otomatis dari seluruh hasil perhitungan. "
+            "Peternak dapat menyalin prompt ini ke AI lain untuk mendapatkan analisis lanjutan yang lebih detail."
+        )
+
+        prompt_mode = st.selectbox(
+            "Pilih sudut pandang prompt",
+            options=["Peternak", "Jagal", "Blantik", "Analisis Lengkap"],
+            index=3,
+            key="prompt_mode_ai",
+            help="Pilih jenis analisis yang ingin diminta ke AI lain."
+        )
+
+        prompt_col1, prompt_col2, prompt_col3, prompt_col4 = st.columns(4)
+        with prompt_col1:
+            st.metric("Jenis", jenis_ternak)
+        with prompt_col2:
+            st.metric("Bangsa", bangsa_ternak)
+        with prompt_col3:
+            st.metric("Berat", f"{berat_badan:.2f} kg")
+        with prompt_col4:
+            st.metric("Skor Input", f"{accuracy_score}/100")
+
+        ai_prompt_text = build_ai_prompt_from_results(
+            prompt_mode=prompt_mode,
+            jenis_ternak=jenis_ternak,
+            bangsa_ternak=bangsa_ternak,
+            jenis_kelamin=jenis_kelamin,
+            lingkar_dada=lingkar_dada,
+            panjang_badan=panjang_badan,
+            berat_badan=berat_badan,
+            bb_min=bb_min,
+            bb_max=bb_max,
+            margin_error=margin_error,
+            formula_name=formula_name,
+            formula_text=formula_text,
+            status_ukuran=status_ukuran,
+            status_note=status_note,
+            bcs_option=bcs_option,
+            accuracy_score=accuracy_score,
+            accuracy_category=accuracy_category,
+            karkas_data=karkas_data,
+            breed_profile=get_breed_business_profile(jenis_ternak, bangsa_ternak),
+            target_table=target_table if "target_table" in locals() else None,
+            harga_bobot_hidup=harga_bobot_hidup,
+            harga_karkas=harga_karkas,
+            harga_daging=harga_daging,
+            nilai_hidup=nilai_hidup,
+            nilai_karkas=nilai_karkas,
+            nilai_daging=nilai_daging,
+            business_metrics=business_metrics,
+            jagal_metrics=jagal_metrics if "jagal_metrics" in locals() else {},
+            trader_insights=trader_insights if "trader_insights" in locals() else {},
+            insights=insights if "insights" in locals() else {},
+        )
+
+        st.markdown("#### Prompt Siap Salin")
+        st.text_area(
+            "Salin prompt di bawah ini, lalu tempel ke AI lain.",
+            value=ai_prompt_text,
+            height=520,
+            key="generated_ai_prompt_text_area"
+        )
+
+        download_filename = (
+            f"prompt_ai_{jenis_ternak}_{bangsa_ternak}_{prompt_mode}"
+            .lower()
+            .replace(" ", "_")
+            .replace("/", "_")
+            .replace("(", "")
+            .replace(")", "")
+            + ".txt"
+        )
+
+        st.download_button(
+            label="⬇️ Download Prompt TXT",
+            data=ai_prompt_text.encode("utf-8"),
+            file_name=download_filename,
+            mime="text/plain"
+        )
+
+        with st.expander("Cara menggunakan prompt ini"):
+            st.write("- Pilih sudut pandang prompt sesuai kebutuhan.")
+            st.write("- Salin semua teks pada kotak prompt.")
+            st.write("- Tempel ke AI lain seperti ChatGPT, Gemini, Claude, atau AI lain.")
+            st.write("- Tambahkan konteks lokal, misalnya harga pasar daerah, umur ternak, jenis pakan, dan tujuan transaksi.")
+            st.write("- Minta AI tersebut membuat rencana lanjutan yang lebih spesifik.")
+
+        with st.expander("Contoh tambahan instruksi yang bisa ditambahkan"):
+            st.code(
+                "Tambahkan analisis berdasarkan harga pasar di daerah saya. "
+                "Saya berada di [nama daerah], harga sapi/kambing/domba saat ini sekitar [harga]. "
+                "Buatkan saran tindakan 30 hari ke depan.",
+                language="text"
+            )
 
 
     # Simpan riwayat hanya saat tombol hitung baru ditekan

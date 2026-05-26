@@ -46,6 +46,24 @@ Perubahan:
 - Header menggunakan workflow ringkas: Input → Hitung → Baca Hasil → Analisis → Simpan.
 - Desain tetap adaptif untuk light mode dan dark mode.
 
+
+## Fitur Baru: Generator Prompt AI
+
+Aplikasi sekarang memiliki tab **8️⃣ Prompt AI**.
+
+Fitur ini menyusun prompt otomatis dari hasil perhitungan, sehingga peternak dapat menyalinnya ke AI lain untuk mendapatkan analisis lanjutan.
+
+Jenis prompt:
+- **Peternak**: fokus pada bobot, BCS, pakan, pemeliharaan, dan target berat.
+- **Jagal**: fokus pada karkas, daging, susut, omzet, biaya, profit, dan harga beli maksimal.
+- **Blantik**: fokus pada harga beli, harga jual ulang, margin, daya jual, segmentasi pembeli, dan strategi negosiasi.
+- **Analisis Lengkap**: menggabungkan sudut pandang peternak, jagal, dan blantik.
+
+Output:
+- Prompt siap salin.
+- Download prompt dalam format `.txt`.
+- Panduan cara memakai prompt di AI lain.
+
 ## Tab Hasil
 
 Setelah tombol **Hitung Berat Badan** ditekan, hasil tampil dalam tab:
@@ -58,6 +76,7 @@ Setelah tombol **Hitung Berat Badan** ditekan, hasil tampil dalam tab:
 5️⃣ Jagal
 6️⃣ Blantik
 7️⃣ Insight
+8️⃣ Prompt AI
 ```
 
 ## Bagian Arsip
