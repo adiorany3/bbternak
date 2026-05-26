@@ -905,6 +905,223 @@ def create_breed_comparison_chart(jenis_ternak, lingkar_dada, panjang_badan, jen
     
     return fig
 
+
+
+def format_rupiah(value):
+    """Format angka menjadi format Rupiah Indonesia."""
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        value = 0
+    return "Rp{:,.0f}".format(value).replace(",", ".")
+
+
+def get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak):
+    """Memberikan kategori sederhana berdasarkan posisi LD dan PB terhadap rentang normal bangsa ternak."""
+    breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+    chest_range = breed_data["chest_range"]
+    length_range = breed_data["length_range"]
+
+    ld_ratio = lingkar_dada / ((chest_range["min"] + chest_range["max"]) / 2)
+    pb_ratio = panjang_badan / ((length_range["min"] + length_range["max"]) / 2)
+    avg_ratio = (ld_ratio + pb_ratio) / 2
+
+    if avg_ratio < 0.90:
+        return "Kecil", "Ukuran tubuh berada di bawah nilai tengah rentang normal bangsa ternak ini."
+    if avg_ratio <= 1.10:
+        return "Normal", "Ukuran tubuh berada pada rentang yang wajar untuk bangsa ternak ini."
+    if avg_ratio <= 1.25:
+        return "Besar", "Ukuran tubuh berada di atas nilai tengah rentang normal bangsa ternak ini."
+    return "Sangat Besar", "Ukuran tubuh berada cukup tinggi dibandingkan rentang umum bangsa ternak ini."
+
+
+def generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin):
+    """Membuat rekomendasi otomatis berdasarkan hasil prediksi."""
+    status, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
+    recommendations = [
+        f"Status ukuran ternak: {status}. {status_note}",
+        "Lakukan pengukuran 2–3 kali, lalu gunakan nilai rata-rata agar prediksi lebih stabil.",
+        "Untuk transaksi bernilai besar, tetap gunakan timbangan ternak yang terkalibrasi sebagai pembanding.",
+    ]
+
+    if berat_badan <= 0:
+        recommendations.insert(0, "Hasil prediksi belum wajar. Cek kembali rumus, satuan, dan data input.")
+    elif jenis_ternak == "Sapi" and berat_badan < 150:
+        recommendations.insert(0, "Prediksi berat sapi cukup rendah. Pastikan data lingkar dada dan panjang badan tidak tertukar.")
+    elif jenis_ternak in ["Kambing", "Domba"] and berat_badan < 10:
+        recommendations.insert(0, "Prediksi berat ruminansia kecil sangat rendah. Cek ulang satuan pengukuran dalam cm.")
+
+    if jenis_kelamin == "Jantan":
+        recommendations.append("Pada ternak jantan, variasi bobot dapat lebih besar karena faktor pertumbuhan dan kondisi tubuh.")
+    else:
+        recommendations.append("Pada ternak betina, kondisi reproduksi dan kebuntingan dapat mempengaruhi hasil estimasi ukuran tubuh.")
+
+    return recommendations
+
+
+def create_pdf_report(report_data):
+    """Membuat laporan PDF sederhana untuk diunduh dari Streamlit."""
+    buffer = BytesIO()
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.lib.units import cm
+        from reportlab.pdfgen import canvas
+    except Exception:
+        return None
+
+    c = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+    y = height - 2 * cm
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(2 * cm, y, "Laporan Prediksi Berat Badan Ternak")
+    y -= 0.8 * cm
+
+    c.setFont("Helvetica", 10)
+    c.drawString(2 * cm, y, f"Tanggal: {report_data.get('tanggal', '-')}")
+    y -= 0.7 * cm
+
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(2 * cm, y, "Data Ternak")
+    y -= 0.5 * cm
+
+    c.setFont("Helvetica", 10)
+    rows = [
+        ("Jenis Ternak", report_data.get("jenis_ternak", "-")),
+        ("Bangsa Ternak", report_data.get("bangsa_ternak", "-")),
+        ("Jenis Kelamin", report_data.get("jenis_kelamin", "-")),
+        ("Lingkar Dada", f"{report_data.get('lingkar_dada', 0):.1f} cm"),
+        ("Panjang Badan", f"{report_data.get('panjang_badan', 0):.1f} cm"),
+        ("Rumus", report_data.get("formula_name", "-")),
+        ("Prediksi Berat Badan", f"{report_data.get('berat_badan', 0):.2f} kg"),
+    ]
+
+    for label, value in rows:
+        c.drawString(2 * cm, y, f"{label}:")
+        c.drawString(7 * cm, y, str(value))
+        y -= 0.45 * cm
+
+    y -= 0.3 * cm
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(2 * cm, y, "Estimasi Karkas dan Daging")
+    y -= 0.5 * cm
+    c.setFont("Helvetica", 10)
+
+    rows = [
+        ("Berat Karkas", f"{report_data.get('karkas_weight', 0):.2f} kg"),
+        ("Berat Daging", f"{report_data.get('meat_weight', 0):.2f} kg"),
+        ("Berat Tulang & Lemak Karkas", f"{report_data.get('bone_and_fat_weight', 0):.2f} kg"),
+        ("Status Ukuran", report_data.get("status_ukuran", "-")),
+    ]
+
+    for label, value in rows:
+        c.drawString(2 * cm, y, f"{label}:")
+        c.drawString(7 * cm, y, str(value))
+        y -= 0.45 * cm
+
+    y -= 0.3 * cm
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(2 * cm, y, "Estimasi Nilai Ekonomi")
+    y -= 0.5 * cm
+    c.setFont("Helvetica", 10)
+
+    rows = [
+        ("Harga/kg Bobot Hidup", format_rupiah(report_data.get("harga_hidup", 0))),
+        ("Estimasi Nilai Bobot Hidup", format_rupiah(report_data.get("nilai_hidup", 0))),
+        ("Harga/kg Karkas", format_rupiah(report_data.get("harga_karkas", 0))),
+        ("Estimasi Nilai Karkas", format_rupiah(report_data.get("nilai_karkas", 0))),
+        ("Harga/kg Daging", format_rupiah(report_data.get("harga_daging", 0))),
+        ("Estimasi Nilai Daging", format_rupiah(report_data.get("nilai_daging", 0))),
+    ]
+
+    for label, value in rows:
+        c.drawString(2 * cm, y, f"{label}:")
+        c.drawString(7 * cm, y, str(value))
+        y -= 0.45 * cm
+
+    y -= 0.4 * cm
+    c.setFont("Helvetica-Bold", 12)
+    c.drawString(2 * cm, y, "Catatan")
+    y -= 0.5 * cm
+    c.setFont("Helvetica", 9)
+    notes = [
+        "Hasil aplikasi adalah estimasi berbasis rumus dan data rata-rata.",
+        "Hasil aktual dapat berbeda karena umur, kondisi tubuh, pakan, kesehatan, dan metode pengukuran.",
+        "Gunakan timbangan ternak terkalibrasi untuk keputusan transaksi besar atau penelitian.",
+    ]
+    for note in notes:
+        c.drawString(2 * cm, y, f"- {note}")
+        y -= 0.4 * cm
+
+    c.showPage()
+    c.save()
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
+def process_batch_dataframe(df):
+    """Menghitung prediksi banyak ternak dari dataframe upload CSV/XLSX."""
+    required_cols = [
+        "Jenis Ternak",
+        "Bangsa Ternak",
+        "Jenis Kelamin",
+        "Lingkar Dada",
+        "Panjang Badan",
+    ]
+    missing_cols = [col for col in required_cols if col not in df.columns]
+    if missing_cols:
+        raise ValueError("Kolom wajib belum lengkap: " + ", ".join(missing_cols))
+
+    results = []
+    for idx, row in df.iterrows():
+        try:
+            jenis = str(row["Jenis Ternak"]).strip()
+            bangsa = str(row["Bangsa Ternak"]).strip()
+            kelamin = str(row["Jenis Kelamin"]).strip()
+            ld = float(row["Lingkar Dada"])
+            pb = float(row["Panjang Badan"])
+            harga_hidup = float(row.get("Harga per Kg", 0) or 0)
+
+            berat, formula_name, formula_text = hitung_berat_badan(ld, pb, jenis, bangsa, kelamin)
+            karkas = hitung_komponen_karkas(berat, jenis, bangsa, kelamin)
+            status, _ = get_size_status(ld, pb, jenis, bangsa)
+
+            results.append({
+                "No": idx + 1,
+                "Jenis Ternak": jenis,
+                "Bangsa Ternak": bangsa,
+                "Jenis Kelamin": kelamin,
+                "Lingkar Dada (cm)": ld,
+                "Panjang Badan (cm)": pb,
+                "Rumus": formula_name,
+                "Prediksi Berat (kg)": round(berat, 2),
+                "Berat Karkas (kg)": round(karkas["karkas_weight"], 2),
+                "Berat Daging (kg)": round(karkas["meat_weight"], 2),
+                "Status Ukuran": status,
+                "Harga per Kg": harga_hidup,
+                "Estimasi Nilai Ternak": round(berat * harga_hidup, 0),
+                "Status Proses": "Berhasil",
+            })
+        except Exception as exc:
+            results.append({
+                "No": idx + 1,
+                "Jenis Ternak": row.get("Jenis Ternak", ""),
+                "Bangsa Ternak": row.get("Bangsa Ternak", ""),
+                "Jenis Kelamin": row.get("Jenis Kelamin", ""),
+                "Lingkar Dada (cm)": row.get("Lingkar Dada", ""),
+                "Panjang Badan (cm)": row.get("Panjang Badan", ""),
+                "Rumus": "-",
+                "Prediksi Berat (kg)": 0,
+                "Berat Karkas (kg)": 0,
+                "Berat Daging (kg)": 0,
+                "Status Ukuran": "-",
+                "Harga per Kg": row.get("Harga per Kg", 0),
+                "Estimasi Nilai Ternak": 0,
+                "Status Proses": f"Gagal: {exc}",
+            })
+
+    return pd.DataFrame(results)
+
 # Judul dan deskripsi aplikasi
 st.title("🐄 Prediksi Berat Badan Ternak")
 
@@ -936,7 +1153,7 @@ with guide_tab1:
         > **Catatan Penting**: Pengukuran sebaiknya dilakukan pada pagi hari sebelum ternak diberi makan untuk menghindari pengembangan perut yang dapat mempengaruhi hasil pengukuran. Selain itu, pastikan ternak dalam keadaan seimbang dan tidak terlalu gelisah.
         """)
     with col2:
-        show_image_safe("lingkar_dada.png", "Cara mengukur lingkar dada ternak. Pastikan pita ukur melingkar tepat di belakang bahu.", fallback_paths=["version/V3/assets/panjangbadan.png"])
+        show_image_safe("karkas.jpeg", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["lingkar_dada.png", "version/V3/assets/panjangbadan.png"])
 
 with guide_tab2:
     col1, col2 = st.columns([1, 1])
@@ -955,7 +1172,7 @@ with guide_tab2:
         > **Catatan**: Untuk memudahkan, Anda dapat menggunakan dua tongkat yang ditempatkan tegak lurus di depan bahu dan belakang tulang duduk, lalu ukur jarak antara keduanya.
         """)
     with col2:
-        show_image_safe("panjang_badan.png", "Cara mengukur panjang badan ternak.", fallback_paths=["panjangbadan.png"])
+        show_image_safe("karkas.jpeg", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["panjang_badan.png", "panjangbadan.png"])
 
 with guide_tab3:
     st.markdown("""
@@ -1040,13 +1257,42 @@ panjang_badan = st.sidebar.number_input(
     help=f"Ukur panjang badan ternak, yaitu dari ujung bahu hingga tulang duduk (tuber ischii). Rentang normal untuk {bangsa_ternak}: {length_range['min']}-{length_range['max']} cm."
 )
 
+st.sidebar.markdown("---")
+st.sidebar.subheader("Estimasi Ekonomi")
+harga_bobot_hidup = st.sidebar.number_input(
+    "Harga per kg bobot hidup (Rp)",
+    min_value=0,
+    value=65000 if jenis_ternak == "Sapi" else 90000,
+    step=1000,
+    help="Masukkan harga pasar per kg bobot hidup. Isi 0 jika tidak ingin menghitung nilai ekonomi."
+)
+harga_karkas = st.sidebar.number_input(
+    "Harga per kg karkas (Rp)",
+    min_value=0,
+    value=0,
+    step=1000,
+    help="Opsional. Digunakan untuk memperkirakan nilai karkas."
+)
+harga_daging = st.sidebar.number_input(
+    "Harga per kg daging (Rp)",
+    min_value=0,
+    value=0,
+    step=1000,
+    help="Opsional. Digunakan untuk memperkirakan nilai daging bersih."
+)
+
 # Tombol untuk menghitung berat badan
 # st.session_state digunakan agar hasil tidak hilang ketika slider/komponen lain berubah.
 if "show_results" not in st.session_state:
     st.session_state.show_results = False
+if "calculation_history" not in st.session_state:
+    st.session_state.calculation_history = []
+if "new_calculation" not in st.session_state:
+    st.session_state.new_calculation = False
 
 if st.sidebar.button("Hitung Berat Badan", type="primary"):
     st.session_state.show_results = True
+    st.session_state.new_calculation = True
 
 if st.session_state.show_results:
     # Add info message to guide users
@@ -1066,6 +1312,44 @@ if st.session_state.show_results:
     
     # Tampilkan hasil dalam kotak
     st.success(f"## Prediksi Berat Badan: **{berat_badan:.2f} kg**")
+
+    # Estimasi nilai ekonomi
+    nilai_hidup = berat_badan * harga_bobot_hidup
+    nilai_karkas = karkas_data["karkas_weight"] * harga_karkas
+    nilai_daging = karkas_data["meat_weight"] * harga_daging
+    status_ukuran, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
+
+    st.subheader("Estimasi Nilai Ekonomi")
+    econ_col1, econ_col2, econ_col3 = st.columns(3)
+    with econ_col1:
+        st.metric("Nilai Bobot Hidup", format_rupiah(nilai_hidup))
+        st.caption(f"Harga/kg: {format_rupiah(harga_bobot_hidup)}")
+    with econ_col2:
+        st.metric("Nilai Karkas", format_rupiah(nilai_karkas))
+        st.caption(f"Harga/kg: {format_rupiah(harga_karkas)}")
+    with econ_col3:
+        st.metric("Nilai Daging", format_rupiah(nilai_daging))
+        st.caption(f"Harga/kg: {format_rupiah(harga_daging)}")
+
+    st.info(f"**Status ukuran:** {status_ukuran}. {status_note}")
+
+    # Simpan riwayat hanya saat tombol hitung baru ditekan
+    if st.session_state.new_calculation:
+        st.session_state.calculation_history.append({
+            "Tanggal": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "Jenis Ternak": jenis_ternak,
+            "Bangsa Ternak": bangsa_ternak,
+            "Jenis Kelamin": jenis_kelamin,
+            "Lingkar Dada (cm)": lingkar_dada,
+            "Panjang Badan (cm)": panjang_badan,
+            "Prediksi Berat (kg)": round(berat_badan, 2),
+            "Berat Karkas (kg)": round(karkas_data["karkas_weight"], 2),
+            "Berat Daging (kg)": round(karkas_data["meat_weight"], 2),
+            "Status Ukuran": status_ukuran,
+            "Harga/kg Bobot Hidup": harga_bobot_hidup,
+            "Estimasi Nilai Ternak": round(nilai_hidup, 0),
+        })
+        st.session_state.new_calculation = False
     
     # Tampilkan detail perhitungan
     st.subheader("Detail Perhitungan:")
@@ -1084,6 +1368,41 @@ if st.session_state.show_results:
     - Panjang Badan (PB): **{panjang_badan} cm** (Rentang normal: {length_range['min']}-{length_range['max']} cm)
     - Berat Badan (BB) = **{berat_badan:.2f} kg**
     """)
+
+    st.subheader("Rekomendasi Otomatis")
+    for recommendation in generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin):
+        st.write(f"- {recommendation}")
+
+    report_data = {
+        "tanggal": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "jenis_ternak": jenis_ternak,
+        "bangsa_ternak": bangsa_ternak,
+        "jenis_kelamin": jenis_kelamin,
+        "lingkar_dada": lingkar_dada,
+        "panjang_badan": panjang_badan,
+        "formula_name": formula_name,
+        "berat_badan": berat_badan,
+        "karkas_weight": karkas_data["karkas_weight"],
+        "meat_weight": karkas_data["meat_weight"],
+        "bone_and_fat_weight": karkas_data["bone_and_fat_weight"],
+        "status_ukuran": status_ukuran,
+        "harga_hidup": harga_bobot_hidup,
+        "nilai_hidup": nilai_hidup,
+        "harga_karkas": harga_karkas,
+        "nilai_karkas": nilai_karkas,
+        "harga_daging": harga_daging,
+        "nilai_daging": nilai_daging,
+    }
+    pdf_bytes = create_pdf_report(report_data)
+    if pdf_bytes:
+        st.download_button(
+            label="📄 Download Laporan PDF",
+            data=pdf_bytes,
+            file_name=f"laporan_prediksi_{jenis_ternak.lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+            mime="application/pdf"
+        )
+    else:
+        st.warning("Fitur PDF membutuhkan package reportlab. Pastikan requirements.txt berisi reportlab.")
     
     # Tampilkan prediksi karkas, non-karkas, dan daging
     st.subheader("Prediksi Hasil Pemotongan:")
@@ -1684,6 +2003,79 @@ if st.session_state.show_results:
         
         # Tampilkan heatmap
         st.plotly_chart(fig, use_container_width=True)
+
+
+
+st.markdown("---")
+st.subheader("Riwayat Perhitungan dan Mode Banyak Ternak")
+riwayat_tab, batch_tab = st.tabs(["📋 Riwayat Perhitungan", "📤 Upload Banyak Ternak"])
+
+with riwayat_tab:
+    if st.session_state.calculation_history:
+        history_df = pd.DataFrame(st.session_state.calculation_history)
+        st.dataframe(history_df, use_container_width=True, hide_index=True)
+        st.download_button(
+            label="⬇️ Download Riwayat CSV",
+            data=history_df.to_csv(index=False).encode("utf-8"),
+            file_name="riwayat_prediksi_ternak.csv",
+            mime="text/csv"
+        )
+        if st.button("Hapus Riwayat"):
+            st.session_state.calculation_history = []
+            st.success("Riwayat perhitungan berhasil dihapus.")
+    else:
+        st.info("Belum ada riwayat. Klik tombol Hitung Berat Badan untuk menyimpan hasil ke riwayat.")
+
+with batch_tab:
+    st.markdown("""
+    Gunakan fitur ini untuk menghitung banyak ternak sekaligus dari file CSV atau Excel.
+
+    Kolom wajib:
+    - `Jenis Ternak`
+    - `Bangsa Ternak`
+    - `Jenis Kelamin`
+    - `Lingkar Dada`
+    - `Panjang Badan`
+
+    Kolom opsional:
+    - `Harga per Kg`
+    """)
+
+    template_df = pd.DataFrame({
+        "Jenis Ternak": ["Sapi", "Kambing", "Domba"],
+        "Bangsa Ternak": ["Sapi Bali", "Kambing Kacang", "Domba Garut"],
+        "Jenis Kelamin": ["Jantan", "Betina", "Jantan"],
+        "Lingkar Dada": [175, 65, 80],
+        "Panjang Badan": [150, 55, 70],
+        "Harga per Kg": [65000, 90000, 90000],
+    })
+
+    st.download_button(
+        label="⬇️ Download Template CSV",
+        data=template_df.to_csv(index=False).encode("utf-8"),
+        file_name="template_data_ternak.csv",
+        mime="text/csv"
+    )
+
+    uploaded_file = st.file_uploader("Upload CSV atau Excel", type=["csv", "xlsx"])
+    if uploaded_file is not None:
+        try:
+            if uploaded_file.name.lower().endswith(".csv"):
+                input_df = pd.read_csv(uploaded_file)
+            else:
+                input_df = pd.read_excel(uploaded_file)
+
+            batch_result_df = process_batch_dataframe(input_df)
+            st.success("Data berhasil diproses.")
+            st.dataframe(batch_result_df, use_container_width=True, hide_index=True)
+            st.download_button(
+                label="⬇️ Download Hasil CSV",
+                data=batch_result_df.to_csv(index=False).encode("utf-8"),
+                file_name="hasil_prediksi_banyak_ternak.csv",
+                mime="text/csv"
+            )
+        except Exception as exc:
+            st.error(f"Gagal memproses file: {exc}")
 
 # Footer with LinkedIn profile link and improved styling
 st.markdown("""

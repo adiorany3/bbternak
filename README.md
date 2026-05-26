@@ -1,6 +1,6 @@
 # Sapi Weight Predictor
 
-Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi estimasi karkas, non-karkas, daging, serta visualisasi data.
+Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan. Aplikasi dilengkapi estimasi karkas, non-karkas, daging, nilai ekonomi, laporan PDF, riwayat perhitungan, mode upload banyak ternak, dan visualisasi data.
 
 ## File Utama
 
@@ -21,12 +21,34 @@ sapi_weight_predictor_streamlit/
 ├── .streamlit/
 │   └── config.toml               # konfigurasi tema Streamlit
 ├── assets/
+│   ├── karkas.jpeg
 │   ├── lingkar_dada.png
 │   └── panjang_badan.png
 ├── run_app.sh                    # menjalankan lokal di Mac/Linux
 ├── run_app.bat                   # menjalankan lokal di Windows
 └── original_source.txt           # cadangan kode sumber awal
 ```
+
+## Fitur Tambahan Versi Ini
+
+- Estimasi nilai bobot hidup berdasarkan harga per kg.
+- Estimasi nilai karkas dan daging bersih.
+- Rekomendasi otomatis berdasarkan hasil prediksi dan ukuran ternak.
+- Download laporan hasil perhitungan dalam format PDF.
+- Riwayat perhitungan yang bisa diunduh sebagai CSV.
+- Upload data banyak ternak sekaligus melalui CSV atau Excel.
+- Template CSV untuk input data massal.
+
+## Dependency Tambahan
+
+Versi ini memakai dependency tambahan berikut:
+
+```text
+reportlab>=4.0
+openpyxl>=3.1
+```
+
+`reportlab` digunakan untuk membuat laporan PDF, sedangkan `openpyxl` digunakan agar file Excel `.xlsx` dapat dibaca.
 
 ## Cara Menjalankan di Laptop/PC
 
@@ -94,7 +116,7 @@ sapi_weight_predictor.py
 ## Catatan Penting untuk Streamlit Online
 
 - Jangan ubah nama `requirements.txt`.
-- Jangan hapus folder `assets`, karena gambar panduan pengukuran diambil dari folder tersebut.
+- Jangan hapus folder `assets`, karena gambar panduan diambil dari folder tersebut. Versi ini menggunakan file utama gambar `assets/karkas.jpeg`.
 - Jika aplikasi gagal membaca gambar, aplikasi tetap berjalan karena sudah disiapkan fallback pesan teks.
 - File utama sudah disesuaikan menjadi `sapi_weight_predictor.py`.
 
@@ -107,6 +129,11 @@ Versi ini sudah ditambahkan beberapa perbaikan aman:
 3. Ada validasi sederhana jika hasil berat badan terlihat ekstrem.
 4. Perhitungan persentase non-karkas dibuat aman dari pembagian dengan nol.
 5. Nama file utama disesuaikan untuk deploy Streamlit Online.
+6. Ditambahkan estimasi harga bobot hidup, karkas, dan daging.
+7. Ditambahkan laporan PDF yang bisa diunduh.
+8. Ditambahkan riwayat perhitungan dan download CSV.
+9. Ditambahkan mode upload banyak ternak melalui CSV/Excel.
+10. Ditambahkan rekomendasi otomatis dan status ukuran ternak.
 
 ## Catatan Akurasi
 
