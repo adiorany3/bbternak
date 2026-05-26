@@ -31,6 +31,7 @@ sapi_weight_predictor_streamlit/
 
 ## Fitur Tambahan Versi Ini
 
+- Harga default terbaru untuk bobot hidup, karkas, dan daging berdasarkan acuan pasar/pangan terbaru.
 - Estimasi nilai bobot hidup berdasarkan harga per kg.
 - Estimasi nilai karkas dan daging bersih.
 - Rekomendasi otomatis berdasarkan hasil prediksi dan ukuran ternak.
@@ -113,6 +114,29 @@ sapi_weight_predictor.py
 
 5. Klik **Deploy**.
 
+## Catatan Harga Default
+
+Versi ini memakai harga default berikut dan tetap dapat diedit manual di sidebar:
+
+```text
+Sapi
+- Bobot hidup: Rp55.000/kg
+- Karkas: Rp107.000/kg
+- Daging: Rp150.750/kg
+
+Kambing
+- Bobot hidup: Rp90.000/kg
+- Karkas: Rp135.000/kg
+- Daging: Rp155.000/kg
+
+Domba
+- Bobot hidup: Rp95.000/kg
+- Karkas: Rp135.000/kg
+- Daging: Rp150.000/kg
+```
+
+Catatan: harga sapi memakai acuan PIHPS/BI dan Bapanas terbaru yang ditemukan. Harga kambing/domba memakai acuan pasar/ritel terbaru dan sebaiknya disesuaikan dengan harga daerah.
+
 ## Catatan Penting untuk Streamlit Online
 
 - Jangan ubah nama `requirements.txt`.
@@ -134,6 +158,7 @@ Versi ini sudah ditambahkan beberapa perbaikan aman:
 8. Ditambahkan riwayat perhitungan dan download CSV.
 9. Ditambahkan mode upload banyak ternak melalui CSV/Excel.
 10. Ditambahkan rekomendasi otomatis dan status ukuran ternak.
+11. Harga per kg karkas dan harga per kg daging sekarang otomatis terisi default terbaru.
 
 ## Catatan Akurasi
 

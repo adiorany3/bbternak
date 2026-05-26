@@ -28,6 +28,33 @@ from pathlib import Path
 # Get current year for the footer
 current_year = datetime.now().year
 
+
+# Harga default terbaru yang dipakai aplikasi.
+# Catatan: Harga bersifat acuan nasional/pasar dan tetap dapat diubah manual oleh pengguna.
+LATEST_PRICE_DEFAULTS = {
+    "Sapi": {
+        "harga_bobot_hidup": 55000,
+        "harga_karkas": 107000,
+        "harga_daging": 150750,
+        "label": "Acuan terbaru sapi: bobot hidup Rp55.000/kg, karkas Rp107.000/kg, daging sapi kualitas I Rp150.750/kg.",
+        "source": "PIHPS/BI 25 Mei 2026; Bapanas Maret 2026; HAP Bapanas 2026."
+    },
+    "Kambing": {
+        "harga_bobot_hidup": 90000,
+        "harga_karkas": 135000,
+        "harga_daging": 155000,
+        "label": "Acuan pasar kambing terbaru: karkas sekitar Rp135.000/kg dan daging sekitar Rp155.000/kg.",
+        "source": "Acuan pasar online/ritel Mei 2026; sesuaikan dengan harga daerah."
+    },
+    "Domba": {
+        "harga_bobot_hidup": 95000,
+        "harga_karkas": 135000,
+        "harga_daging": 150000,
+        "label": "Acuan pasar domba terbaru: karkas sekitar Rp135.000/kg dan daging sekitar Rp150.000/kg.",
+        "source": "Acuan pasar online/ritel Mei 2026; sesuaikan dengan harga daerah."
+    }
+}
+
 # Path helper agar gambar tetap aman saat aplikasi dipindahkan/deploy
 BASE_DIR = Path(__file__).resolve().parent
 ASSET_DIR = BASE_DIR / "assets"
@@ -916,6 +943,22 @@ def format_rupiah(value):
     return "Rp{:,.0f}".format(value).replace(",", ".")
 
 
+def get_latest_price_defaults(jenis_ternak):
+    """Mengambil harga default terbaru berdasarkan jenis ternak."""
+    return LATEST_PRICE_DEFAULTS.get(jenis_ternak, LATEST_PRICE_DEFAULTS["Sapi"])
+
+
+def clean_price_value(value, fallback=0):
+    """Mengubah nilai harga menjadi float, memakai fallback jika kosong/NaN."""
+    try:
+        if pd.isna(value):
+            return float(fallback)
+        value = float(value)
+    except (TypeError, ValueError):
+        return float(fallback)
+    return value if value > 0 else float(fallback)
+
+
 def get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak):
     """Memberikan kategori sederhana berdasarkan posisi LD dan PB terhadap rentang normal bangsa ternak."""
     breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
@@ -1080,7 +1123,10 @@ def process_batch_dataframe(df):
             kelamin = str(row["Jenis Kelamin"]).strip()
             ld = float(row["Lingkar Dada"])
             pb = float(row["Panjang Badan"])
-            harga_hidup = float(row.get("Harga per Kg", 0) or 0)
+            price_defaults = get_latest_price_defaults(jenis)
+            harga_hidup = clean_price_value(row.get("Harga per Kg", 0), price_defaults["harga_bobot_hidup"])
+            harga_karkas_batch = clean_price_value(row.get("Harga per Kg Karkas", 0), price_defaults["harga_karkas"])
+            harga_daging_batch = clean_price_value(row.get("Harga per Kg Daging", 0), price_defaults["harga_daging"])
 
             berat, formula_name, formula_text = hitung_berat_badan(ld, pb, jenis, bangsa, kelamin)
             karkas = hitung_komponen_karkas(berat, jenis, bangsa, kelamin)
@@ -1099,7 +1145,11 @@ def process_batch_dataframe(df):
                 "Berat Daging (kg)": round(karkas["meat_weight"], 2),
                 "Status Ukuran": status,
                 "Harga per Kg": harga_hidup,
+                "Harga per Kg Karkas": harga_karkas_batch,
+                "Harga per Kg Daging": harga_daging_batch,
                 "Estimasi Nilai Ternak": round(berat * harga_hidup, 0),
+                "Estimasi Nilai Karkas": round(karkas["karkas_weight"] * harga_karkas_batch, 0),
+                "Estimasi Nilai Daging": round(karkas["meat_weight"] * harga_daging_batch, 0),
                 "Status Proses": "Berhasil",
             })
         except Exception as exc:
@@ -1116,7 +1166,11 @@ def process_batch_dataframe(df):
                 "Berat Daging (kg)": 0,
                 "Status Ukuran": "-",
                 "Harga per Kg": row.get("Harga per Kg", 0),
+                "Harga per Kg Karkas": row.get("Harga per Kg Karkas", 0),
+                "Harga per Kg Daging": row.get("Harga per Kg Daging", 0),
                 "Estimasi Nilai Ternak": 0,
+                "Estimasi Nilai Karkas": 0,
+                "Estimasi Nilai Daging": 0,
                 "Status Proses": f"Gagal: {exc}",
             })
 
@@ -1153,7 +1207,7 @@ with guide_tab1:
         > **Catatan Penting**: Pengukuran sebaiknya dilakukan pada pagi hari sebelum ternak diberi makan untuk menghindari pengembangan perut yang dapat mempengaruhi hasil pengukuran. Selain itu, pastikan ternak dalam keadaan seimbang dan tidak terlalu gelisah.
         """)
     with col2:
-        show_image_safe("assets/lingkar_dada.png", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["assets/lingkar_dada.png", "version/V3/assets/panjangbadan.png"])
+        show_image_safe("karkas.jpeg", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["lingkar_dada.png", "version/V3/assets/panjangbadan.png"])
 
 with guide_tab2:
     col1, col2 = st.columns([1, 1])
@@ -1172,7 +1226,7 @@ with guide_tab2:
         > **Catatan**: Untuk memudahkan, Anda dapat menggunakan dua tongkat yang ditempatkan tegak lurus di depan bahu dan belakang tulang duduk, lalu ukur jarak antara keduanya.
         """)
     with col2:
-        show_image_safe("assets/lingkar_dada.png", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["assets/panjang_badan.png", "panjangbadan.png"])
+        show_image_safe("karkas.jpeg", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["panjang_badan.png", "panjangbadan.png"])
 
 with guide_tab3:
     st.markdown("""
@@ -1205,6 +1259,11 @@ st.markdown(f"""
         Silakan pilih jenis dan bangsa ternak yang sesuai di sidebar untuk mendapatkan hasil yang lebih akurat.
         
         """)
+
+st.info(
+    "Harga ekonomi memakai default acuan terbaru yang tersedia, tetapi tetap dapat diedit manual "
+    "karena harga karkas dan daging berbeda antar daerah, kualitas potongan, dan waktu transaksi."
+)
 # with col2: # Removing this redundant image section
 # st.image("panjangbadan.png", caption="Panduan Pengukuran Panjang Badan, ref : https://vetmedicinae.com/cara-menghitung-berat-badan-sapi/", use_container_width=True)
 
@@ -1259,26 +1318,30 @@ panjang_badan = st.sidebar.number_input(
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Estimasi Ekonomi")
+latest_prices = get_latest_price_defaults(jenis_ternak)
+st.sidebar.caption(latest_prices["label"])
+st.sidebar.caption(f"Sumber/acuan: {latest_prices['source']}")
+
 harga_bobot_hidup = st.sidebar.number_input(
     "Harga per kg bobot hidup (Rp)",
     min_value=0,
-    value=65000 if jenis_ternak == "Sapi" else 90000,
+    value=int(latest_prices["harga_bobot_hidup"]),
     step=1000,
-    help="Masukkan harga pasar per kg bobot hidup. Isi 0 jika tidak ingin menghitung nilai ekonomi."
+    help="Harga default mengikuti acuan terbaru yang tersedia. Ubah manual jika harga daerah berbeda."
 )
 harga_karkas = st.sidebar.number_input(
     "Harga per kg karkas (Rp)",
     min_value=0,
-    value=0,
+    value=int(latest_prices["harga_karkas"]),
     step=1000,
-    help="Opsional. Digunakan untuk memperkirakan nilai karkas."
+    help="Harga default mengikuti acuan terbaru yang tersedia. Ubah manual jika harga daerah berbeda."
 )
 harga_daging = st.sidebar.number_input(
     "Harga per kg daging (Rp)",
     min_value=0,
-    value=0,
+    value=int(latest_prices["harga_daging"]),
     step=1000,
-    help="Opsional. Digunakan untuk memperkirakan nilai daging bersih."
+    help="Harga default mengikuti acuan terbaru yang tersedia. Ubah manual jika harga daerah berbeda."
 )
 
 # Tombol untuk menghitung berat badan
@@ -1347,7 +1410,11 @@ if st.session_state.show_results:
             "Berat Daging (kg)": round(karkas_data["meat_weight"], 2),
             "Status Ukuran": status_ukuran,
             "Harga/kg Bobot Hidup": harga_bobot_hidup,
+            "Harga/kg Karkas": harga_karkas,
+            "Harga/kg Daging": harga_daging,
             "Estimasi Nilai Ternak": round(nilai_hidup, 0),
+            "Estimasi Nilai Karkas": round(nilai_karkas, 0),
+            "Estimasi Nilai Daging": round(nilai_daging, 0),
         })
         st.session_state.new_calculation = False
     
@@ -2039,6 +2106,10 @@ with batch_tab:
 
     Kolom opsional:
     - `Harga per Kg`
+    - `Harga per Kg Karkas`
+    - `Harga per Kg Daging`
+
+    Jika kolom harga dikosongkan atau diisi 0, aplikasi memakai harga default terbaru berdasarkan jenis ternak.
     """)
 
     template_df = pd.DataFrame({
@@ -2047,7 +2118,9 @@ with batch_tab:
         "Jenis Kelamin": ["Jantan", "Betina", "Jantan"],
         "Lingkar Dada": [175, 65, 80],
         "Panjang Badan": [150, 55, 70],
-        "Harga per Kg": [65000, 90000, 90000],
+        "Harga per Kg": [LATEST_PRICE_DEFAULTS["Sapi"]["harga_bobot_hidup"], LATEST_PRICE_DEFAULTS["Kambing"]["harga_bobot_hidup"], LATEST_PRICE_DEFAULTS["Domba"]["harga_bobot_hidup"]],
+        "Harga per Kg Karkas": [LATEST_PRICE_DEFAULTS["Sapi"]["harga_karkas"], LATEST_PRICE_DEFAULTS["Kambing"]["harga_karkas"], LATEST_PRICE_DEFAULTS["Domba"]["harga_karkas"]],
+        "Harga per Kg Daging": [LATEST_PRICE_DEFAULTS["Sapi"]["harga_daging"], LATEST_PRICE_DEFAULTS["Kambing"]["harga_daging"], LATEST_PRICE_DEFAULTS["Domba"]["harga_daging"]],
     })
 
     st.download_button(
