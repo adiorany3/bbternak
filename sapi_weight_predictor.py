@@ -1165,6 +1165,152 @@ def calculate_maintenance_metrics(
     }
 
 
+def calculate_butcher_metrics(
+    karkas_data,
+    harga_beli_ternak,
+    harga_jual_daging,
+    harga_jual_tulang_lemak,
+    harga_jual_non_karkas,
+    biaya_pemotongan,
+    biaya_transportasi,
+    biaya_tenaga_kerja,
+    biaya_es_penyimpanan,
+    biaya_sewa_retribusi,
+    biaya_lain_lain,
+    target_margin_percent,
+):
+    """Menghitung estimasi omzet, biaya, profit, ROI, dan harga beli maksimal untuk jagal."""
+    meat_weight = float(karkas_data.get("meat_weight", 0) or 0)
+    bone_fat_weight = float(karkas_data.get("bone_and_fat_weight", 0) or 0)
+    non_karkas_weights = karkas_data.get("non_karkas_weights", {}) or {}
+    non_karkas_total = sum(float(value or 0) for value in non_karkas_weights.values())
+
+    harga_beli_ternak = max(0, float(harga_beli_ternak or 0))
+    harga_jual_daging = max(0, float(harga_jual_daging or 0))
+    harga_jual_tulang_lemak = max(0, float(harga_jual_tulang_lemak or 0))
+    harga_jual_non_karkas = max(0, float(harga_jual_non_karkas or 0))
+
+    biaya_pemotongan = max(0, float(biaya_pemotongan or 0))
+    biaya_transportasi = max(0, float(biaya_transportasi or 0))
+    biaya_tenaga_kerja = max(0, float(biaya_tenaga_kerja or 0))
+    biaya_es_penyimpanan = max(0, float(biaya_es_penyimpanan or 0))
+    biaya_sewa_retribusi = max(0, float(biaya_sewa_retribusi or 0))
+    biaya_lain_lain = max(0, float(biaya_lain_lain or 0))
+    target_margin_percent = max(0, float(target_margin_percent or 0))
+
+    omzet_daging = meat_weight * harga_jual_daging
+    omzet_tulang_lemak = bone_fat_weight * harga_jual_tulang_lemak
+    omzet_non_karkas = non_karkas_total * harga_jual_non_karkas
+    omzet_total = omzet_daging + omzet_tulang_lemak + omzet_non_karkas
+
+    biaya_operasional = (
+        biaya_pemotongan
+        + biaya_transportasi
+        + biaya_tenaga_kerja
+        + biaya_es_penyimpanan
+        + biaya_sewa_retribusi
+        + biaya_lain_lain
+    )
+
+    total_modal = harga_beli_ternak + biaya_operasional
+    profit = omzet_total - total_modal
+    roi_percent = (profit / total_modal * 100) if total_modal > 0 else 0
+
+    target_profit = omzet_total * (target_margin_percent / 100)
+    break_even_buy_price = omzet_total - biaya_operasional
+    max_buy_price = break_even_buy_price - target_profit
+
+    if profit < 0:
+        decision = "Berisiko Rugi"
+        decision_note = "Estimasi omzet belum menutup harga beli dan biaya operasional."
+    elif roi_percent < target_margin_percent:
+        decision = "Perlu Negosiasi"
+        decision_note = "Masih profit, tetapi belum mencapai target margin."
+    else:
+        decision = "Layak Dibeli"
+        decision_note = "Estimasi profit sudah memenuhi target margin."
+
+    return {
+        "meat_weight": meat_weight,
+        "bone_fat_weight": bone_fat_weight,
+        "non_karkas_total": non_karkas_total,
+        "omzet_daging": omzet_daging,
+        "omzet_tulang_lemak": omzet_tulang_lemak,
+        "omzet_non_karkas": omzet_non_karkas,
+        "omzet_total": omzet_total,
+        "biaya_operasional": biaya_operasional,
+        "total_modal": total_modal,
+        "profit": profit,
+        "roi_percent": roi_percent,
+        "target_profit": target_profit,
+        "break_even_buy_price": break_even_buy_price,
+        "max_buy_price": max_buy_price,
+        "decision": decision,
+        "decision_note": decision_note,
+    }
+
+
+def create_butcher_component_dataframe(karkas_data, harga_jual_daging, harga_jual_tulang_lemak, harga_jual_non_karkas):
+    """Membuat tabel ringkas komponen hasil potong untuk jagal."""
+    meat_weight = float(karkas_data.get("meat_weight", 0) or 0)
+    bone_fat_weight = float(karkas_data.get("bone_and_fat_weight", 0) or 0)
+    non_karkas_weights = karkas_data.get("non_karkas_weights", {}) or {}
+    non_karkas_total = sum(float(value or 0) for value in non_karkas_weights.values())
+
+    rows = [
+        {
+            "Komponen": "Daging bersih",
+            "Estimasi Berat (kg)": round(meat_weight, 2),
+            "Harga/kg": format_rupiah(harga_jual_daging),
+            "Estimasi Nilai": format_rupiah(meat_weight * harga_jual_daging),
+        },
+        {
+            "Komponen": "Tulang & lemak karkas",
+            "Estimasi Berat (kg)": round(bone_fat_weight, 2),
+            "Harga/kg": format_rupiah(harga_jual_tulang_lemak),
+            "Estimasi Nilai": format_rupiah(bone_fat_weight * harga_jual_tulang_lemak),
+        },
+        {
+            "Komponen": "Non-karkas gabungan",
+            "Estimasi Berat (kg)": round(non_karkas_total, 2),
+            "Harga/kg": format_rupiah(harga_jual_non_karkas),
+            "Estimasi Nilai": format_rupiah(non_karkas_total * harga_jual_non_karkas),
+        },
+    ]
+
+    return pd.DataFrame(rows)
+
+
+def create_non_karkas_detail_dataframe(karkas_data, harga_jual_non_karkas):
+    """Membuat tabel detail komponen non-karkas untuk jagal."""
+    rows = []
+    for component, weight in (karkas_data.get("non_karkas_weights", {}) or {}).items():
+        rows.append({
+            "Komponen Non-Karkas": component,
+            "Estimasi Berat (kg)": round(float(weight or 0), 2),
+            "Estimasi Nilai": format_rupiah(float(weight or 0) * harga_jual_non_karkas),
+        })
+    return pd.DataFrame(rows)
+
+
+def generate_butcher_recommendations(metrics):
+    """Membuat rekomendasi keputusan untuk jagal."""
+    recommendations = [
+        f"Keputusan awal: {metrics['decision']}. {metrics['decision_note']}",
+        f"Harga beli impas maksimal sekitar {format_rupiah(metrics['break_even_buy_price'])}.",
+        f"Harga beli maksimal agar memenuhi target margin sekitar {format_rupiah(max(0, metrics['max_buy_price']))}.",
+    ]
+
+    if metrics["profit"] < 0:
+        recommendations.append("Disarankan negosiasi harga beli, naikkan harga jual, atau cek ulang estimasi hasil potong.")
+    elif metrics["roi_percent"] < 10:
+        recommendations.append("Margin masih tipis. Tambahkan cadangan risiko untuk susut, kerusakan, atau harga pasar turun.")
+    else:
+        recommendations.append("Margin relatif aman berdasarkan harga dan biaya yang dimasukkan.")
+
+    return recommendations
+
+
 
 def calculate_input_accuracy_score(
     lingkar_dada,
@@ -1877,11 +2023,12 @@ if st.session_state.show_results:
     # Area hasil dibuat bertab agar fokus utama tetap pada hitung berat badan.
     status_ukuran, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
 
-    hasil_tab, target_tab, ekonomi_tab, biaya_tab = st.tabs([
+    hasil_tab, target_tab, ekonomi_tab, biaya_tab, jagal_tab = st.tabs([
         "⚖️ Hitung Berat Badan",
         "🎯 Simulasi Target Berat",
         "💰 Estimasi Ekonomi",
         "📊 Biaya & Keuntungan",
+        "🔪 Kalkulator Jagal",
     ])
 
     with hasil_tab:
@@ -2194,6 +2341,191 @@ if st.session_state.show_results:
         elif business_metrics["total_modal"] > 0:
             st.success("Estimasi keuntungan positif berdasarkan data biaya dan harga jual yang dimasukkan.")
 
+
+    with jagal_tab:
+        st.markdown("#### Kalkulator Jagal")
+        st.write(
+            "Fitur ini membantu memperkirakan omzet hasil potong, total modal, keuntungan, ROI, "
+            "harga beli impas, dan harga beli maksimal agar tidak melewati target margin."
+        )
+
+        default_harga_beli_jagal = int(round(nilai_hidup, 0)) if "nilai_hidup" in locals() else 0
+        default_harga_daging_jagal = int(harga_daging) if "harga_daging" in locals() else int(latest_prices["harga_daging"])
+
+        jagal_col1, jagal_col2, jagal_col3 = st.columns(3)
+        with jagal_col1:
+            harga_beli_ternak_jagal = st.number_input(
+                "Harga beli ternak (Rp)",
+                min_value=0,
+                value=default_harga_beli_jagal,
+                step=100000,
+                key="harga_beli_ternak_jagal",
+                help="Harga beli aktual dari ternak hidup."
+            )
+            harga_jual_daging_jagal = st.number_input(
+                "Harga jual daging/kg (Rp)",
+                min_value=0,
+                value=default_harga_daging_jagal,
+                step=1000,
+                key="harga_jual_daging_jagal",
+            )
+            biaya_pemotongan_jagal = st.number_input(
+                "Biaya pemotongan (Rp)",
+                min_value=0,
+                value=0,
+                step=50000,
+                key="biaya_pemotongan_jagal",
+            )
+        with jagal_col2:
+            harga_jual_tulang_lemak_jagal = st.number_input(
+                "Harga jual tulang & lemak/kg (Rp)",
+                min_value=0,
+                value=30000,
+                step=1000,
+                key="harga_jual_tulang_lemak_jagal",
+            )
+            biaya_transportasi_jagal = st.number_input(
+                "Biaya transportasi (Rp)",
+                min_value=0,
+                value=0,
+                step=50000,
+                key="biaya_transportasi_jagal",
+            )
+            biaya_tenaga_kerja_jagal = st.number_input(
+                "Biaya tenaga kerja (Rp)",
+                min_value=0,
+                value=0,
+                step=50000,
+                key="biaya_tenaga_kerja_jagal",
+            )
+        with jagal_col3:
+            harga_jual_non_karkas_jagal = st.number_input(
+                "Harga non-karkas rata-rata/kg (Rp)",
+                min_value=0,
+                value=25000,
+                step=1000,
+                key="harga_jual_non_karkas_jagal",
+                help="Dipakai sebagai pendekatan untuk kepala, kulit, kaki, ekor, jeroan, darah, dan komponen non-karkas lain."
+            )
+            biaya_es_penyimpanan_jagal = st.number_input(
+                "Biaya es/penyimpanan (Rp)",
+                min_value=0,
+                value=0,
+                step=25000,
+                key="biaya_es_penyimpanan_jagal",
+            )
+            biaya_sewa_retribusi_jagal = st.number_input(
+                "Biaya sewa/retribusi (Rp)",
+                min_value=0,
+                value=0,
+                step=25000,
+                key="biaya_sewa_retribusi_jagal",
+            )
+
+        extra_col1, extra_col2 = st.columns(2)
+        with extra_col1:
+            biaya_lain_lain_jagal = st.number_input(
+                "Biaya lain-lain jagal (Rp)",
+                min_value=0,
+                value=0,
+                step=25000,
+                key="biaya_lain_lain_jagal",
+            )
+        with extra_col2:
+            target_margin_jagal = st.slider(
+                "Target margin jagal (%)",
+                min_value=0,
+                max_value=40,
+                value=10,
+                step=1,
+                key="target_margin_jagal",
+                help="Dipakai untuk menghitung harga beli maksimal agar target margin tercapai."
+            )
+
+        jagal_metrics = calculate_butcher_metrics(
+            karkas_data=karkas_data,
+            harga_beli_ternak=harga_beli_ternak_jagal,
+            harga_jual_daging=harga_jual_daging_jagal,
+            harga_jual_tulang_lemak=harga_jual_tulang_lemak_jagal,
+            harga_jual_non_karkas=harga_jual_non_karkas_jagal,
+            biaya_pemotongan=biaya_pemotongan_jagal,
+            biaya_transportasi=biaya_transportasi_jagal,
+            biaya_tenaga_kerja=biaya_tenaga_kerja_jagal,
+            biaya_es_penyimpanan=biaya_es_penyimpanan_jagal,
+            biaya_sewa_retribusi=biaya_sewa_retribusi_jagal,
+            biaya_lain_lain=biaya_lain_lain_jagal,
+            target_margin_percent=target_margin_jagal,
+        )
+
+        st.markdown("#### Ringkasan Keputusan Jagal")
+        decision_col1, decision_col2, decision_col3, decision_col4 = st.columns(4)
+        with decision_col1:
+            st.metric("Omzet Estimasi", format_rupiah(jagal_metrics["omzet_total"]))
+        with decision_col2:
+            st.metric("Total Modal", format_rupiah(jagal_metrics["total_modal"]))
+        with decision_col3:
+            st.metric("Estimasi Profit", format_rupiah(jagal_metrics["profit"]))
+            st.caption(f"ROI: {jagal_metrics['roi_percent']:.1f}%")
+        with decision_col4:
+            st.metric("Keputusan", jagal_metrics["decision"])
+
+        if jagal_metrics["decision"] == "Layak Dibeli":
+            st.success(jagal_metrics["decision_note"])
+        elif jagal_metrics["decision"] == "Perlu Negosiasi":
+            st.warning(jagal_metrics["decision_note"])
+        else:
+            st.error(jagal_metrics["decision_note"])
+
+        st.markdown("#### Harga Beli Maksimal")
+        buy_col1, buy_col2, buy_col3 = st.columns(3)
+        with buy_col1:
+            st.metric("Harga Beli Impas", format_rupiah(jagal_metrics["break_even_buy_price"]))
+        with buy_col2:
+            st.metric("Harga Beli Maks. Target Margin", format_rupiah(max(0, jagal_metrics["max_buy_price"])))
+        with buy_col3:
+            st.metric("Target Profit", format_rupiah(jagal_metrics["target_profit"]))
+
+        st.markdown("#### Estimasi Hasil Potong")
+        component_df = create_butcher_component_dataframe(
+            karkas_data,
+            harga_jual_daging_jagal,
+            harga_jual_tulang_lemak_jagal,
+            harga_jual_non_karkas_jagal,
+        )
+        st.dataframe(component_df, use_container_width=True, hide_index=True)
+
+        with st.expander("Lihat detail non-karkas"):
+            non_karkas_detail_df = create_non_karkas_detail_dataframe(
+                karkas_data,
+                harga_jual_non_karkas_jagal,
+            )
+            st.dataframe(non_karkas_detail_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Rincian Biaya Jagal")
+        jagal_cost_df = pd.DataFrame([
+            {"Komponen": "Harga beli ternak", "Nilai": harga_beli_ternak_jagal},
+            {"Komponen": "Biaya pemotongan", "Nilai": biaya_pemotongan_jagal},
+            {"Komponen": "Biaya transportasi", "Nilai": biaya_transportasi_jagal},
+            {"Komponen": "Biaya tenaga kerja", "Nilai": biaya_tenaga_kerja_jagal},
+            {"Komponen": "Biaya es/penyimpanan", "Nilai": biaya_es_penyimpanan_jagal},
+            {"Komponen": "Biaya sewa/retribusi", "Nilai": biaya_sewa_retribusi_jagal},
+            {"Komponen": "Biaya lain-lain", "Nilai": biaya_lain_lain_jagal},
+            {"Komponen": "Biaya operasional", "Nilai": jagal_metrics["biaya_operasional"]},
+            {"Komponen": "Total modal", "Nilai": jagal_metrics["total_modal"]},
+        ])
+        jagal_cost_df["Nilai"] = jagal_cost_df["Nilai"].apply(format_rupiah)
+        st.dataframe(jagal_cost_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Rekomendasi Jagal")
+        for recommendation in generate_butcher_recommendations(jagal_metrics):
+            st.write(f"- {recommendation}")
+
+        st.caption(
+            "Catatan: nilai non-karkas memakai harga rata-rata gabungan. Untuk transaksi aktual, "
+            "harga kulit, kepala, kaki, jeroan, dan komponen lain sebaiknya disesuaikan dengan pasar setempat."
+        )
+
+
     # Simpan riwayat hanya saat tombol hitung baru ditekan
     if st.session_state.new_calculation:
         st.session_state.calculation_history.append({
@@ -2224,6 +2556,11 @@ if st.session_state.show_results:
             "Total Modal": round(business_metrics["total_modal"], 0),
             "Estimasi Keuntungan": round(business_metrics["estimasi_keuntungan"], 0),
             "ROI (%)": round(business_metrics["roi_percent"], 2),
+            "Omzet Jagal": round(jagal_metrics["omzet_total"], 0) if "jagal_metrics" in locals() else 0,
+            "Profit Jagal": round(jagal_metrics["profit"], 0) if "jagal_metrics" in locals() else 0,
+            "ROI Jagal (%)": round(jagal_metrics["roi_percent"], 2) if "jagal_metrics" in locals() else 0,
+            "Keputusan Jagal": jagal_metrics["decision"] if "jagal_metrics" in locals() else "-",
+            "Harga Beli Maksimal Jagal": round(max(0, jagal_metrics["max_buy_price"]), 0) if "jagal_metrics" in locals() else 0,
         })
         st.session_state.new_calculation = False
     
