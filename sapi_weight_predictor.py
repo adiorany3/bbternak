@@ -1486,6 +1486,296 @@ def create_decision_checklist(insights, jagal_metrics=None):
     checklist.append("Cocokkan kembali harga daging, tulang/lemak, dan non-karkas dengan pasar setempat.")
     return checklist
 
+
+
+def calculate_trader_resale_score(
+    berat_badan,
+    jenis_ternak,
+    status_ukuran,
+    bcs_option,
+    accuracy_score,
+    trader_margin,
+    trader_roi,
+):
+    """Menghitung skor daya jual ternak dari kacamata blantik."""
+    score = 50
+
+    if accuracy_score >= 85:
+        score += 15
+    elif accuracy_score >= 70:
+        score += 10
+    elif accuracy_score >= 55:
+        score += 4
+    else:
+        score -= 8
+
+    if status_ukuran in ["Normal", "Besar"]:
+        score += 12
+    elif status_ukuran == "Sangat Besar":
+        score += 6
+    else:
+        score -= 5
+
+    if bcs_option == "3 - Sedang/Ideal":
+        score += 15
+    elif bcs_option in ["2 - Kurus", "4 - Gemuk"]:
+        score += 5
+    elif bcs_option in ["1 - Sangat Kurus", "5 - Sangat Gemuk"]:
+        score -= 8
+
+    if trader_margin > 0:
+        score += 8
+    else:
+        score -= 12
+
+    if trader_roi >= 15:
+        score += 10
+    elif trader_roi >= 8:
+        score += 6
+    elif trader_roi > 0:
+        score += 2
+    else:
+        score -= 8
+
+    if jenis_ternak == "Sapi" and berat_badan >= 250:
+        score += 5
+    elif jenis_ternak in ["Kambing", "Domba"] and berat_badan >= 25:
+        score += 5
+
+    score = max(0, min(100, int(round(score))))
+
+    if score >= 85:
+        category = "Sangat Mudah Dijual"
+    elif score >= 70:
+        category = "Mudah Dijual"
+    elif score >= 55:
+        category = "Cukup"
+    else:
+        category = "Sulit Dijual"
+
+    return score, category
+
+
+def determine_buyer_segments(jenis_ternak, berat_badan, bcs_option, status_ukuran):
+    """Menentukan segmentasi calon pembeli potensial."""
+    segments = []
+
+    if jenis_ternak == "Sapi":
+        if berat_badan >= 250 and bcs_option in ["2 - Kurus", "3 - Sedang/Ideal", "4 - Gemuk", "Tidak dinilai"]:
+            segments.append("Pembeli kurban")
+        if berat_badan >= 300:
+            segments.append("Jagal / pemotong")
+        if bcs_option in ["1 - Sangat Kurus", "2 - Kurus"] and status_ukuran in ["Normal", "Besar"]:
+            segments.append("Peternak penggemukan")
+        segments.append("Pedagang pasar hewan")
+    else:
+        if berat_badan >= 22 and bcs_option in ["2 - Kurus", "3 - Sedang/Ideal", "4 - Gemuk", "Tidak dinilai"]:
+            segments.append("Pembeli kurban")
+        if berat_badan >= 25:
+            segments.append("Jagal kecil / pedagang daging")
+        if bcs_option in ["1 - Sangat Kurus", "2 - Kurus"]:
+            segments.append("Peternak penggemukan")
+        segments.append("Pedagang pasar hewan")
+
+    # Hapus duplikat sambil menjaga urutan
+    unique_segments = []
+    for segment in segments:
+        if segment not in unique_segments:
+            unique_segments.append(segment)
+
+    return unique_segments
+
+
+def determine_trader_strategy(bcs_option, trader_margin, trader_roi, resale_score, status_ukuran):
+    """Menentukan strategi jual dari kacamata blantik."""
+    if trader_margin < 0:
+        return "Tahan / Jangan Deal", "Margin masih negatif pada harga dan biaya yang dimasukkan."
+    if bcs_option in ["1 - Sangat Kurus", "2 - Kurus"] and status_ukuran in ["Normal", "Besar"]:
+        return "Penggemukan Lanjutan", "BCS masih bisa dinaikkan sehingga ada peluang peningkatan nilai jual."
+    if resale_score >= 75 and trader_roi >= 10:
+        return "Jual Cepat", "Daya jual dan margin cukup baik sehingga cocok untuk perputaran cepat."
+    if trader_roi < 8:
+        return "Perlu Negosiasi", "ROI masih tipis; harga beli atau biaya operasional perlu ditekan."
+    return "Tahan 2–4 Minggu", "Masih ada peluang optimasi harga jual atau kondisi tubuh sebelum dijual."
+
+
+def calculate_trader_insights(
+    berat_badan,
+    jenis_ternak,
+    bangsa_ternak,
+    status_ukuran,
+    bcs_option,
+    accuracy_score,
+    harga_beli,
+    harga_jual_per_kg,
+    biaya_angkut,
+    biaya_pakan_harian,
+    lama_tahan_hari,
+    biaya_kandang,
+    biaya_retribusi,
+    biaya_tenaga_bantu,
+    biaya_lain,
+    target_margin_percent,
+):
+    """Menghitung insight transaksi dari kacamata blantik ternak."""
+    berat_badan = max(0, float(berat_badan or 0))
+    harga_beli = max(0, float(harga_beli or 0))
+    harga_jual_per_kg = max(0, float(harga_jual_per_kg or 0))
+    biaya_angkut = max(0, float(biaya_angkut or 0))
+    biaya_pakan_harian = max(0, float(biaya_pakan_harian or 0))
+    lama_tahan_hari = max(0, float(lama_tahan_hari or 0))
+    biaya_kandang = max(0, float(biaya_kandang or 0))
+    biaya_retribusi = max(0, float(biaya_retribusi or 0))
+    biaya_tenaga_bantu = max(0, float(biaya_tenaga_bantu or 0))
+    biaya_lain = max(0, float(biaya_lain or 0))
+    target_margin_percent = max(0, float(target_margin_percent or 0))
+
+    estimasi_harga_jual = berat_badan * harga_jual_per_kg
+    biaya_pakan_total = biaya_pakan_harian * lama_tahan_hari
+    total_biaya_tambahan = (
+        biaya_angkut
+        + biaya_pakan_total
+        + biaya_kandang
+        + biaya_retribusi
+        + biaya_tenaga_bantu
+        + biaya_lain
+    )
+    total_modal = harga_beli + total_biaya_tambahan
+    margin_bersih = estimasi_harga_jual - total_modal
+    roi = (margin_bersih / total_modal * 100) if total_modal > 0 else 0
+
+    target_profit = estimasi_harga_jual * (target_margin_percent / 100)
+    harga_beli_impas = estimasi_harga_jual - total_biaya_tambahan
+    harga_beli_maksimal = harga_beli_impas - target_profit
+    harga_beli_ideal = harga_beli_maksimal * 0.95 if harga_beli_maksimal > 0 else 0
+
+    resale_score, resale_category = calculate_trader_resale_score(
+        berat_badan,
+        jenis_ternak,
+        status_ukuran,
+        bcs_option,
+        accuracy_score,
+        margin_bersih,
+        roi,
+    )
+
+    buyer_segments = determine_buyer_segments(
+        jenis_ternak,
+        berat_badan,
+        bcs_option,
+        status_ukuran,
+    )
+
+    strategy, strategy_note = determine_trader_strategy(
+        bcs_option,
+        margin_bersih,
+        roi,
+        resale_score,
+        status_ukuran,
+    )
+
+    if margin_bersih < 0:
+        decision = "Berisiko Rugi"
+        decision_note = "Harga beli dan biaya tambahan lebih besar dari estimasi harga jual."
+    elif roi < target_margin_percent:
+        decision = "Perlu Negosiasi"
+        decision_note = "Masih ada margin, tetapi belum mencapai target margin."
+    elif resale_score < 55:
+        decision = "Tahan Dulu"
+        decision_note = "Margin bisa positif, tetapi daya jual masih perlu diperbaiki."
+    else:
+        decision = "Layak Dibeli"
+        decision_note = "Margin, daya jual, dan strategi masih cukup mendukung transaksi."
+
+    risk_level = "Rendah"
+    risk_notes = []
+    if margin_bersih < 0:
+        risk_level = "Tinggi"
+        risk_notes.append("Margin bersih negatif.")
+    if roi < target_margin_percent:
+        risk_level = "Sedang" if risk_level != "Tinggi" else risk_level
+        risk_notes.append("ROI belum mencapai target margin.")
+    if accuracy_score < 70:
+        risk_level = "Sedang" if risk_level != "Tinggi" else risk_level
+        risk_notes.append("Skor akurasi input belum kuat.")
+    if bcs_option in ["1 - Sangat Kurus", "5 - Sangat Gemuk"]:
+        risk_level = "Sedang" if risk_level != "Tinggi" else risk_level
+        risk_notes.append("BCS ekstrem dapat menyulitkan jual ulang.")
+    if not risk_notes:
+        risk_notes.append("Risiko utama relatif terkendali berdasarkan input saat ini.")
+
+    return {
+        "estimasi_harga_jual": estimasi_harga_jual,
+        "biaya_pakan_total": biaya_pakan_total,
+        "total_biaya_tambahan": total_biaya_tambahan,
+        "total_modal": total_modal,
+        "margin_bersih": margin_bersih,
+        "roi": roi,
+        "target_profit": target_profit,
+        "harga_beli_impas": harga_beli_impas,
+        "harga_beli_maksimal": harga_beli_maksimal,
+        "harga_beli_ideal": harga_beli_ideal,
+        "resale_score": resale_score,
+        "resale_category": resale_category,
+        "buyer_segments": buyer_segments,
+        "strategy": strategy,
+        "strategy_note": strategy_note,
+        "decision": decision,
+        "decision_note": decision_note,
+        "risk_level": risk_level,
+        "risk_notes": risk_notes,
+    }
+
+
+def create_trader_sensitivity_dataframe(
+    berat_badan,
+    harga_beli,
+    harga_jual_per_kg,
+    total_biaya_tambahan,
+):
+    """Membuat simulasi sensitivitas margin blantik jika harga jual/kg berubah."""
+    rows = []
+    for change_percent in [-10, -5, 0, 5, 10]:
+        adjusted_price = harga_jual_per_kg * (1 + change_percent / 100)
+        estimated_sale = berat_badan * adjusted_price
+        margin = estimated_sale - harga_beli - total_biaya_tambahan
+        total_modal = harga_beli + total_biaya_tambahan
+        roi = (margin / total_modal * 100) if total_modal > 0 else 0
+        rows.append({
+            "Perubahan Harga Jual/kg": f"{change_percent:+.0f}%",
+            "Harga Jual/kg": format_rupiah(adjusted_price),
+            "Estimasi Harga Jual": format_rupiah(estimated_sale),
+            "Margin Bersih": format_rupiah(margin),
+            "ROI": f"{roi:.1f}%",
+        })
+
+    return pd.DataFrame(rows)
+
+
+def create_trader_checklist(trader_insights):
+    """Membuat checklist tindakan untuk blantik ternak."""
+    checklist = [
+        "Cek fisik langsung: mata, hidung, kaki, nafsu makan, dan kondisi kulit.",
+        "Verifikasi umur, riwayat kesehatan, dan status kepemilikan sebelum transaksi.",
+        "Bandingkan harga/kg dengan harga pasar lokal pada hari transaksi.",
+    ]
+
+    if trader_insights["decision"] == "Berisiko Rugi":
+        checklist.insert(0, "Jangan deal sebelum harga beli turun atau harga jual ulang lebih jelas.")
+    elif trader_insights["decision"] == "Perlu Negosiasi":
+        checklist.insert(0, "Negosiasikan harga beli mendekati batas harga beli maksimal.")
+    elif trader_insights["decision"] == "Tahan Dulu":
+        checklist.insert(0, "Pertimbangkan penggemukan/penahanan singkat sebelum jual ulang.")
+    else:
+        checklist.insert(0, "Deal masih layak dipertimbangkan jika pemeriksaan fisik sesuai.")
+
+    if trader_insights["strategy"] == "Penggemukan Lanjutan":
+        checklist.append("Siapkan pakan dan estimasi lama tahan agar biaya tidak menggerus margin.")
+    elif trader_insights["strategy"] == "Jual Cepat":
+        checklist.append("Prioritaskan calon pembeli yang sudah siap agar perputaran modal cepat.")
+
+    return checklist
+
 def calculate_input_accuracy_score(
     lingkar_dada,
     panjang_badan,
@@ -2197,13 +2487,14 @@ if st.session_state.show_results:
     # Area hasil dibuat bertab agar fokus utama tetap pada hitung berat badan.
     status_ukuran, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
 
-    hasil_tab, target_tab, ekonomi_tab, biaya_tab, jagal_tab, insight_tab = st.tabs([
+    hasil_tab, target_tab, ekonomi_tab, biaya_tab, jagal_tab, insight_tab, blantik_tab = st.tabs([
         "⚖️ Hitung Berat Badan",
         "🎯 Simulasi Target Berat",
         "💰 Estimasi Ekonomi",
         "📊 Biaya & Keuntungan",
         "🔪 Kalkulator Jagal",
         "📈 Insight Analisis",
+        "🤝 Insight Blantik",
     ])
 
     with hasil_tab:
@@ -2802,6 +3093,194 @@ if st.session_state.show_results:
         )
 
 
+
+    with blantik_tab:
+        st.markdown("#### Insight Blantik Ternak")
+        st.write(
+            "Tab ini membantu membaca transaksi dari sudut pandang blantik: harga beli wajar, "
+            "harga jual kembali, margin, batas nego, daya jual, segmentasi pembeli, dan strategi jual."
+        )
+
+        default_harga_beli_blantik = int(round(nilai_hidup, 0)) if "nilai_hidup" in locals() else int(round(berat_badan * latest_prices["harga_bobot_hidup"], 0))
+        default_harga_jual_blantik = int(harga_bobot_hidup) if "harga_bobot_hidup" in locals() else int(latest_prices["harga_bobot_hidup"])
+
+        blantik_col1, blantik_col2, blantik_col3 = st.columns(3)
+        with blantik_col1:
+            harga_beli_blantik = st.number_input(
+                "Harga beli ternak (Rp)",
+                min_value=0,
+                value=default_harga_beli_blantik,
+                step=100000,
+                key="harga_beli_blantik",
+            )
+            biaya_angkut_blantik = st.number_input(
+                "Biaya angkut (Rp)",
+                min_value=0,
+                value=0,
+                step=50000,
+                key="biaya_angkut_blantik",
+            )
+            biaya_kandang_blantik = st.number_input(
+                "Biaya kandang/pasar (Rp)",
+                min_value=0,
+                value=0,
+                step=25000,
+                key="biaya_kandang_blantik",
+            )
+        with blantik_col2:
+            harga_jual_per_kg_blantik = st.number_input(
+                "Estimasi harga jual/kg bobot hidup (Rp)",
+                min_value=0,
+                value=default_harga_jual_blantik,
+                step=1000,
+                key="harga_jual_per_kg_blantik",
+            )
+            biaya_pakan_harian_blantik = st.number_input(
+                "Biaya pakan harian (Rp)",
+                min_value=0,
+                value=0,
+                step=5000,
+                key="biaya_pakan_harian_blantik",
+            )
+            biaya_retribusi_blantik = st.number_input(
+                "Biaya retribusi/pasar (Rp)",
+                min_value=0,
+                value=0,
+                step=25000,
+                key="biaya_retribusi_blantik",
+            )
+        with blantik_col3:
+            target_margin_blantik = st.slider(
+                "Target margin blantik (%)",
+                min_value=0,
+                max_value=40,
+                value=10,
+                step=1,
+                key="target_margin_blantik",
+            )
+            lama_tahan_hari_blantik = st.number_input(
+                "Lama tahan sebelum jual (hari)",
+                min_value=0,
+                value=0,
+                step=1,
+                key="lama_tahan_hari_blantik",
+            )
+            biaya_tenaga_bantu_blantik = st.number_input(
+                "Biaya tenaga bantu (Rp)",
+                min_value=0,
+                value=0,
+                step=25000,
+                key="biaya_tenaga_bantu_blantik",
+            )
+
+        biaya_lain_blantik = st.number_input(
+            "Biaya lain-lain blantik (Rp)",
+            min_value=0,
+            value=0,
+            step=25000,
+            key="biaya_lain_blantik",
+        )
+
+        trader_insights = calculate_trader_insights(
+            berat_badan=berat_badan,
+            jenis_ternak=jenis_ternak,
+            bangsa_ternak=bangsa_ternak,
+            status_ukuran=status_ukuran,
+            bcs_option=bcs_option,
+            accuracy_score=accuracy_score,
+            harga_beli=harga_beli_blantik,
+            harga_jual_per_kg=harga_jual_per_kg_blantik,
+            biaya_angkut=biaya_angkut_blantik,
+            biaya_pakan_harian=biaya_pakan_harian_blantik,
+            lama_tahan_hari=lama_tahan_hari_blantik,
+            biaya_kandang=biaya_kandang_blantik,
+            biaya_retribusi=biaya_retribusi_blantik,
+            biaya_tenaga_bantu=biaya_tenaga_bantu_blantik,
+            biaya_lain=biaya_lain_blantik,
+            target_margin_percent=target_margin_blantik,
+        )
+
+        st.markdown("#### Ringkasan Transaksi Blantik")
+        trader_col1, trader_col2, trader_col3, trader_col4 = st.columns(4)
+        with trader_col1:
+            st.metric("Estimasi Harga Jual", format_rupiah(trader_insights["estimasi_harga_jual"]))
+        with trader_col2:
+            st.metric("Margin Bersih", format_rupiah(trader_insights["margin_bersih"]))
+            st.caption(f"ROI: {trader_insights['roi']:.1f}%")
+        with trader_col3:
+            st.metric("Skor Daya Jual", f"{trader_insights['resale_score']}/100")
+            st.caption(trader_insights["resale_category"])
+        with trader_col4:
+            st.metric("Keputusan", trader_insights["decision"])
+
+        if trader_insights["decision"] == "Layak Dibeli":
+            st.success(trader_insights["decision_note"])
+        elif trader_insights["decision"] in ["Perlu Negosiasi", "Tahan Dulu"]:
+            st.warning(trader_insights["decision_note"])
+        else:
+            st.error(trader_insights["decision_note"])
+
+        st.markdown("#### Batas Harga Nego")
+        nego_col1, nego_col2, nego_col3 = st.columns(3)
+        with nego_col1:
+            st.metric("Harga Ideal Beli", format_rupiah(max(0, trader_insights["harga_beli_ideal"])))
+        with nego_col2:
+            st.metric("Harga Maksimal Beli", format_rupiah(max(0, trader_insights["harga_beli_maksimal"])))
+        with nego_col3:
+            st.metric("Harga Impas", format_rupiah(max(0, trader_insights["harga_beli_impas"])))
+
+        st.markdown("#### Strategi Jual")
+        strategy_col1, strategy_col2, strategy_col3 = st.columns(3)
+        with strategy_col1:
+            st.metric("Strategi", trader_insights["strategy"])
+            st.caption(trader_insights["strategy_note"])
+        with strategy_col2:
+            st.metric("Risiko Transaksi", trader_insights["risk_level"])
+        with strategy_col3:
+            st.metric("Target Profit", format_rupiah(trader_insights["target_profit"]))
+
+        st.markdown("#### Segmentasi Calon Pembeli")
+        segment_text = ", ".join(trader_insights["buyer_segments"]) if trader_insights["buyer_segments"] else "Belum teridentifikasi"
+        st.info(segment_text)
+
+        st.markdown("#### Rincian Modal Blantik")
+        trader_cost_df = pd.DataFrame([
+            {"Komponen": "Harga beli ternak", "Nilai": harga_beli_blantik},
+            {"Komponen": "Biaya angkut", "Nilai": biaya_angkut_blantik},
+            {"Komponen": "Biaya pakan total", "Nilai": trader_insights["biaya_pakan_total"]},
+            {"Komponen": "Biaya kandang/pasar", "Nilai": biaya_kandang_blantik},
+            {"Komponen": "Biaya retribusi/pasar", "Nilai": biaya_retribusi_blantik},
+            {"Komponen": "Biaya tenaga bantu", "Nilai": biaya_tenaga_bantu_blantik},
+            {"Komponen": "Biaya lain-lain", "Nilai": biaya_lain_blantik},
+            {"Komponen": "Total biaya tambahan", "Nilai": trader_insights["total_biaya_tambahan"]},
+            {"Komponen": "Total modal", "Nilai": trader_insights["total_modal"]},
+        ])
+        trader_cost_df["Nilai"] = trader_cost_df["Nilai"].apply(format_rupiah)
+        st.dataframe(trader_cost_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Sensitivitas Harga Jual Ulang")
+        trader_sensitivity_df = create_trader_sensitivity_dataframe(
+            berat_badan=berat_badan,
+            harga_beli=harga_beli_blantik,
+            harga_jual_per_kg=harga_jual_per_kg_blantik,
+            total_biaya_tambahan=trader_insights["total_biaya_tambahan"],
+        )
+        st.dataframe(trader_sensitivity_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Risiko Blantik")
+        for risk_note in trader_insights["risk_notes"]:
+            st.warning(risk_note)
+
+        st.markdown("#### Checklist Tindakan")
+        for item in create_trader_checklist(trader_insights):
+            st.write(f"- {item}")
+
+        st.caption(
+            "Catatan: insight blantik memakai estimasi bobot hidup dan harga jual ulang. "
+            "Tetap cek fisik, umur, kesehatan, dan harga pasar setempat sebelum deal."
+        )
+
+
     # Simpan riwayat hanya saat tombol hitung baru ditekan
     if st.session_state.new_calculation:
         st.session_state.calculation_history.append({
@@ -2837,6 +3316,14 @@ if st.session_state.show_results:
             "ROI Jagal (%)": round(jagal_metrics["roi_percent"], 2) if "jagal_metrics" in locals() else 0,
             "Keputusan Jagal": jagal_metrics["decision"] if "jagal_metrics" in locals() else "-",
             "Harga Beli Maksimal Jagal": round(max(0, jagal_metrics["max_buy_price"]), 0) if "jagal_metrics" in locals() else 0,
+            "Estimasi Harga Jual Blantik": round(trader_insights["estimasi_harga_jual"], 0) if "trader_insights" in locals() else 0,
+            "Margin Bersih Blantik": round(trader_insights["margin_bersih"], 0) if "trader_insights" in locals() else 0,
+            "ROI Blantik (%)": round(trader_insights["roi"], 2) if "trader_insights" in locals() else 0,
+            "Skor Daya Jual": trader_insights["resale_score"] if "trader_insights" in locals() else 0,
+            "Kategori Daya Jual": trader_insights["resale_category"] if "trader_insights" in locals() else "-",
+            "Strategi Blantik": trader_insights["strategy"] if "trader_insights" in locals() else "-",
+            "Keputusan Blantik": trader_insights["decision"] if "trader_insights" in locals() else "-",
+            "Harga Maksimal Beli Blantik": round(max(0, trader_insights["harga_beli_maksimal"]), 0) if "trader_insights" in locals() else 0,
         })
         st.session_state.new_calculation = False
     
