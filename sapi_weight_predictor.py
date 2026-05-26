@@ -1153,7 +1153,7 @@ with guide_tab1:
         > **Catatan Penting**: Pengukuran sebaiknya dilakukan pada pagi hari sebelum ternak diberi makan untuk menghindari pengembangan perut yang dapat mempengaruhi hasil pengukuran. Selain itu, pastikan ternak dalam keadaan seimbang dan tidak terlalu gelisah.
         """)
     with col2:
-        show_image_safe("karkas.jpeg", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["lingkar_dada.png", "version/V3/assets/panjangbadan.png"])
+        show_image_safe("karkas.jpeg", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["assets/lingkar_dada.png", "version/V3/assets/panjangbadan.png"])
 
 with guide_tab2:
     col1, col2 = st.columns([1, 1])
@@ -1172,7 +1172,7 @@ with guide_tab2:
         > **Catatan**: Untuk memudahkan, Anda dapat menggunakan dua tongkat yang ditempatkan tegak lurus di depan bahu dan belakang tulang duduk, lalu ukur jarak antara keduanya.
         """)
     with col2:
-        show_image_safe("karkas.jpeg", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["panjang_badan.png", "panjangbadan.png"])
+        show_image_safe("karkas.jpeg", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["assets/panjang_badan.png", "panjangbadan.png"])
 
 with guide_tab3:
     st.markdown("""
