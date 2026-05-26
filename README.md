@@ -1,19 +1,17 @@
-# Sapi Weight Predictor - Insight Blantik
+# Sapi Weight Predictor - Breed Wide Perspective
 
-Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi kalkulator jagal, insight analisis, dan insight blantik ternak.
+Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi analisis berdasarkan **jenis ternak + bangsa ternak**.
 
-## Fokus Tampilan
+## Fokus Versi Ini
 
-Sidebar tetap sederhana dan fokus pada input utama:
+Versi ini memperluas sudut pandang aplikasi. Analisis tidak lagi hanya berdasarkan jenis ternak umum, tetapi juga disesuaikan dengan karakter **bangsa ternak**.
 
-- Jenis ternak
-- Bangsa ternak
-- Jenis kelamin
-- Lingkar dada
-- Panjang badan
-- Tombol hitung
-
-Fitur lanjutan ditempatkan di tab hasil agar tampilan tidak terlalu penuh.
+Contoh:
+- Sapi Bali dibaca sebagai sapi lokal adaptif dan likuid untuk pasar rakyat/kurban.
+- Sapi Limousin dan Simental dibaca sebagai sapi besar/premium dengan kebutuhan modal dan pembeli berbeda.
+- Kambing Boer dibaca sebagai kambing pedaging premium.
+- Domba Garut dibaca sebagai domba lokal bernilai tinggi untuk segmen premium/pejantan/kurban.
+- Domba Texel dan Suffolk dibaca sebagai domba pedaging premium.
 
 ## Tab Hasil
 
@@ -29,29 +27,45 @@ Setelah tombol **Hitung Berat Badan** ditekan, hasil tampil dalam tab:
 🤝 Insight Blantik
 ```
 
+## Penyesuaian Berdasarkan Jenis dan Bangsa
+
+Aplikasi sekarang memakai profil bisnis tiap bangsa ternak untuk:
+- Posisi pasar
+- Pembeli potensial
+- Kacamata jagal
+- Kacamata blantik
+- Strategi umum
+- Risiko khusus
+- Likuiditas pasar
+- Kesesuaian untuk jagal
+- Kesesuaian untuk penggemukan
+- Faktor premium harga
+
 ## Fitur Utama
 
 - Prediksi berat badan sapi, kambing, dan domba.
 - Rumus menyesuaikan jenis dan bangsa ternak.
+- Profil pasar berdasarkan jenis dan bangsa.
 - Status ukuran ternak.
 - Margin error prediksi berat.
 - BCS / kondisi tubuh ternak.
 - Skor akurasi input pengukuran.
-- Simulasi target berat.
+- Simulasi target berat dengan catatan khusus bangsa.
 - Estimasi karkas, non-karkas, dan daging.
-- Estimasi ekonomi berdasarkan jenis, bangsa, dan kelas pasar ternak.
+- Estimasi ekonomi berdasarkan jenis, bangsa, kelas pasar, dan faktor premium.
 - Estimasi biaya pemeliharaan, total modal, keuntungan, dan ROI.
-- Kalkulator jagal:
+- Kalkulator jagal berbasis profil bangsa:
   - Omzet daging
   - Omzet tulang & lemak
   - Omzet non-karkas
+  - Kesesuaian jagal
   - Harga beli impas
   - Harga beli maksimal sesuai target margin
   - Rekomendasi keputusan jagal
 - Insight Analisis:
   - Efisiensi karkas
   - Daging terhadap bobot hidup
-  - Risiko utama
+  - Risiko khusus bangsa
   - Sensitivitas harga jual
   - Sensitivitas susut daging
   - Struktur omzet
@@ -63,16 +77,15 @@ Setelah tombol **Hitung Berat Badan** ditekan, hasil tampil dalam tab:
   - Harga ideal beli
   - Harga maksimal beli
   - Harga impas
-  - Skor daya jual
-  - Segmentasi calon pembeli
+  - Skor daya jual berbasis bangsa
+  - Segmentasi calon pembeli berdasarkan bangsa
   - Risiko transaksi
   - Strategi jual: jual cepat, tahan, penggemukan, atau jangan deal
   - Checklist tindakan transaksi
-- Rekomendasi otomatis.
-- Download laporan PDF.
 - Riwayat perhitungan.
 - Upload data banyak ternak melalui CSV/Excel.
 - Download template CSV.
+- Download laporan PDF.
 
 ## File Utama untuk Streamlit Online
 
@@ -113,9 +126,6 @@ sapi_weight_predictor.py
 
 ## Catatan
 
-- Insight blantik adalah alat bantu tawar-menawar dan jual ulang, bukan keputusan mutlak.
-- Tetap cek fisik ternak, umur, kesehatan, surat/kepemilikan, dan harga pasar setempat sebelum transaksi.
-- Nilai non-karkas pada kalkulator jagal memakai harga rata-rata gabungan.
-- BCS adalah penilaian sederhana kondisi tubuh, bukan diagnosis kesehatan.
-- Simulasi target berat adalah pendekatan matematis dari rumus aplikasi, bukan prediksi pertumbuhan biologis.
+- Profil bangsa adalah alat bantu analisis pasar, bukan keputusan mutlak.
+- Harga lokal, musim, lokasi, umur, kesehatan, dan permintaan pasar tetap perlu dicek langsung.
 - Untuk transaksi besar, tetap gunakan timbangan ternak terkalibrasi.

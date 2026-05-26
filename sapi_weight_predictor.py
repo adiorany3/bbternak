@@ -89,6 +89,256 @@ BREED_PRICE_FACTORS = {
 
 # Faktor penyesuaian harga berdasarkan kelas/kondisi pasar ternak.
 # Kelas ini bersifat estimasi cepat dan tetap bisa disesuaikan manual di sidebar.
+
+BREED_BUSINESS_PROFILES = {
+    "Sapi": {
+        "Sapi Bali": {
+            "market_position": "Sapi lokal adaptif, likuid di pasar tradisional, kuat untuk kurban dan penggemukan skala rakyat.",
+            "primary_buyers": ["Pembeli kurban", "Peternak penggemukan", "Pedagang pasar hewan", "Jagal lokal"],
+            "butcher_view": "Cocok untuk jagal lokal dan pasar daging segar; nilai jual terbantu oleh permintaan lokal yang stabil.",
+            "trader_view": "Mudah diputar karena dikenal luas; margin sering berasal dari ketepatan beli dan kondisi tubuh.",
+            "strategy": "Jual cepat jika BCS ideal; penggemukan singkat jika BCS masih kurus tetapi rangka normal.",
+            "risks": ["Harga bisa sangat dipengaruhi musim kurban", "Bobot ekstrem belum tentu mudah diserap semua pembeli"],
+            "liquidity_bonus": 8,
+            "butcher_fit": 7,
+            "fattening_fit": 8,
+            "premium_factor": 1.00,
+        },
+        "Sapi Madura": {
+            "market_position": "Sapi lokal dengan pasar kuat di wilayah tertentu, cocok untuk transaksi tradisional dan kurban.",
+            "primary_buyers": ["Pembeli kurban", "Pedagang pasar hewan", "Peternak lokal", "Jagal lokal"],
+            "butcher_view": "Cocok untuk potong lokal; perlu cermat pada bobot dan BCS agar nilai karkas tetap menarik.",
+            "trader_view": "Daya jual baik di pasar yang mengenal sapi Madura; di luar wilayah kuat perlu strategi harga.",
+            "strategy": "Fokus pada pembeli lokal/kurban; hindari beli terlalu mahal bila ukuran kecil.",
+            "risks": ["Pasar cenderung regional", "Harga jual ulang bisa lebih sensitif lokasi"],
+            "liquidity_bonus": 6,
+            "butcher_fit": 6,
+            "fattening_fit": 7,
+            "premium_factor": 0.96,
+        },
+        "Sapi Limousin": {
+            "market_position": "Sapi besar/premium, menarik untuk jagal, kurban premium, dan transaksi bernilai tinggi.",
+            "primary_buyers": ["Jagal besar", "Pembeli kurban premium", "Pedagang besar", "Peternak penggemukan"],
+            "butcher_view": "Potensi karkas dan daging tinggi; sangat menarik jika harga beli masih masuk batas margin.",
+            "trader_view": "Nilai jual tinggi, tetapi modal besar; perlu pembeli yang tepat agar perputaran tidak lambat.",
+            "strategy": "Cocok untuk jual premium atau jagal; pastikan margin aman karena modal tinggi.",
+            "risks": ["Modal besar", "Jika harga beli terlalu tinggi, ruang nego mengecil", "Perlu pembeli kelas premium"],
+            "liquidity_bonus": 7,
+            "butcher_fit": 9,
+            "fattening_fit": 8,
+            "premium_factor": 1.18,
+        },
+        "Sapi Simental": {
+            "market_position": "Sapi besar/premium dengan daya tarik tinggi untuk daging, kurban premium, dan jagal.",
+            "primary_buyers": ["Jagal besar", "Pembeli kurban premium", "Pedagang besar", "Peternak penggemukan"],
+            "butcher_view": "Potensi daging baik; cocok untuk jagal jika efisiensi karkas dan harga beli seimbang.",
+            "trader_view": "Daya jual tinggi, tetapi harus diarahkan ke pembeli bermodal besar.",
+            "strategy": "Jual ke segmen premium; gunakan batas harga maksimal agar tidak terjebak modal besar.",
+            "risks": ["Butuh pasar premium", "Biaya tahan dan transport bisa besar"],
+            "liquidity_bonus": 7,
+            "butcher_fit": 9,
+            "fattening_fit": 8,
+            "premium_factor": 1.16,
+        },
+        "Sapi Brahman": {
+            "market_position": "Sapi tipe besar dan tahan lingkungan; cocok untuk penggemukan dan pasar potong.",
+            "primary_buyers": ["Jagal", "Feedlot/penggemukan", "Pedagang besar", "Peternak"],
+            "butcher_view": "Menarik untuk potong jika bobot dan BCS cukup; cocok untuk pasar daging volume.",
+            "trader_view": "Cocok untuk pembeli yang mencari performa dan bobot; perlu cek kondisi tubuh.",
+            "strategy": "Tahan/penggemukan jika BCS belum ideal; jual cepat bila bobot dan harga sudah masuk.",
+            "risks": ["Variasi kondisi tubuh bisa besar", "Perlu pakan baik jika ditahan"],
+            "liquidity_bonus": 7,
+            "butcher_fit": 8,
+            "fattening_fit": 9,
+            "premium_factor": 1.10,
+        },
+        "Sapi Peranakan Ongole (PO)": {
+            "market_position": "Sapi lokal-kerja/potong yang dikenal luas; cocok untuk penggemukan dan pasar tradisional.",
+            "primary_buyers": ["Peternak penggemukan", "Jagal lokal", "Pedagang pasar hewan", "Pembeli kurban"],
+            "butcher_view": "Masuk untuk potong lokal; margin bergantung pada harga beli dan BCS.",
+            "trader_view": "Cukup likuid dan fleksibel, baik untuk jual ulang jika harga beli tidak tinggi.",
+            "strategy": "Cari margin dari beli cermat dan penggemukan; cocok untuk pasar menengah.",
+            "risks": ["Jika BCS rendah, hasil daging bisa kurang optimal", "Harga premium tidak setinggi sapi besar impor"],
+            "liquidity_bonus": 7,
+            "butcher_fit": 7,
+            "fattening_fit": 8,
+            "premium_factor": 1.02,
+        },
+        "Sapi Friesian Holstein (FH)": {
+            "market_position": "Sapi perah/afkir atau persilangan yang dapat masuk pasar potong, tetapi perlu cermat kualitas daging.",
+            "primary_buyers": ["Jagal tertentu", "Pedagang pasar hewan", "Peternak tertentu"],
+            "butcher_view": "Perlu teliti karena karakter perah bisa berbeda dari sapi potong; harga beli harus konservatif.",
+            "trader_view": "Cocok untuk transaksi jika ada pembeli jelas; jangan terlalu agresif pada harga beli.",
+            "strategy": "Utamakan jual cepat ke pembeli yang memang mencari FH/potong; hindari tahan lama.",
+            "risks": ["Persepsi pasar berbeda dari sapi potong", "Kondisi afkir bisa menurunkan nilai"],
+            "liquidity_bonus": 4,
+            "butcher_fit": 5,
+            "fattening_fit": 5,
+            "premium_factor": 0.98,
+        },
+        "Sapi Aceh": {
+            "market_position": "Sapi lokal kecil-adaptif dengan pasar kuat di wilayah tertentu.",
+            "primary_buyers": ["Pedagang lokal", "Pembeli kurban lokal", "Peternak lokal", "Jagal lokal"],
+            "butcher_view": "Cocok untuk potong lokal; hasil harus dibaca sesuai ukuran tubuh yang relatif kecil.",
+            "trader_view": "Baik di pasar yang mengenal sapi Aceh; margin lebih aman jika biaya angkut rendah.",
+            "strategy": "Fokus pasar lokal/regional; jangan membandingkan langsung dengan sapi besar premium.",
+            "risks": ["Pasar regional", "Ukuran kecil dapat membatasi segmen pembeli tertentu"],
+            "liquidity_bonus": 5,
+            "butcher_fit": 5,
+            "fattening_fit": 6,
+            "premium_factor": 0.94,
+        },
+    },
+    "Kambing": {
+        "Kambing Kacang": {
+            "market_position": "Kambing lokal kecil yang likuid untuk pasar tradisional, aqiqah, dan konsumsi rumah tangga.",
+            "primary_buyers": ["Pembeli aqiqah", "Pedagang pasar", "Jagal kecil", "Peternak lokal"],
+            "butcher_view": "Cocok untuk potong kecil/eceran; harga beli harus sebanding dengan bobot.",
+            "trader_view": "Perputaran cepat, tetapi margin per ekor sering tidak besar.",
+            "strategy": "Jual cepat dan main volume; hindari biaya tahan terlalu lama.",
+            "risks": ["Bobot kecil membatasi omzet per ekor", "Margin tipis jika biaya angkut tinggi"],
+            "liquidity_bonus": 8,
+            "butcher_fit": 6,
+            "fattening_fit": 6,
+            "premium_factor": 0.95,
+        },
+        "Kambing Ettawa": {
+            "market_position": "Kambing besar/perah dengan nilai lebih pada ukuran dan penampilan.",
+            "primary_buyers": ["Peternak bibit/perah", "Pembeli kurban", "Pedagang premium", "Jagal tertentu"],
+            "butcher_view": "Nilai potong ada, tetapi jangan abaikan nilai non-potong seperti bibit/perah jika kondisinya bagus.",
+            "trader_view": "Bisa masuk segmen premium; perlu pembeli yang tepat agar harga optimal.",
+            "strategy": "Cari pembeli spesifik, bukan hanya jagal; nilai jual bisa lebih tinggi dari potong biasa.",
+            "risks": ["Pasar lebih selektif", "Harga tinggi butuh pembeli tepat"],
+            "liquidity_bonus": 6,
+            "butcher_fit": 6,
+            "fattening_fit": 7,
+            "premium_factor": 1.08,
+        },
+        "Kambing Peranakan Ettawa (PE)": {
+            "market_position": "Kambing serbaguna untuk perah, bibit, kurban, dan potong.",
+            "primary_buyers": ["Pembeli kurban", "Peternak PE", "Pedagang pasar", "Jagal kecil"],
+            "butcher_view": "Cukup fleksibel untuk potong, tetapi nilai bibit/perah bisa membuat harga beli lebih tinggi.",
+            "trader_view": "Likuid jika kondisi tubuh dan penampilan baik.",
+            "strategy": "Segmentasikan ke kurban atau peternak jika tampilan bagus; potong jika margin jelas.",
+            "risks": ["Harga bisa kemahalan jika dihitung hanya dari daging"],
+            "liquidity_bonus": 7,
+            "butcher_fit": 6,
+            "fattening_fit": 7,
+            "premium_factor": 1.04,
+        },
+        "Kambing Boer": {
+            "market_position": "Kambing pedaging premium dengan potensi karkas dan daging lebih menarik.",
+            "primary_buyers": ["Jagal/pedagang daging", "Peternak pembibit", "Pembeli kurban premium"],
+            "butcher_view": "Sangat menarik untuk daging jika harga beli masih masuk; potensi daging relatif baik.",
+            "trader_view": "Nilai jual tinggi, cocok untuk segmen premium dan pedaging.",
+            "strategy": "Arahkan ke pasar premium/pedaging; jaga batas harga beli agar margin tidak hilang.",
+            "risks": ["Modal lebih tinggi", "Butuh pembeli yang memahami nilai Boer"],
+            "liquidity_bonus": 7,
+            "butcher_fit": 9,
+            "fattening_fit": 8,
+            "premium_factor": 1.15,
+        },
+        "Kambing Jawarandu": {
+            "market_position": "Kambing umum pasar rakyat, cukup fleksibel untuk kurban, aqiqah, dan potong.",
+            "primary_buyers": ["Pembeli aqiqah", "Pembeli kurban", "Pedagang pasar", "Jagal kecil"],
+            "butcher_view": "Cocok untuk potong lokal; margin bergantung bobot dan biaya.",
+            "trader_view": "Cukup mudah diputar karena dikenal luas.",
+            "strategy": "Jual cepat jika BCS ideal; penggemukan singkat jika masih kurus.",
+            "risks": ["Margin tipis jika harga beli terlalu dekat harga jual"],
+            "liquidity_bonus": 7,
+            "butcher_fit": 6,
+            "fattening_fit": 7,
+            "premium_factor": 1.00,
+        },
+        "Kambing Bligon": {
+            "market_position": "Kambing lokal/silangan untuk pasar rakyat dan potong kecil.",
+            "primary_buyers": ["Pedagang pasar", "Jagal kecil", "Pembeli aqiqah", "Peternak lokal"],
+            "butcher_view": "Masuk untuk potong lokal; baca bobot dan BCS secara konservatif.",
+            "trader_view": "Cukup likuid di pasar lokal, tetapi kurang premium.",
+            "strategy": "Mainkan harga beli aman dan perputaran cepat.",
+            "risks": ["Kurang premium", "Margin mudah tergerus biaya angkut"],
+            "liquidity_bonus": 6,
+            "butcher_fit": 6,
+            "fattening_fit": 6,
+            "premium_factor": 0.98,
+        },
+    },
+    "Domba": {
+        "Domba Ekor Tipis": {
+            "market_position": "Domba lokal ringan dan likuid untuk pasar rakyat, aqiqah, dan kurban.",
+            "primary_buyers": ["Pembeli aqiqah", "Pembeli kurban", "Pedagang pasar", "Jagal kecil"],
+            "butcher_view": "Cocok untuk potong kecil; margin perlu dijaga dari biaya tambahan.",
+            "trader_view": "Mudah diputar di pasar lokal jika harga beli aman.",
+            "strategy": "Jual cepat, terutama saat permintaan aqiqah/kurban meningkat.",
+            "risks": ["Bobot kecil membatasi omzet per ekor"],
+            "liquidity_bonus": 8,
+            "butcher_fit": 6,
+            "fattening_fit": 6,
+            "premium_factor": 0.96,
+        },
+        "Domba Ekor Gemuk": {
+            "market_position": "Domba lokal dengan karakter lemak ekor, cocok untuk segmen yang menyukai tipe ini.",
+            "primary_buyers": ["Pedagang pasar", "Jagal kecil", "Pembeli kurban", "Konsumen lokal tertentu"],
+            "butcher_view": "Perhatikan proporsi lemak; sebagian pasar menyukai, sebagian lain lebih memilih daging bersih.",
+            "trader_view": "Baik di pasar yang mengenal karakter ekor gemuk.",
+            "strategy": "Arahkan ke pasar yang menerima lemak ekor; hindari salah segmen.",
+            "risks": ["Preferensi pasar terhadap lemak berbeda-beda"],
+            "liquidity_bonus": 6,
+            "butcher_fit": 6,
+            "fattening_fit": 7,
+            "premium_factor": 1.02,
+        },
+        "Domba Merino": {
+            "market_position": "Domba tipe wol/premium tertentu; pasar lebih selektif dibanding domba lokal.",
+            "primary_buyers": ["Peternak khusus", "Pedagang premium", "Jagal tertentu"],
+            "butcher_view": "Masuk untuk potong jika bobot dan harga mendukung, tetapi pasar tidak selalu umum.",
+            "trader_view": "Perlu pembeli spesifik; jangan hanya mengandalkan pasar rakyat umum.",
+            "strategy": "Cari pembeli khusus atau premium; gunakan harga beli konservatif jika pasar belum jelas.",
+            "risks": ["Likuiditas pasar bisa lebih rendah", "Butuh pembeli yang memahami nilai Merino"],
+            "liquidity_bonus": 5,
+            "butcher_fit": 6,
+            "fattening_fit": 6,
+            "premium_factor": 1.10,
+        },
+        "Domba Garut": {
+            "market_position": "Domba lokal bernilai tinggi, kuat untuk kurban, kontes, pejantan, dan pasar premium tertentu.",
+            "primary_buyers": ["Pembeli kurban premium", "Peternak Domba Garut", "Pedagang premium", "Jagal tertentu"],
+            "butcher_view": "Nilai potong ada, tetapi jangan abaikan nilai non-potong seperti pejantan/kontes bila kualitas bagus.",
+            "trader_view": "Daya tarik tinggi jika postur dan performa baik; segmentasi pembeli penting.",
+            "strategy": "Utamakan pembeli premium/peternak; potong hanya jika margin jelas.",
+            "risks": ["Harga bisa terlalu tinggi jika dihitung hanya dari daging", "Butuh pembeli tepat"],
+            "liquidity_bonus": 7,
+            "butcher_fit": 7,
+            "fattening_fit": 8,
+            "premium_factor": 1.08,
+        },
+        "Domba Suffolk": {
+            "market_position": "Domba pedaging premium, menarik untuk produksi daging dan segmen pembibit tertentu.",
+            "primary_buyers": ["Jagal/pedagang daging", "Peternak pembibit", "Pembeli premium"],
+            "butcher_view": "Potensi daging baik; cocok jika harga beli masuk target margin.",
+            "trader_view": "Nilai jual premium, tetapi pasar lebih selektif.",
+            "strategy": "Arahkan ke segmen pedaging/premium; jaga modal agar tidak mengendap.",
+            "risks": ["Pembeli lebih terbatas dibanding domba lokal", "Modal lebih tinggi"],
+            "liquidity_bonus": 6,
+            "butcher_fit": 8,
+            "fattening_fit": 8,
+            "premium_factor": 1.13,
+        },
+        "Domba Texel": {
+            "market_position": "Domba pedaging premium dengan potensi karkas/daging tinggi.",
+            "primary_buyers": ["Jagal/pedagang daging premium", "Peternak pembibit", "Pembeli premium"],
+            "butcher_view": "Sangat menarik untuk daging bila harga beli tidak terlalu tinggi.",
+            "trader_view": "Premium, tetapi butuh pembeli yang memahami nilai Texel.",
+            "strategy": "Cari pembeli premium atau pedaging; gunakan analisis margin ketat.",
+            "risks": ["Pasar selektif", "Harga beli tinggi bisa menekan margin"],
+            "liquidity_bonus": 6,
+            "butcher_fit": 9,
+            "fattening_fit": 8,
+            "premium_factor": 1.15,
+        },
+    },
+}
+
 MARKET_CLASS_MULTIPLIERS = {
     "Kelas A / Super": 1.08,
     "Kelas B / Normal": 1.00,
@@ -1128,6 +1378,69 @@ def calculate_error_range(value, margin_percent):
     return lower, upper
 
 
+
+
+def get_breed_business_profile(jenis_ternak, bangsa_ternak):
+    """Mengambil profil bisnis/market berdasarkan jenis dan bangsa ternak."""
+    default_profile = {
+        "market_position": f"{bangsa_ternak} memiliki karakter pasar yang perlu dibaca sesuai wilayah, bobot, BCS, dan tujuan transaksi.",
+        "primary_buyers": ["Pedagang pasar hewan", "Peternak", "Jagal", "Pembeli konsumsi"],
+        "butcher_view": "Nilai untuk jagal bergantung pada bobot, BCS, efisiensi karkas, dan harga beli.",
+        "trader_view": "Nilai untuk blantik bergantung pada likuiditas pasar, margin, biaya tahan, dan calon pembeli.",
+        "strategy": "Gunakan pendekatan konservatif: cek fisik, cek harga pasar lokal, dan pastikan margin aman.",
+        "risks": ["Harga pasar berbeda antar daerah", "Hasil aktual dapat berbeda dari estimasi"],
+        "liquidity_bonus": 5,
+        "butcher_fit": 5,
+        "fattening_fit": 5,
+        "premium_factor": 1.00,
+    }
+
+    profile = BREED_BUSINESS_PROFILES.get(jenis_ternak, {}).get(bangsa_ternak, default_profile).copy()
+    profile["jenis_ternak"] = jenis_ternak
+    profile["bangsa_ternak"] = bangsa_ternak
+    return profile
+
+
+def create_breed_perspective_dataframe(jenis_ternak, bangsa_ternak):
+    """Membuat dataframe profil sudut pandang berdasarkan jenis dan bangsa ternak."""
+    profile = get_breed_business_profile(jenis_ternak, bangsa_ternak)
+
+    rows = [
+        {"Sudut Pandang": "Posisi Pasar", "Insight": profile["market_position"]},
+        {"Sudut Pandang": "Pembeli Potensial", "Insight": ", ".join(profile["primary_buyers"])},
+        {"Sudut Pandang": "Kacamata Jagal", "Insight": profile["butcher_view"]},
+        {"Sudut Pandang": "Kacamata Blantik", "Insight": profile["trader_view"]},
+        {"Sudut Pandang": "Strategi Umum", "Insight": profile["strategy"]},
+        {"Sudut Pandang": "Risiko Khusus", "Insight": "; ".join(profile["risks"])},
+    ]
+
+    return pd.DataFrame(rows)
+
+
+def get_breed_specific_price_note(jenis_ternak, bangsa_ternak):
+    """Catatan harga berdasarkan jenis dan bangsa ternak."""
+    profile = get_breed_business_profile(jenis_ternak, bangsa_ternak)
+    premium_factor = profile.get("premium_factor", 1.0)
+
+    if premium_factor >= 1.12:
+        return "Bangsa ini cenderung masuk segmen premium; harga beli bisa tinggi sehingga margin perlu dihitung lebih ketat."
+    if premium_factor <= 0.98:
+        return "Bangsa ini cenderung lebih sensitif lokasi dan segmen pasar; gunakan harga lokal sebagai acuan utama."
+    return "Bangsa ini relatif fleksibel untuk pasar umum; margin lebih ditentukan oleh BCS, bobot, dan biaya transaksi."
+
+
+def get_breed_specific_target_note(jenis_ternak, bangsa_ternak, target_status):
+    """Catatan target berat berdasarkan jenis dan bangsa ternak."""
+    profile = get_breed_business_profile(jenis_ternak, bangsa_ternak)
+
+    if profile.get("fattening_fit", 5) >= 8 and target_status in ["Realistis", "Masih Mungkin"]:
+        return "Secara profil bangsa, ternak ini cukup menarik untuk strategi penggemukan jika biaya pakan terkendali."
+    if profile.get("premium_factor", 1.0) >= 1.10:
+        return "Karena masuk segmen premium, target berat sebaiknya dikaitkan dengan calon pembeli yang jelas."
+    if profile.get("liquidity_bonus", 5) >= 8:
+        return "Bangsa ini relatif likuid; target moderat biasanya lebih mudah diserap pasar."
+    return "Gunakan target berat secara konservatif dan sesuaikan dengan pasar lokal."
+
 def calculate_maintenance_metrics(
     nilai_jual,
     harga_beli_modal,
@@ -1332,8 +1645,11 @@ def calculate_operational_insights(
     accuracy_score,
     bcs_option,
     jagal_metrics=None,
+    jenis_ternak=None,
+    bangsa_ternak=None,
 ):
     """Membuat insight otomatis dari berat, karkas, BCS, akurasi input, dan metrik jagal."""
+    breed_profile = get_breed_business_profile(jenis_ternak, bangsa_ternak) if jenis_ternak and bangsa_ternak else None
     berat_badan = max(0.0, float(berat_badan or 0))
     karkas_weight = float(karkas_data.get("karkas_weight", 0) or 0)
     meat_weight = float(karkas_data.get("meat_weight", 0) or 0)
@@ -1383,6 +1699,11 @@ def calculate_operational_insights(
         else:
             opportunity_notes.append("ROI jagal relatif baik berdasarkan simulasi harga dan biaya saat ini.")
 
+    if breed_profile:
+        risk_notes.append("Risiko khusus bangsa: " + "; ".join(breed_profile.get("risks", [])))
+        opportunity_notes.append(f"Profil bangsa: {breed_profile.get('market_position', '')}")
+        opportunity_notes.append(f"Sudut pandang jagal untuk {bangsa_ternak}: {breed_profile.get('butcher_view', '')}")
+
     if not risk_notes:
         risk_notes.append("Tidak ada risiko besar yang terdeteksi dari parameter utama, tetapi hasil tetap bersifat estimasi.")
 
@@ -1398,6 +1719,7 @@ def calculate_operational_insights(
         "karkas_category": karkas_category,
         "meat_category": meat_category,
         "accuracy_category": accuracy_category,
+        "breed_profile": breed_profile,
         "risk_notes": risk_notes,
         "opportunity_notes": opportunity_notes,
     }
@@ -1496,8 +1818,10 @@ def calculate_trader_resale_score(
     accuracy_score,
     trader_margin,
     trader_roi,
+    bangsa_ternak=None,
 ):
     """Menghitung skor daya jual ternak dari kacamata blantik."""
+    breed_profile = get_breed_business_profile(jenis_ternak, bangsa_ternak) if bangsa_ternak else None
     score = 50
 
     if accuracy_score >= 85:
@@ -1542,6 +1866,13 @@ def calculate_trader_resale_score(
     elif jenis_ternak in ["Kambing", "Domba"] and berat_badan >= 25:
         score += 5
 
+    if breed_profile:
+        score += int(breed_profile.get("liquidity_bonus", 5)) - 5
+        if breed_profile.get("premium_factor", 1.0) >= 1.10 and trader_margin > 0:
+            score += 4
+        if breed_profile.get("liquidity_bonus", 5) <= 5 and trader_margin <= 0:
+            score -= 4
+
     score = max(0, min(100, int(round(score))))
 
     if score >= 85:
@@ -1556,9 +1887,10 @@ def calculate_trader_resale_score(
     return score, category
 
 
-def determine_buyer_segments(jenis_ternak, berat_badan, bcs_option, status_ukuran):
+def determine_buyer_segments(jenis_ternak, berat_badan, bcs_option, status_ukuran, bangsa_ternak=None):
     """Menentukan segmentasi calon pembeli potensial."""
-    segments = []
+    profile = get_breed_business_profile(jenis_ternak, bangsa_ternak) if bangsa_ternak else None
+    segments = list(profile.get("primary_buyers", [])) if profile else []
 
     if jenis_ternak == "Sapi":
         if berat_badan >= 250 and bcs_option in ["2 - Kurus", "3 - Sedang/Ideal", "4 - Gemuk", "Tidak dinilai"]:
@@ -1618,6 +1950,7 @@ def calculate_trader_insights(
     target_margin_percent,
 ):
     """Menghitung insight transaksi dari kacamata blantik ternak."""
+    breed_profile = get_breed_business_profile(jenis_ternak, bangsa_ternak)
     berat_badan = max(0, float(berat_badan or 0))
     harga_beli = max(0, float(harga_beli or 0))
     harga_jual_per_kg = max(0, float(harga_jual_per_kg or 0))
@@ -1657,6 +1990,7 @@ def calculate_trader_insights(
         accuracy_score,
         margin_bersih,
         roi,
+        bangsa_ternak=bangsa_ternak,
     )
 
     buyer_segments = determine_buyer_segments(
@@ -1664,6 +1998,7 @@ def calculate_trader_insights(
         berat_badan,
         bcs_option,
         status_ukuran,
+        bangsa_ternak=bangsa_ternak,
     )
 
     strategy, strategy_note = determine_trader_strategy(
@@ -1673,6 +2008,14 @@ def calculate_trader_insights(
         resale_score,
         status_ukuran,
     )
+
+    if breed_profile.get("fattening_fit", 5) >= 8 and strategy == "Tahan 2–4 Minggu":
+        strategy = "Penggemukan Lanjutan"
+        strategy_note = f"Profil {bangsa_ternak} mendukung penggemukan jika biaya pakan terkendali."
+    elif breed_profile.get("liquidity_bonus", 5) >= 8 and margin_bersih > 0:
+        strategy = "Jual Cepat"
+        strategy_note = f"Profil {bangsa_ternak} relatif likuid, cocok untuk perputaran cepat."
+
 
     if margin_bersih < 0:
         decision = "Berisiko Rugi"
@@ -1701,6 +2044,9 @@ def calculate_trader_insights(
     if bcs_option in ["1 - Sangat Kurus", "5 - Sangat Gemuk"]:
         risk_level = "Sedang" if risk_level != "Tinggi" else risk_level
         risk_notes.append("BCS ekstrem dapat menyulitkan jual ulang.")
+    if breed_profile.get("risks"):
+        risk_notes.append("Risiko spesifik bangsa: " + "; ".join(breed_profile.get("risks", [])))
+
     if not risk_notes:
         risk_notes.append("Risiko utama relatif terkendali berdasarkan input saat ini.")
 
@@ -1718,6 +2064,7 @@ def calculate_trader_insights(
         "resale_score": resale_score,
         "resale_category": resale_category,
         "buyer_segments": buyer_segments,
+        "breed_profile": breed_profile,
         "strategy": strategy,
         "strategy_note": strategy_note,
         "decision": decision,
@@ -2563,9 +2910,14 @@ if st.session_state.show_results:
         ])
         st.dataframe(input_summary_df, use_container_width=True, hide_index=True)
 
+        with st.expander("Lihat profil jenis dan bangsa ternak"):
+            breed_profile_df = create_breed_perspective_dataframe(jenis_ternak, bangsa_ternak)
+            st.dataframe(breed_profile_df, use_container_width=True, hide_index=True)
+
         st.info(
             f"Fokus utama aplikasi adalah estimasi berat badan. "
-            f"Hasil saat ini berada pada rentang **{bb_min:.2f}–{bb_max:.2f} kg** dengan margin error ±{margin_error}%."
+            f"Hasil saat ini berada pada rentang **{bb_min:.2f}–{bb_max:.2f} kg** dengan margin error ±{margin_error}%. "
+            f"Profil {bangsa_ternak}: {get_breed_business_profile(jenis_ternak, bangsa_ternak)['market_position']}"
         )
 
     with target_tab:
@@ -2604,6 +2956,7 @@ if st.session_state.show_results:
             st.metric("Status Target", target_estimate["status"])
 
         st.info(target_estimate["note"])
+        st.caption(get_breed_specific_target_note(jenis_ternak, bangsa_ternak, target_estimate["status"]))
 
         target_compare_df = pd.DataFrame([
             {"Parameter": "Berat Saat Ini", "Nilai": f"{berat_badan:.2f} kg"},
@@ -2663,6 +3016,7 @@ if st.session_state.show_results:
 
         st.caption(latest_prices["label"])
         st.caption(f"Sumber/acuan: {latest_prices['source']}")
+        st.info(get_breed_specific_price_note(jenis_ternak, bangsa_ternak))
 
         price_key_suffix = (
             f"{jenis_ternak}_{bangsa_ternak}_{kelas_pasar}"
@@ -2815,6 +3169,9 @@ if st.session_state.show_results:
             "harga beli impas, dan harga beli maksimal agar tidak melewati target margin."
         )
 
+        jagal_profile = get_breed_business_profile(jenis_ternak, bangsa_ternak)
+        st.info(f"Sudut pandang jagal untuk {bangsa_ternak}: {jagal_profile['butcher_view']}")
+
         default_harga_beli_jagal = int(round(nilai_hidup, 0)) if "nilai_hidup" in locals() else 0
         default_harga_daging_jagal = int(harga_daging) if "harga_daging" in locals() else int(latest_prices["harga_daging"])
 
@@ -2960,6 +3317,11 @@ if st.session_state.show_results:
         )
         st.dataframe(component_df, use_container_width=True, hide_index=True)
 
+        st.caption(
+            f"Kesesuaian jagal berdasarkan profil {bangsa_ternak}: "
+            f"{jagal_profile.get('butcher_fit', 5)}/10. {jagal_profile.get('strategy', '')}"
+        )
+
         with st.expander("Lihat detail non-karkas"):
             non_karkas_detail_df = create_non_karkas_detail_dataframe(
                 karkas_data,
@@ -3000,12 +3362,18 @@ if st.session_state.show_results:
             "risiko transaksi, dan prioritas tindakan."
         )
 
+        insight_profile_df = create_breed_perspective_dataframe(jenis_ternak, bangsa_ternak)
+        with st.expander("Profil sudut pandang berdasarkan jenis dan bangsa"):
+            st.dataframe(insight_profile_df, use_container_width=True, hide_index=True)
+
         insights = calculate_operational_insights(
             berat_badan=berat_badan,
             karkas_data=karkas_data,
             accuracy_score=accuracy_score,
             bcs_option=bcs_option,
             jagal_metrics=jagal_metrics if "jagal_metrics" in locals() else None,
+            jenis_ternak=jenis_ternak,
+            bangsa_ternak=bangsa_ternak,
         )
 
         insight_col1, insight_col2, insight_col3, insight_col4 = st.columns(4)
@@ -3100,6 +3468,9 @@ if st.session_state.show_results:
             "Tab ini membantu membaca transaksi dari sudut pandang blantik: harga beli wajar, "
             "harga jual kembali, margin, batas nego, daya jual, segmentasi pembeli, dan strategi jual."
         )
+
+        blantik_profile = get_breed_business_profile(jenis_ternak, bangsa_ternak)
+        st.info(f"Sudut pandang blantik untuk {bangsa_ternak}: {blantik_profile['trader_view']}")
 
         default_harga_beli_blantik = int(round(nilai_hidup, 0)) if "nilai_hidup" in locals() else int(round(berat_badan * latest_prices["harga_bobot_hidup"], 0))
         default_harga_jual_blantik = int(harga_bobot_hidup) if "harga_bobot_hidup" in locals() else int(latest_prices["harga_bobot_hidup"])
@@ -3242,6 +3613,10 @@ if st.session_state.show_results:
         st.markdown("#### Segmentasi Calon Pembeli")
         segment_text = ", ".join(trader_insights["buyer_segments"]) if trader_insights["buyer_segments"] else "Belum teridentifikasi"
         st.info(segment_text)
+        st.caption(
+            f"Likuiditas profil {bangsa_ternak}: {blantik_profile.get('liquidity_bonus', 5)}/10. "
+            f"Strategi umum: {blantik_profile.get('strategy', '')}"
+        )
 
         st.markdown("#### Rincian Modal Blantik")
         trader_cost_df = pd.DataFrame([
@@ -3270,6 +3645,9 @@ if st.session_state.show_results:
         st.markdown("#### Risiko Blantik")
         for risk_note in trader_insights["risk_notes"]:
             st.warning(risk_note)
+        st.markdown("#### Catatan Khusus Bangsa")
+        st.write(f"- Posisi pasar: {blantik_profile['market_position']}")
+        st.write(f"- Risiko khusus: {'; '.join(blantik_profile.get('risks', []))}")
 
         st.markdown("#### Checklist Tindakan")
         for item in create_trader_checklist(trader_insights):
@@ -3324,6 +3702,8 @@ if st.session_state.show_results:
             "Strategi Blantik": trader_insights["strategy"] if "trader_insights" in locals() else "-",
             "Keputusan Blantik": trader_insights["decision"] if "trader_insights" in locals() else "-",
             "Harga Maksimal Beli Blantik": round(max(0, trader_insights["harga_beli_maksimal"]), 0) if "trader_insights" in locals() else 0,
+            "Profil Pasar Bangsa": get_breed_business_profile(jenis_ternak, bangsa_ternak)["market_position"],
+            "Segmen Pembeli Utama": ", ".join(get_breed_business_profile(jenis_ternak, bangsa_ternak)["primary_buyers"]),
         })
         st.session_state.new_calculation = False
     
@@ -3337,8 +3717,7 @@ if st.session_state.show_results:
     - Jenis Ternak: **{jenis_ternak}**
     - Bangsa Ternak: **{bangsa_ternak}**
     - Jenis Kelamin: **{jenis_kelamin}**
-    - BCS / Kondisi Tubuh: **{bcs_option}**
-    - Skor Akurasi Input: **{accuracy_score}/100 ({accuracy_category})**
+    - Profil Pasar Bangsa: **{get_breed_business_profile(jenis_ternak, bangsa_ternak)['market_position']}**
     - BCS / Kondisi Tubuh: **{bcs_option}**
     - Skor Akurasi Input: **{accuracy_score}/100 ({accuracy_category})**
     - Kelas Pasar: **{kelas_pasar}** (penyesuaian harga x{kelas_multiplier:.2f})
