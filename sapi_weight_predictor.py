@@ -87,6 +87,21 @@ BREED_PRICE_FACTORS = {
     },
 }
 
+# Faktor penyesuaian harga berdasarkan kelas/kondisi pasar ternak.
+# Kelas ini bersifat estimasi cepat dan tetap bisa disesuaikan manual di sidebar.
+MARKET_CLASS_MULTIPLIERS = {
+    "Kelas A / Super": 1.08,
+    "Kelas B / Normal": 1.00,
+    "Kelas C / Kurus": 0.92,
+}
+
+MARKET_CLASS_OPTIONS = [
+    "Otomatis",
+    "Kelas A / Super",
+    "Kelas B / Normal",
+    "Kelas C / Kurus",
+]
+
 
 # Path helper agar gambar tetap aman saat aplikasi dipindahkan/deploy
 BASE_DIR = Path(__file__).resolve().parent
@@ -1048,7 +1063,90 @@ def get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak):
     return "Sangat Besar", "Ukuran tubuh berada cukup tinggi dibandingkan rentang umum bangsa ternak ini."
 
 
-def generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin):
+
+
+def get_market_class(status_ukuran, selected_class="Otomatis"):
+    """Menentukan kelas/kondisi pasar ternak dan multiplier harga."""
+    if selected_class and selected_class != "Otomatis":
+        market_class = selected_class
+        note = "Kelas pasar dipilih manual oleh pengguna."
+    else:
+        if status_ukuran == "Kecil":
+            market_class = "Kelas C / Kurus"
+            note = "Kelas otomatis karena ukuran tubuh relatif kecil dibandingkan rentang bangsa ternak."
+        elif status_ukuran == "Normal":
+            market_class = "Kelas B / Normal"
+            note = "Kelas otomatis karena ukuran tubuh berada pada rentang normal."
+        else:
+            market_class = "Kelas A / Super"
+            note = "Kelas otomatis karena ukuran tubuh berada di atas nilai tengah rentang normal."
+
+    multiplier = MARKET_CLASS_MULTIPLIERS.get(market_class, 1.00)
+    return market_class, note, multiplier
+
+
+def apply_market_class_to_prices(price_defaults, market_multiplier, market_class):
+    """Menyesuaikan default harga berdasarkan kelas/kondisi pasar."""
+    adjusted = price_defaults.copy()
+    adjusted["harga_bobot_hidup"] = round_price_to_nearest(adjusted["harga_bobot_hidup"] * market_multiplier)
+    adjusted["harga_karkas"] = round_price_to_nearest(adjusted["harga_karkas"] * market_multiplier)
+    adjusted["harga_daging"] = round_price_to_nearest(adjusted["harga_daging"] * market_multiplier)
+    adjusted["label"] = adjusted.get("label", "") + f" Kelas pasar: {market_class}."
+    adjusted["source"] = adjusted.get("source", "") + f" Penyesuaian kelas pasar: x{market_multiplier:.2f}."
+    adjusted["market_class"] = market_class
+    adjusted["market_multiplier"] = market_multiplier
+    return adjusted
+
+
+def calculate_error_range(value, margin_percent):
+    """Menghitung rentang bawah-atas berdasarkan margin error."""
+    try:
+        margin = float(margin_percent) / 100
+    except (TypeError, ValueError):
+        margin = 0.10
+
+    lower = max(0, value * (1 - margin))
+    upper = value * (1 + margin)
+    return lower, upper
+
+
+def calculate_maintenance_metrics(
+    nilai_jual,
+    harga_beli_modal,
+    biaya_pakan_per_hari,
+    lama_pemeliharaan_hari,
+    biaya_obat_vitamin,
+    biaya_transportasi,
+    biaya_lain_lain,
+):
+    """Menghitung biaya pemeliharaan, total modal, estimasi keuntungan, dan ROI."""
+    harga_beli_modal = max(0, float(harga_beli_modal or 0))
+    biaya_pakan_per_hari = max(0, float(biaya_pakan_per_hari or 0))
+    lama_pemeliharaan_hari = max(0, float(lama_pemeliharaan_hari or 0))
+    biaya_obat_vitamin = max(0, float(biaya_obat_vitamin or 0))
+    biaya_transportasi = max(0, float(biaya_transportasi or 0))
+    biaya_lain_lain = max(0, float(biaya_lain_lain or 0))
+
+    biaya_pakan_total = biaya_pakan_per_hari * lama_pemeliharaan_hari
+    total_biaya_pemeliharaan = (
+        biaya_pakan_total
+        + biaya_obat_vitamin
+        + biaya_transportasi
+        + biaya_lain_lain
+    )
+    total_modal = harga_beli_modal + total_biaya_pemeliharaan
+    estimasi_keuntungan = float(nilai_jual or 0) - total_modal
+    roi_percent = (estimasi_keuntungan / total_modal * 100) if total_modal > 0 else 0
+
+    return {
+        "biaya_pakan_total": biaya_pakan_total,
+        "total_biaya_pemeliharaan": total_biaya_pemeliharaan,
+        "total_modal": total_modal,
+        "estimasi_keuntungan": estimasi_keuntungan,
+        "roi_percent": roi_percent,
+    }
+
+def generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin, kelas_pasar=None, margin_error=None, estimasi_keuntungan=None):
     """Membuat rekomendasi otomatis berdasarkan hasil prediksi."""
     status, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
     recommendations = [
@@ -1056,6 +1154,18 @@ def generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ter
         "Lakukan pengukuran 2–3 kali, lalu gunakan nilai rata-rata agar prediksi lebih stabil.",
         "Untuk transaksi bernilai besar, tetap gunakan timbangan ternak yang terkalibrasi sebagai pembanding.",
     ]
+
+    if kelas_pasar:
+        recommendations.append(f"Kelas pasar yang digunakan untuk estimasi harga: {kelas_pasar}.")
+
+    if margin_error:
+        recommendations.append(f"Gunakan rentang estimasi ±{margin_error}% agar hasil tidak dianggap sebagai angka pasti.")
+
+    if estimasi_keuntungan is not None:
+        if estimasi_keuntungan >= 0:
+            recommendations.append("Estimasi usaha masih positif berdasarkan harga jual dan biaya yang dimasukkan.")
+        else:
+            recommendations.append("Estimasi usaha negatif. Cek kembali harga beli, biaya pakan, dan target harga jual.")
 
     if berat_badan <= 0:
         recommendations.insert(0, "Hasil prediksi belum wajar. Cek kembali rumus, satuan, dan data input.")
@@ -1103,10 +1213,13 @@ def create_pdf_report(report_data):
         ("Jenis Ternak", report_data.get("jenis_ternak", "-")),
         ("Bangsa Ternak", report_data.get("bangsa_ternak", "-")),
         ("Jenis Kelamin", report_data.get("jenis_kelamin", "-")),
+        ("Kelas Pasar", report_data.get("kelas_pasar", "-")),
+        ("Margin Error", f"±{report_data.get('margin_error', 0)}%"),
         ("Lingkar Dada", f"{report_data.get('lingkar_dada', 0):.1f} cm"),
         ("Panjang Badan", f"{report_data.get('panjang_badan', 0):.1f} cm"),
         ("Rumus", report_data.get("formula_name", "-")),
         ("Prediksi Berat Badan", f"{report_data.get('berat_badan', 0):.2f} kg"),
+        ("Rentang Berat Badan", f"{report_data.get('bb_min', 0):.2f} - {report_data.get('bb_max', 0):.2f} kg"),
     ]
 
     for label, value in rows:
@@ -1145,6 +1258,10 @@ def create_pdf_report(report_data):
         ("Estimasi Nilai Karkas", format_rupiah(report_data.get("nilai_karkas", 0))),
         ("Harga/kg Daging", format_rupiah(report_data.get("harga_daging", 0))),
         ("Estimasi Nilai Daging", format_rupiah(report_data.get("nilai_daging", 0))),
+        ("Total Biaya Pemeliharaan", format_rupiah(report_data.get("total_biaya_pemeliharaan", 0))),
+        ("Total Modal", format_rupiah(report_data.get("total_modal", 0))),
+        ("Estimasi Keuntungan", format_rupiah(report_data.get("estimasi_keuntungan", 0))),
+        ("ROI", f"{report_data.get('roi_percent', 0):.1f}%"),
     ]
 
     for label, value in rows:
@@ -1193,14 +1310,50 @@ def process_batch_dataframe(df):
             kelamin = str(row["Jenis Kelamin"]).strip()
             ld = float(row["Lingkar Dada"])
             pb = float(row["Panjang Badan"])
-            price_defaults = get_latest_price_defaults(jenis, bangsa)
-            harga_hidup = clean_price_value(row.get("Harga per Kg", 0), price_defaults["harga_bobot_hidup"])
-            harga_karkas_batch = clean_price_value(row.get("Harga per Kg Karkas", 0), price_defaults["harga_karkas"])
-            harga_daging_batch = clean_price_value(row.get("Harga per Kg Daging", 0), price_defaults["harga_daging"])
 
             berat, formula_name, formula_text = hitung_berat_badan(ld, pb, jenis, bangsa, kelamin)
             karkas = hitung_komponen_karkas(berat, jenis, bangsa, kelamin)
             status, _ = get_size_status(ld, pb, jenis, bangsa)
+
+            kelas_input = str(row.get("Kelas Pasar", "Otomatis")).strip()
+            if not kelas_input or kelas_input.lower() == "nan":
+                kelas_input = "Otomatis"
+            kelas_pasar_batch, _, kelas_multiplier_batch = get_market_class(status, kelas_input)
+
+            price_defaults = get_latest_price_defaults(jenis, bangsa)
+            price_defaults = apply_market_class_to_prices(
+                price_defaults,
+                kelas_multiplier_batch,
+                kelas_pasar_batch,
+            )
+
+            harga_hidup = clean_price_value(row.get("Harga per Kg", 0), price_defaults["harga_bobot_hidup"])
+            harga_karkas_batch = clean_price_value(row.get("Harga per Kg Karkas", 0), price_defaults["harga_karkas"])
+            harga_daging_batch = clean_price_value(row.get("Harga per Kg Daging", 0), price_defaults["harga_daging"])
+
+            margin_error_batch = clean_price_value(row.get("Margin Error (%)", 10), 10)
+            bb_min, bb_max = calculate_error_range(berat, margin_error_batch)
+
+            nilai_ternak = berat * harga_hidup
+            nilai_karkas = karkas["karkas_weight"] * harga_karkas_batch
+            nilai_daging = karkas["meat_weight"] * harga_daging_batch
+
+            harga_beli_modal_batch = clean_price_value(row.get("Harga Beli / Modal", 0), 0)
+            biaya_pakan_per_hari_batch = clean_price_value(row.get("Biaya Pakan per Hari", 0), 0)
+            lama_pemeliharaan_batch = clean_price_value(row.get("Lama Pemeliharaan (Hari)", 0), 0)
+            biaya_obat_batch = clean_price_value(row.get("Biaya Obat/Vitamin", 0), 0)
+            biaya_transport_batch = clean_price_value(row.get("Biaya Transportasi", 0), 0)
+            biaya_lain_batch = clean_price_value(row.get("Biaya Lain-lain", 0), 0)
+
+            business = calculate_maintenance_metrics(
+                nilai_jual=nilai_ternak,
+                harga_beli_modal=harga_beli_modal_batch,
+                biaya_pakan_per_hari=biaya_pakan_per_hari_batch,
+                lama_pemeliharaan_hari=lama_pemeliharaan_batch,
+                biaya_obat_vitamin=biaya_obat_batch,
+                biaya_transportasi=biaya_transport_batch,
+                biaya_lain_lain=biaya_lain_batch,
+            )
 
             results.append({
                 "No": idx + 1,
@@ -1211,15 +1364,25 @@ def process_batch_dataframe(df):
                 "Panjang Badan (cm)": pb,
                 "Rumus": formula_name,
                 "Prediksi Berat (kg)": round(berat, 2),
+                "BB Min (kg)": round(bb_min, 2),
+                "BB Max (kg)": round(bb_max, 2),
                 "Berat Karkas (kg)": round(karkas["karkas_weight"], 2),
                 "Berat Daging (kg)": round(karkas["meat_weight"], 2),
                 "Status Ukuran": status,
+                "Kelas Pasar": kelas_pasar_batch,
+                "Multiplier Kelas": kelas_multiplier_batch,
+                "Margin Error (%)": margin_error_batch,
                 "Harga per Kg": harga_hidup,
                 "Harga per Kg Karkas": harga_karkas_batch,
                 "Harga per Kg Daging": harga_daging_batch,
-                "Estimasi Nilai Ternak": round(berat * harga_hidup, 0),
-                "Estimasi Nilai Karkas": round(karkas["karkas_weight"] * harga_karkas_batch, 0),
-                "Estimasi Nilai Daging": round(karkas["meat_weight"] * harga_daging_batch, 0),
+                "Estimasi Nilai Ternak": round(nilai_ternak, 0),
+                "Estimasi Nilai Karkas": round(nilai_karkas, 0),
+                "Estimasi Nilai Daging": round(nilai_daging, 0),
+                "Harga Beli / Modal": round(harga_beli_modal_batch, 0),
+                "Biaya Pemeliharaan": round(business["total_biaya_pemeliharaan"], 0),
+                "Total Modal": round(business["total_modal"], 0),
+                "Estimasi Keuntungan": round(business["estimasi_keuntungan"], 0),
+                "ROI (%)": round(business["roi_percent"], 2),
                 "Status Proses": "Berhasil",
             })
         except Exception as exc:
@@ -1232,19 +1395,30 @@ def process_batch_dataframe(df):
                 "Panjang Badan (cm)": row.get("Panjang Badan", ""),
                 "Rumus": "-",
                 "Prediksi Berat (kg)": 0,
+                "BB Min (kg)": 0,
+                "BB Max (kg)": 0,
                 "Berat Karkas (kg)": 0,
                 "Berat Daging (kg)": 0,
                 "Status Ukuran": "-",
+                "Kelas Pasar": row.get("Kelas Pasar", "Otomatis"),
+                "Multiplier Kelas": 0,
+                "Margin Error (%)": row.get("Margin Error (%)", 10),
                 "Harga per Kg": row.get("Harga per Kg", 0),
                 "Harga per Kg Karkas": row.get("Harga per Kg Karkas", 0),
                 "Harga per Kg Daging": row.get("Harga per Kg Daging", 0),
                 "Estimasi Nilai Ternak": 0,
                 "Estimasi Nilai Karkas": 0,
                 "Estimasi Nilai Daging": 0,
+                "Harga Beli / Modal": row.get("Harga Beli / Modal", 0),
+                "Biaya Pemeliharaan": 0,
+                "Total Modal": 0,
+                "Estimasi Keuntungan": 0,
+                "ROI (%)": 0,
                 "Status Proses": f"Gagal: {exc}",
             })
 
     return pd.DataFrame(results)
+
 
 # Judul dan deskripsi aplikasi
 st.title("🐄 Prediksi Berat Badan Ternak")
@@ -1388,11 +1562,42 @@ panjang_badan = st.sidebar.number_input(
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("Estimasi Ekonomi")
-latest_prices = get_latest_price_defaults(jenis_ternak, bangsa_ternak)
+
+status_preview, status_preview_note = get_size_status(
+    lingkar_dada,
+    panjang_badan,
+    jenis_ternak,
+    bangsa_ternak,
+)
+
+kelas_pasar_input = st.sidebar.selectbox(
+    "Kelas/Kondisi Pasar",
+    options=MARKET_CLASS_OPTIONS,
+    help="Pilih otomatis agar aplikasi menilai kelas dari ukuran tubuh, atau pilih manual sesuai kondisi lapangan."
+)
+
+kelas_pasar, kelas_pasar_note, kelas_multiplier = get_market_class(
+    status_preview,
+    kelas_pasar_input,
+)
+
+latest_base_prices = get_latest_price_defaults(jenis_ternak, bangsa_ternak)
+latest_prices = apply_market_class_to_prices(
+    latest_base_prices,
+    kelas_multiplier,
+    kelas_pasar,
+)
+
 st.sidebar.caption(latest_prices["label"])
 st.sidebar.caption(f"Sumber/acuan: {latest_prices['source']}")
 
-price_key_suffix = f"{jenis_ternak}_{bangsa_ternak}".replace(" ", "_").replace("(", "").replace(")", "")
+price_key_suffix = (
+    f"{jenis_ternak}_{bangsa_ternak}_{kelas_pasar}"
+    .replace(" ", "_")
+    .replace("/", "_")
+    .replace("(", "")
+    .replace(")", "")
+)
 
 harga_bobot_hidup = st.sidebar.number_input(
     "Harga per kg bobot hidup (Rp)",
@@ -1400,7 +1605,7 @@ harga_bobot_hidup = st.sidebar.number_input(
     value=int(latest_prices["harga_bobot_hidup"]),
     step=1000,
     key=f"harga_bobot_hidup_{price_key_suffix}",
-    help="Harga default mengikuti jenis dan bangsa ternak. Ubah manual jika harga daerah berbeda."
+    help="Harga default mengikuti jenis, bangsa, dan kelas pasar ternak. Ubah manual jika harga daerah berbeda."
 )
 harga_karkas = st.sidebar.number_input(
     "Harga per kg karkas (Rp)",
@@ -1408,7 +1613,7 @@ harga_karkas = st.sidebar.number_input(
     value=int(latest_prices["harga_karkas"]),
     step=1000,
     key=f"harga_karkas_{price_key_suffix}",
-    help="Harga default mengikuti jenis dan bangsa ternak. Ubah manual jika harga daerah berbeda."
+    help="Harga default mengikuti jenis, bangsa, dan kelas pasar ternak. Ubah manual jika harga daerah berbeda."
 )
 harga_daging = st.sidebar.number_input(
     "Harga per kg daging (Rp)",
@@ -1416,7 +1621,56 @@ harga_daging = st.sidebar.number_input(
     value=int(latest_prices["harga_daging"]),
     step=1000,
     key=f"harga_daging_{price_key_suffix}",
-    help="Harga default mengikuti jenis dan bangsa ternak. Ubah manual jika harga daerah berbeda."
+    help="Harga default mengikuti jenis, bangsa, dan kelas pasar ternak. Ubah manual jika harga daerah berbeda."
+)
+
+margin_error = st.sidebar.slider(
+    "Margin error prediksi (%)",
+    min_value=5,
+    max_value=25,
+    value=10,
+    step=1,
+    help="Rentang estimasi bawah dan atas untuk menghindari hasil dianggap sebagai angka pasti."
+)
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("Biaya dan Keuntungan")
+harga_beli_modal = st.sidebar.number_input(
+    "Harga beli/modal awal (Rp)",
+    min_value=0,
+    value=0,
+    step=100000,
+    help="Isi jika ingin menghitung estimasi keuntungan. Biarkan 0 jika tidak ada data modal awal."
+)
+biaya_pakan_per_hari = st.sidebar.number_input(
+    "Biaya pakan per hari (Rp)",
+    min_value=0,
+    value=0,
+    step=5000,
+)
+lama_pemeliharaan_hari = st.sidebar.number_input(
+    "Lama pemeliharaan (hari)",
+    min_value=0,
+    value=0,
+    step=1,
+)
+biaya_obat_vitamin = st.sidebar.number_input(
+    "Biaya obat/vitamin (Rp)",
+    min_value=0,
+    value=0,
+    step=10000,
+)
+biaya_transportasi = st.sidebar.number_input(
+    "Biaya transportasi (Rp)",
+    min_value=0,
+    value=0,
+    step=10000,
+)
+biaya_lain_lain = st.sidebar.number_input(
+    "Biaya lain-lain (Rp)",
+    min_value=0,
+    value=0,
+    step=10000,
 )
 
 # Tombol untuk menghitung berat badan
@@ -1457,11 +1711,41 @@ if st.session_state.show_results:
     nilai_daging = karkas_data["meat_weight"] * harga_daging
     status_ukuran, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
 
+    bb_min, bb_max = calculate_error_range(berat_badan, margin_error)
+    karkas_min, karkas_max = calculate_error_range(karkas_data["karkas_weight"], margin_error)
+    daging_min, daging_max = calculate_error_range(karkas_data["meat_weight"], margin_error)
+    nilai_hidup_min, nilai_hidup_max = calculate_error_range(nilai_hidup, margin_error)
+
+    business_metrics = calculate_maintenance_metrics(
+        nilai_jual=nilai_hidup,
+        harga_beli_modal=harga_beli_modal,
+        biaya_pakan_per_hari=biaya_pakan_per_hari,
+        lama_pemeliharaan_hari=lama_pemeliharaan_hari,
+        biaya_obat_vitamin=biaya_obat_vitamin,
+        biaya_transportasi=biaya_transportasi,
+        biaya_lain_lain=biaya_lain_lain,
+    )
+
+    st.subheader("Ringkasan Hasil")
+    summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
+    with summary_col1:
+        st.metric("Prediksi Berat", f"{berat_badan:.2f} kg")
+        st.caption(f"Rentang ±{margin_error}%: {bb_min:.2f}–{bb_max:.2f} kg")
+    with summary_col2:
+        st.metric("Status Ukuran", status_ukuran)
+        st.caption(status_note)
+    with summary_col3:
+        st.metric("Kelas Pasar", kelas_pasar)
+        st.caption(kelas_pasar_note)
+    with summary_col4:
+        st.metric("Estimasi Keuntungan", format_rupiah(business_metrics["estimasi_keuntungan"]))
+        st.caption(f"ROI: {business_metrics['roi_percent']:.1f}%")
+
     st.subheader("Estimasi Nilai Ekonomi")
     econ_col1, econ_col2, econ_col3 = st.columns(3)
     with econ_col1:
         st.metric("Nilai Bobot Hidup", format_rupiah(nilai_hidup))
-        st.caption(f"Harga/kg: {format_rupiah(harga_bobot_hidup)}")
+        st.caption(f"Harga/kg: {format_rupiah(harga_bobot_hidup)} | Rentang: {format_rupiah(nilai_hidup_min)}–{format_rupiah(nilai_hidup_max)}")
     with econ_col2:
         st.metric("Nilai Karkas", format_rupiah(nilai_karkas))
         st.caption(f"Harga/kg: {format_rupiah(harga_karkas)}")
@@ -1469,7 +1753,26 @@ if st.session_state.show_results:
         st.metric("Nilai Daging", format_rupiah(nilai_daging))
         st.caption(f"Harga/kg: {format_rupiah(harga_daging)}")
 
-    st.info(f"**Status ukuran:** {status_ukuran}. {status_note}")
+    st.markdown("#### Rincian Biaya dan Profit")
+    biaya_df = pd.DataFrame([
+        {"Komponen": "Harga beli/modal awal", "Nilai": harga_beli_modal},
+        {"Komponen": "Biaya pakan total", "Nilai": business_metrics["biaya_pakan_total"]},
+        {"Komponen": "Biaya obat/vitamin", "Nilai": biaya_obat_vitamin},
+        {"Komponen": "Biaya transportasi", "Nilai": biaya_transportasi},
+        {"Komponen": "Biaya lain-lain", "Nilai": biaya_lain_lain},
+        {"Komponen": "Total biaya pemeliharaan", "Nilai": business_metrics["total_biaya_pemeliharaan"]},
+        {"Komponen": "Total modal", "Nilai": business_metrics["total_modal"]},
+        {"Komponen": "Estimasi keuntungan", "Nilai": business_metrics["estimasi_keuntungan"]},
+    ])
+    biaya_df["Nilai"] = biaya_df["Nilai"].apply(format_rupiah)
+    st.dataframe(biaya_df, use_container_width=True, hide_index=True)
+
+    if business_metrics["estimasi_keuntungan"] < 0:
+        st.warning("Estimasi keuntungan masih negatif. Cek kembali harga beli/modal, biaya pakan, atau harga jual.")
+    elif business_metrics["total_modal"] > 0:
+        st.success("Estimasi keuntungan positif berdasarkan data biaya dan harga jual yang dimasukkan.")
+
+    st.info(f"**Margin error:** ±{margin_error}%. Rentang estimasi berat: **{bb_min:.2f}–{bb_max:.2f} kg**.")
 
     # Simpan riwayat hanya saat tombol hitung baru ditekan
     if st.session_state.new_calculation:
@@ -1484,12 +1787,20 @@ if st.session_state.show_results:
             "Berat Karkas (kg)": round(karkas_data["karkas_weight"], 2),
             "Berat Daging (kg)": round(karkas_data["meat_weight"], 2),
             "Status Ukuran": status_ukuran,
+            "Kelas Pasar": kelas_pasar,
+            "Margin Error (%)": margin_error,
+            "BB Min (kg)": round(bb_min, 2),
+            "BB Max (kg)": round(bb_max, 2),
             "Harga/kg Bobot Hidup": harga_bobot_hidup,
             "Harga/kg Karkas": harga_karkas,
             "Harga/kg Daging": harga_daging,
             "Estimasi Nilai Ternak": round(nilai_hidup, 0),
             "Estimasi Nilai Karkas": round(nilai_karkas, 0),
             "Estimasi Nilai Daging": round(nilai_daging, 0),
+            "Total Biaya Pemeliharaan": round(business_metrics["total_biaya_pemeliharaan"], 0),
+            "Total Modal": round(business_metrics["total_modal"], 0),
+            "Estimasi Keuntungan": round(business_metrics["estimasi_keuntungan"], 0),
+            "ROI (%)": round(business_metrics["roi_percent"], 2),
         })
         st.session_state.new_calculation = False
     
@@ -1503,6 +1814,8 @@ if st.session_state.show_results:
     - Jenis Ternak: **{jenis_ternak}**
     - Bangsa Ternak: **{bangsa_ternak}**
     - Jenis Kelamin: **{jenis_kelamin}**
+    - Kelas Pasar: **{kelas_pasar}** (penyesuaian harga x{kelas_multiplier:.2f})
+    - Margin Error: **±{margin_error}%** (rentang BB: {bb_min:.2f}–{bb_max:.2f} kg)
     - Rumus yang Digunakan: **{formula_name}**
     - Formula: **{formula_text}**
     - Referensi: **{formula_reference}**
@@ -1512,7 +1825,17 @@ if st.session_state.show_results:
     """)
 
     st.subheader("Rekomendasi Otomatis")
-    for recommendation in generate_recommendations(berat_badan, lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin):
+    for recommendation in generate_recommendations(
+        berat_badan,
+        lingkar_dada,
+        panjang_badan,
+        jenis_ternak,
+        bangsa_ternak,
+        jenis_kelamin,
+        kelas_pasar=kelas_pasar,
+        margin_error=margin_error,
+        estimasi_keuntungan=business_metrics["estimasi_keuntungan"],
+    ):
         st.write(f"- {recommendation}")
 
     report_data = {
@@ -1528,12 +1851,26 @@ if st.session_state.show_results:
         "meat_weight": karkas_data["meat_weight"],
         "bone_and_fat_weight": karkas_data["bone_and_fat_weight"],
         "status_ukuran": status_ukuran,
+        "kelas_pasar": kelas_pasar,
+        "margin_error": margin_error,
+        "bb_min": bb_min,
+        "bb_max": bb_max,
+        "karkas_min": karkas_min,
+        "karkas_max": karkas_max,
+        "daging_min": daging_min,
+        "daging_max": daging_max,
         "harga_hidup": harga_bobot_hidup,
         "nilai_hidup": nilai_hidup,
+        "nilai_hidup_min": nilai_hidup_min,
+        "nilai_hidup_max": nilai_hidup_max,
         "harga_karkas": harga_karkas,
         "nilai_karkas": nilai_karkas,
         "harga_daging": harga_daging,
         "nilai_daging": nilai_daging,
+        "total_biaya_pemeliharaan": business_metrics["total_biaya_pemeliharaan"],
+        "total_modal": business_metrics["total_modal"],
+        "estimasi_keuntungan": business_metrics["estimasi_keuntungan"],
+        "roi_percent": business_metrics["roi_percent"],
     }
     pdf_bytes = create_pdf_report(report_data)
     if pdf_bytes:
@@ -2180,11 +2517,19 @@ with batch_tab:
     - `Panjang Badan`
 
     Kolom opsional:
+    - `Kelas Pasar` (`Otomatis`, `Kelas A / Super`, `Kelas B / Normal`, `Kelas C / Kurus`)
+    - `Margin Error (%)`
     - `Harga per Kg`
     - `Harga per Kg Karkas`
     - `Harga per Kg Daging`
+    - `Harga Beli / Modal`
+    - `Biaya Pakan per Hari`
+    - `Lama Pemeliharaan (Hari)`
+    - `Biaya Obat/Vitamin`
+    - `Biaya Transportasi`
+    - `Biaya Lain-lain`
 
-    Jika kolom harga dikosongkan atau diisi 0, aplikasi memakai harga default terbaru berdasarkan jenis ternak dan bangsa ternak.
+    Jika kolom harga dikosongkan atau diisi 0, aplikasi memakai harga default berdasarkan jenis, bangsa, dan kelas pasar ternak.
     """)
 
     template_rows = [
@@ -2219,10 +2564,27 @@ with batch_tab:
     ]
 
     for row in template_rows:
+        status_template, _ = get_size_status(
+            row["Lingkar Dada"],
+            row["Panjang Badan"],
+            row["Jenis Ternak"],
+            row["Bangsa Ternak"],
+        )
+        kelas_template, _, multiplier_template = get_market_class(status_template, "Otomatis")
         prices = get_latest_price_defaults(row["Jenis Ternak"], row["Bangsa Ternak"])
+        prices = apply_market_class_to_prices(prices, multiplier_template, kelas_template)
+
+        row["Kelas Pasar"] = "Otomatis"
+        row["Margin Error (%)"] = 10
         row["Harga per Kg"] = prices["harga_bobot_hidup"]
         row["Harga per Kg Karkas"] = prices["harga_karkas"]
         row["Harga per Kg Daging"] = prices["harga_daging"]
+        row["Harga Beli / Modal"] = 0
+        row["Biaya Pakan per Hari"] = 0
+        row["Lama Pemeliharaan (Hari)"] = 0
+        row["Biaya Obat/Vitamin"] = 0
+        row["Biaya Transportasi"] = 0
+        row["Biaya Lain-lain"] = 0
 
     template_df = pd.DataFrame(template_rows)
 

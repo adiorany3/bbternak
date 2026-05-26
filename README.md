@@ -1,6 +1,22 @@
-# Sapi Weight Predictor - Versi Terbaru
+# Sapi Weight Predictor - Profit Final
 
-Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi estimasi karkas, non-karkas, daging, estimasi nilai ekonomi, laporan PDF, riwayat, dan upload data massal.
+Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan.
+
+## Fitur Utama
+
+- Prediksi berat badan sapi, kambing, dan domba.
+- Rumus menyesuaikan jenis dan bangsa ternak.
+- Estimasi karkas, non-karkas, dan daging.
+- Harga default berdasarkan jenis dan bangsa ternak.
+- Kelas/kondisi pasar: Otomatis, Kelas A / Super, Kelas B / Normal, Kelas C / Kurus.
+- Margin error prediksi berat.
+- Estimasi nilai bobot hidup, karkas, dan daging.
+- Estimasi biaya pemeliharaan, total modal, keuntungan, dan ROI.
+- Rekomendasi otomatis.
+- Download laporan PDF.
+- Riwayat perhitungan.
+- Upload data banyak ternak melalui CSV/Excel.
+- Download template CSV.
 
 ## File Utama untuk Streamlit Online
 
@@ -10,7 +26,7 @@ Gunakan file berikut sebagai **Main file path**:
 sapi_weight_predictor.py
 ```
 
-## Struktur Paket
+## Struktur Folder
 
 ```text
 repository-anda/
@@ -20,9 +36,9 @@ repository-anda/
 ├── .streamlit/
 │   └── config.toml
 └── assets/
+    ├── karkas.jpeg
     ├── lingkar_dada.png
-    ├── panjang_badan.png
-    └── karkas.jpeg
+    └── panjang_badan.png
 ```
 
 ## Cara Menjalankan Lokal
@@ -30,7 +46,7 @@ repository-anda/
 Mac/Linux:
 
 ```bash
-cd sapi_weight_predictor_streamlit_latest
+cd sapi_weight_predictor_streamlit_profit_final
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -40,20 +56,20 @@ streamlit run sapi_weight_predictor.py
 Windows:
 
 ```bash
-cd sapi_weight_predictor_streamlit_latest
+cd sapi_weight_predictor_streamlit_profit_final
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 streamlit run sapi_weight_predictor.py
 ```
 
-## Cara Deploy di Streamlit Community Cloud
+## Cara Deploy ke Streamlit Community Cloud
 
 1. Upload semua isi folder ini ke GitHub.
 2. Buka Streamlit Community Cloud.
 3. Pilih **New app**.
-4. Pilih repository GitHub Anda.
-5. Isi **Main file path** dengan:
+4. Pilih repository GitHub.
+5. Isi **Main file path**:
 
 ```text
 sapi_weight_predictor.py
@@ -61,15 +77,9 @@ sapi_weight_predictor.py
 
 6. Klik **Deploy**.
 
-## Catatan Penting
+## Catatan
 
-- Jangan hapus `requirements.txt`.
-- Jangan hapus folder `assets`.
-- Jika ingin mengganti gambar, gunakan nama file yang sama atau sesuaikan pemanggilan gambar pada kode.
-- Harga default bersifat acuan dan tetap dapat diubah manual oleh pengguna.
-- Hasil prediksi tetap estimasi, bukan pengganti timbangan ternak.
-
-
-## Update Estimasi Harga
-
-Versi ini memakai default harga yang lebih spesifik berdasarkan **jenis ternak** dan **bangsa ternak**. Contoh: Sapi Bali, Sapi Limousin, Kambing Boer, dan Domba Garut dapat memiliki default harga berbeda. Harga tetap dapat diedit manual karena harga pasar berbeda menurut daerah dan waktu.
+- Harga default adalah acuan awal dan tetap bisa diedit manual sesuai daerah.
+- Kelas pasar bersifat estimasi cepat, bukan penilaian resmi.
+- Margin error dipakai agar hasil tidak dianggap sebagai angka pasti.
+- Untuk transaksi besar, tetap gunakan timbangan ternak terkalibrasi.
