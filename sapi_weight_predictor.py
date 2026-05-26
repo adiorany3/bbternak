@@ -1560,9 +1560,8 @@ panjang_badan = st.sidebar.number_input(
     help=f"Ukur panjang badan ternak, yaitu dari ujung bahu hingga tulang duduk (tuber ischii). Rentang normal untuk {bangsa_ternak}: {length_range['min']}-{length_range['max']} cm."
 )
 
-st.sidebar.markdown("---")
-st.sidebar.subheader("Estimasi Ekonomi")
-
+# Nilai awal ekonomi/biaya dibuat default agar sidebar tetap fokus pada hitung berat badan.
+# Input detail ekonomi dan biaya dipindahkan ke tab hasil setelah tombol Hitung Berat Badan ditekan.
 status_preview, status_preview_note = get_size_status(
     lingkar_dada,
     panjang_badan,
@@ -1570,12 +1569,7 @@ status_preview, status_preview_note = get_size_status(
     bangsa_ternak,
 )
 
-kelas_pasar_input = st.sidebar.selectbox(
-    "Kelas/Kondisi Pasar",
-    options=MARKET_CLASS_OPTIONS,
-    help="Pilih otomatis agar aplikasi menilai kelas dari ukuran tubuh, atau pilih manual sesuai kondisi lapangan."
-)
-
+kelas_pasar_input = "Otomatis"
 kelas_pasar, kelas_pasar_note, kelas_multiplier = get_market_class(
     status_preview,
     kelas_pasar_input,
@@ -1588,9 +1582,6 @@ latest_prices = apply_market_class_to_prices(
     kelas_pasar,
 )
 
-st.sidebar.caption(latest_prices["label"])
-st.sidebar.caption(f"Sumber/acuan: {latest_prices['source']}")
-
 price_key_suffix = (
     f"{jenis_ternak}_{bangsa_ternak}_{kelas_pasar}"
     .replace(" ", "_")
@@ -1599,79 +1590,16 @@ price_key_suffix = (
     .replace(")", "")
 )
 
-harga_bobot_hidup = st.sidebar.number_input(
-    "Harga per kg bobot hidup (Rp)",
-    min_value=0,
-    value=int(latest_prices["harga_bobot_hidup"]),
-    step=1000,
-    key=f"harga_bobot_hidup_{price_key_suffix}",
-    help="Harga default mengikuti jenis, bangsa, dan kelas pasar ternak. Ubah manual jika harga daerah berbeda."
-)
-harga_karkas = st.sidebar.number_input(
-    "Harga per kg karkas (Rp)",
-    min_value=0,
-    value=int(latest_prices["harga_karkas"]),
-    step=1000,
-    key=f"harga_karkas_{price_key_suffix}",
-    help="Harga default mengikuti jenis, bangsa, dan kelas pasar ternak. Ubah manual jika harga daerah berbeda."
-)
-harga_daging = st.sidebar.number_input(
-    "Harga per kg daging (Rp)",
-    min_value=0,
-    value=int(latest_prices["harga_daging"]),
-    step=1000,
-    key=f"harga_daging_{price_key_suffix}",
-    help="Harga default mengikuti jenis, bangsa, dan kelas pasar ternak. Ubah manual jika harga daerah berbeda."
-)
-
-margin_error = st.sidebar.slider(
-    "Margin error prediksi (%)",
-    min_value=5,
-    max_value=25,
-    value=10,
-    step=1,
-    help="Rentang estimasi bawah dan atas untuk menghindari hasil dianggap sebagai angka pasti."
-)
-
-st.sidebar.markdown("---")
-st.sidebar.subheader("Biaya dan Keuntungan")
-harga_beli_modal = st.sidebar.number_input(
-    "Harga beli/modal awal (Rp)",
-    min_value=0,
-    value=0,
-    step=100000,
-    help="Isi jika ingin menghitung estimasi keuntungan. Biarkan 0 jika tidak ada data modal awal."
-)
-biaya_pakan_per_hari = st.sidebar.number_input(
-    "Biaya pakan per hari (Rp)",
-    min_value=0,
-    value=0,
-    step=5000,
-)
-lama_pemeliharaan_hari = st.sidebar.number_input(
-    "Lama pemeliharaan (hari)",
-    min_value=0,
-    value=0,
-    step=1,
-)
-biaya_obat_vitamin = st.sidebar.number_input(
-    "Biaya obat/vitamin (Rp)",
-    min_value=0,
-    value=0,
-    step=10000,
-)
-biaya_transportasi = st.sidebar.number_input(
-    "Biaya transportasi (Rp)",
-    min_value=0,
-    value=0,
-    step=10000,
-)
-biaya_lain_lain = st.sidebar.number_input(
-    "Biaya lain-lain (Rp)",
-    min_value=0,
-    value=0,
-    step=10000,
-)
+margin_error = 10
+harga_bobot_hidup = int(latest_prices["harga_bobot_hidup"])
+harga_karkas = int(latest_prices["harga_karkas"])
+harga_daging = int(latest_prices["harga_daging"])
+harga_beli_modal = 0
+biaya_pakan_per_hari = 0
+lama_pemeliharaan_hari = 0
+biaya_obat_vitamin = 0
+biaya_transportasi = 0
+biaya_lain_lain = 0
 
 # Tombol untuk menghitung berat badan
 # st.session_state digunakan agar hasil tidak hilang ketika slider/komponen lain berubah.
@@ -1688,7 +1616,7 @@ if st.sidebar.button("Hitung Berat Badan", type="primary"):
 
 if st.session_state.show_results:
     # Add info message to guide users
-    st.sidebar.info("👉 Silakan geser ke kanan untuk melihat hasil perhitungan detail, visualisasi data, dan analisis komponen karkas.")
+    st.sidebar.info("👉 Hasil utama ada di tab Hitung Berat Badan. Tab ekonomi dan biaya tersedia jika diperlukan.")
     
     # Hitung berat badan
     berat_badan, formula_name, formula_text = hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)
@@ -1702,77 +1630,233 @@ if st.session_state.show_results:
     # Hitung komponen karkas
     karkas_data = hitung_komponen_karkas(berat_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)
     
-    # Tampilkan hasil dalam kotak
-    st.success(f"## Prediksi Berat Badan: **{berat_badan:.2f} kg**")
-
-    # Estimasi nilai ekonomi
-    nilai_hidup = berat_badan * harga_bobot_hidup
-    nilai_karkas = karkas_data["karkas_weight"] * harga_karkas
-    nilai_daging = karkas_data["meat_weight"] * harga_daging
+    # Area hasil dibuat bertab agar fokus utama tetap pada hitung berat badan.
     status_ukuran, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
 
-    bb_min, bb_max = calculate_error_range(berat_badan, margin_error)
-    karkas_min, karkas_max = calculate_error_range(karkas_data["karkas_weight"], margin_error)
-    daging_min, daging_max = calculate_error_range(karkas_data["meat_weight"], margin_error)
-    nilai_hidup_min, nilai_hidup_max = calculate_error_range(nilai_hidup, margin_error)
-
-    business_metrics = calculate_maintenance_metrics(
-        nilai_jual=nilai_hidup,
-        harga_beli_modal=harga_beli_modal,
-        biaya_pakan_per_hari=biaya_pakan_per_hari,
-        lama_pemeliharaan_hari=lama_pemeliharaan_hari,
-        biaya_obat_vitamin=biaya_obat_vitamin,
-        biaya_transportasi=biaya_transportasi,
-        biaya_lain_lain=biaya_lain_lain,
-    )
-
-    st.subheader("Ringkasan Hasil")
-    summary_col1, summary_col2, summary_col3, summary_col4 = st.columns(4)
-    with summary_col1:
-        st.metric("Prediksi Berat", f"{berat_badan:.2f} kg")
-        st.caption(f"Rentang ±{margin_error}%: {bb_min:.2f}–{bb_max:.2f} kg")
-    with summary_col2:
-        st.metric("Status Ukuran", status_ukuran)
-        st.caption(status_note)
-    with summary_col3:
-        st.metric("Kelas Pasar", kelas_pasar)
-        st.caption(kelas_pasar_note)
-    with summary_col4:
-        st.metric("Estimasi Keuntungan", format_rupiah(business_metrics["estimasi_keuntungan"]))
-        st.caption(f"ROI: {business_metrics['roi_percent']:.1f}%")
-
-    st.subheader("Estimasi Nilai Ekonomi")
-    econ_col1, econ_col2, econ_col3 = st.columns(3)
-    with econ_col1:
-        st.metric("Nilai Bobot Hidup", format_rupiah(nilai_hidup))
-        st.caption(f"Harga/kg: {format_rupiah(harga_bobot_hidup)} | Rentang: {format_rupiah(nilai_hidup_min)}–{format_rupiah(nilai_hidup_max)}")
-    with econ_col2:
-        st.metric("Nilai Karkas", format_rupiah(nilai_karkas))
-        st.caption(f"Harga/kg: {format_rupiah(harga_karkas)}")
-    with econ_col3:
-        st.metric("Nilai Daging", format_rupiah(nilai_daging))
-        st.caption(f"Harga/kg: {format_rupiah(harga_daging)}")
-
-    st.markdown("#### Rincian Biaya dan Profit")
-    biaya_df = pd.DataFrame([
-        {"Komponen": "Harga beli/modal awal", "Nilai": harga_beli_modal},
-        {"Komponen": "Biaya pakan total", "Nilai": business_metrics["biaya_pakan_total"]},
-        {"Komponen": "Biaya obat/vitamin", "Nilai": biaya_obat_vitamin},
-        {"Komponen": "Biaya transportasi", "Nilai": biaya_transportasi},
-        {"Komponen": "Biaya lain-lain", "Nilai": biaya_lain_lain},
-        {"Komponen": "Total biaya pemeliharaan", "Nilai": business_metrics["total_biaya_pemeliharaan"]},
-        {"Komponen": "Total modal", "Nilai": business_metrics["total_modal"]},
-        {"Komponen": "Estimasi keuntungan", "Nilai": business_metrics["estimasi_keuntungan"]},
+    hasil_tab, ekonomi_tab, biaya_tab = st.tabs([
+        "⚖️ Hitung Berat Badan",
+        "💰 Estimasi Ekonomi",
+        "📊 Biaya & Keuntungan",
     ])
-    biaya_df["Nilai"] = biaya_df["Nilai"].apply(format_rupiah)
-    st.dataframe(biaya_df, use_container_width=True, hide_index=True)
 
-    if business_metrics["estimasi_keuntungan"] < 0:
-        st.warning("Estimasi keuntungan masih negatif. Cek kembali harga beli/modal, biaya pakan, atau harga jual.")
-    elif business_metrics["total_modal"] > 0:
-        st.success("Estimasi keuntungan positif berdasarkan data biaya dan harga jual yang dimasukkan.")
+    with hasil_tab:
+        st.success(f"## Prediksi Berat Badan: **{berat_badan:.2f} kg**")
 
-    st.info(f"**Margin error:** ±{margin_error}%. Rentang estimasi berat: **{bb_min:.2f}–{bb_max:.2f} kg**.")
+        margin_error = st.slider(
+            "Margin error prediksi (%)",
+            min_value=5,
+            max_value=25,
+            value=10,
+            step=1,
+            key="margin_error_hasil_tab",
+            help="Rentang estimasi bawah dan atas untuk menghindari hasil dianggap sebagai angka pasti."
+        )
+
+        bb_min, bb_max = calculate_error_range(berat_badan, margin_error)
+        karkas_min, karkas_max = calculate_error_range(karkas_data["karkas_weight"], margin_error)
+        daging_min, daging_max = calculate_error_range(karkas_data["meat_weight"], margin_error)
+
+        summary_col1, summary_col2, summary_col3 = st.columns(3)
+        with summary_col1:
+            st.metric("Prediksi Berat", f"{berat_badan:.2f} kg")
+            st.caption(f"Rentang ±{margin_error}%: {bb_min:.2f}–{bb_max:.2f} kg")
+        with summary_col2:
+            st.metric("Status Ukuran", status_ukuran)
+            st.caption(status_note)
+        with summary_col3:
+            st.metric("Rumus", formula_name)
+            st.caption(formula_text)
+
+        st.markdown("#### Input Utama")
+        input_summary_df = pd.DataFrame([
+            {"Parameter": "Jenis Ternak", "Nilai": jenis_ternak},
+            {"Parameter": "Bangsa Ternak", "Nilai": bangsa_ternak},
+            {"Parameter": "Jenis Kelamin", "Nilai": jenis_kelamin},
+            {"Parameter": "Lingkar Dada", "Nilai": f"{lingkar_dada:.1f} cm"},
+            {"Parameter": "Panjang Badan", "Nilai": f"{panjang_badan:.1f} cm"},
+            {"Parameter": "Rentang Normal LD", "Nilai": f"{chest_range['min']}–{chest_range['max']} cm"},
+            {"Parameter": "Rentang Normal PB", "Nilai": f"{length_range['min']}–{length_range['max']} cm"},
+        ])
+        st.dataframe(input_summary_df, use_container_width=True, hide_index=True)
+
+        st.info(
+            f"Fokus utama aplikasi adalah estimasi berat badan. "
+            f"Hasil saat ini berada pada rentang **{bb_min:.2f}–{bb_max:.2f} kg** dengan margin error ±{margin_error}%."
+        )
+
+    with ekonomi_tab:
+        st.markdown("#### Estimasi Ekonomi")
+        status_preview, _ = get_size_status(
+            lingkar_dada,
+            panjang_badan,
+            jenis_ternak,
+            bangsa_ternak,
+        )
+
+        kelas_pasar_input = st.selectbox(
+            "Kelas/Kondisi Pasar",
+            options=MARKET_CLASS_OPTIONS,
+            key="kelas_pasar_ekonomi_tab",
+            help="Pilih otomatis agar aplikasi menilai kelas dari ukuran tubuh, atau pilih manual sesuai kondisi lapangan."
+        )
+
+        kelas_pasar, kelas_pasar_note, kelas_multiplier = get_market_class(
+            status_preview,
+            kelas_pasar_input,
+        )
+
+        latest_base_prices = get_latest_price_defaults(jenis_ternak, bangsa_ternak)
+        latest_prices = apply_market_class_to_prices(
+            latest_base_prices,
+            kelas_multiplier,
+            kelas_pasar,
+        )
+
+        st.caption(latest_prices["label"])
+        st.caption(f"Sumber/acuan: {latest_prices['source']}")
+
+        price_key_suffix = (
+            f"{jenis_ternak}_{bangsa_ternak}_{kelas_pasar}"
+            .replace(" ", "_")
+            .replace("/", "_")
+            .replace("(", "")
+            .replace(")", "")
+        )
+
+        price_col1, price_col2, price_col3 = st.columns(3)
+        with price_col1:
+            harga_bobot_hidup = st.number_input(
+                "Harga per kg bobot hidup (Rp)",
+                min_value=0,
+                value=int(latest_prices["harga_bobot_hidup"]),
+                step=1000,
+                key=f"harga_bobot_hidup_tab_{price_key_suffix}",
+                help="Harga default mengikuti jenis, bangsa, dan kelas pasar ternak. Ubah manual jika harga daerah berbeda."
+            )
+        with price_col2:
+            harga_karkas = st.number_input(
+                "Harga per kg karkas (Rp)",
+                min_value=0,
+                value=int(latest_prices["harga_karkas"]),
+                step=1000,
+                key=f"harga_karkas_tab_{price_key_suffix}",
+                help="Harga default mengikuti jenis, bangsa, dan kelas pasar ternak. Ubah manual jika harga daerah berbeda."
+            )
+        with price_col3:
+            harga_daging = st.number_input(
+                "Harga per kg daging (Rp)",
+                min_value=0,
+                value=int(latest_prices["harga_daging"]),
+                step=1000,
+                key=f"harga_daging_tab_{price_key_suffix}",
+                help="Harga default mengikuti jenis, bangsa, dan kelas pasar ternak. Ubah manual jika harga daerah berbeda."
+            )
+
+        nilai_hidup = berat_badan * harga_bobot_hidup
+        nilai_karkas = karkas_data["karkas_weight"] * harga_karkas
+        nilai_daging = karkas_data["meat_weight"] * harga_daging
+        nilai_hidup_min, nilai_hidup_max = calculate_error_range(nilai_hidup, margin_error)
+
+        econ_col1, econ_col2, econ_col3 = st.columns(3)
+        with econ_col1:
+            st.metric("Nilai Bobot Hidup", format_rupiah(nilai_hidup))
+            st.caption(f"Harga/kg: {format_rupiah(harga_bobot_hidup)} | Rentang: {format_rupiah(nilai_hidup_min)}–{format_rupiah(nilai_hidup_max)}")
+        with econ_col2:
+            st.metric("Nilai Karkas", format_rupiah(nilai_karkas))
+            st.caption(f"Harga/kg: {format_rupiah(harga_karkas)}")
+        with econ_col3:
+            st.metric("Nilai Daging", format_rupiah(nilai_daging))
+            st.caption(f"Harga/kg: {format_rupiah(harga_daging)}")
+
+        st.info(f"**Kelas pasar:** {kelas_pasar}. {kelas_pasar_note}")
+
+    with biaya_tab:
+        st.markdown("#### Biaya & Keuntungan")
+
+        cost_col1, cost_col2, cost_col3 = st.columns(3)
+        with cost_col1:
+            harga_beli_modal = st.number_input(
+                "Harga beli/modal awal (Rp)",
+                min_value=0,
+                value=0,
+                step=100000,
+                key="harga_beli_modal_biaya_tab",
+                help="Isi jika ingin menghitung estimasi keuntungan. Biarkan 0 jika tidak ada data modal awal."
+            )
+            biaya_obat_vitamin = st.number_input(
+                "Biaya obat/vitamin (Rp)",
+                min_value=0,
+                value=0,
+                step=10000,
+                key="biaya_obat_biaya_tab",
+            )
+        with cost_col2:
+            biaya_pakan_per_hari = st.number_input(
+                "Biaya pakan per hari (Rp)",
+                min_value=0,
+                value=0,
+                step=5000,
+                key="biaya_pakan_biaya_tab",
+            )
+            biaya_transportasi = st.number_input(
+                "Biaya transportasi (Rp)",
+                min_value=0,
+                value=0,
+                step=10000,
+                key="biaya_transport_biaya_tab",
+            )
+        with cost_col3:
+            lama_pemeliharaan_hari = st.number_input(
+                "Lama pemeliharaan (hari)",
+                min_value=0,
+                value=0,
+                step=1,
+                key="lama_pemeliharaan_biaya_tab",
+            )
+            biaya_lain_lain = st.number_input(
+                "Biaya lain-lain (Rp)",
+                min_value=0,
+                value=0,
+                step=10000,
+                key="biaya_lain_biaya_tab",
+            )
+
+        business_metrics = calculate_maintenance_metrics(
+            nilai_jual=nilai_hidup,
+            harga_beli_modal=harga_beli_modal,
+            biaya_pakan_per_hari=biaya_pakan_per_hari,
+            lama_pemeliharaan_hari=lama_pemeliharaan_hari,
+            biaya_obat_vitamin=biaya_obat_vitamin,
+            biaya_transportasi=biaya_transportasi,
+            biaya_lain_lain=biaya_lain_lain,
+        )
+
+        profit_col1, profit_col2, profit_col3 = st.columns(3)
+        with profit_col1:
+            st.metric("Total Biaya Pemeliharaan", format_rupiah(business_metrics["total_biaya_pemeliharaan"]))
+        with profit_col2:
+            st.metric("Total Modal", format_rupiah(business_metrics["total_modal"]))
+        with profit_col3:
+            st.metric("Estimasi Keuntungan", format_rupiah(business_metrics["estimasi_keuntungan"]))
+            st.caption(f"ROI: {business_metrics['roi_percent']:.1f}%")
+
+        biaya_df = pd.DataFrame([
+            {"Komponen": "Harga beli/modal awal", "Nilai": harga_beli_modal},
+            {"Komponen": "Biaya pakan total", "Nilai": business_metrics["biaya_pakan_total"]},
+            {"Komponen": "Biaya obat/vitamin", "Nilai": biaya_obat_vitamin},
+            {"Komponen": "Biaya transportasi", "Nilai": biaya_transportasi},
+            {"Komponen": "Biaya lain-lain", "Nilai": biaya_lain_lain},
+            {"Komponen": "Total biaya pemeliharaan", "Nilai": business_metrics["total_biaya_pemeliharaan"]},
+            {"Komponen": "Total modal", "Nilai": business_metrics["total_modal"]},
+            {"Komponen": "Estimasi keuntungan", "Nilai": business_metrics["estimasi_keuntungan"]},
+        ])
+        biaya_df["Nilai"] = biaya_df["Nilai"].apply(format_rupiah)
+        st.dataframe(biaya_df, use_container_width=True, hide_index=True)
+
+        if business_metrics["estimasi_keuntungan"] < 0:
+            st.warning("Estimasi keuntungan masih negatif. Cek kembali harga beli/modal, biaya pakan, atau harga jual.")
+        elif business_metrics["total_modal"] > 0:
+            st.success("Estimasi keuntungan positif berdasarkan data biaya dan harga jual yang dimasukkan.")
 
     # Simpan riwayat hanya saat tombol hitung baru ditekan
     if st.session_state.new_calculation:

@@ -1,16 +1,30 @@
-# Sapi Weight Predictor - Profit Final
+# Sapi Weight Predictor - Weight Focus Tabs
 
 Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan.
+
+## Fokus Tampilan Baru
+
+Versi ini dibuat lebih fokus pada **hitung berat badan**:
+
+- Sidebar hanya berisi input utama:
+  - Jenis ternak
+  - Bangsa ternak
+  - Jenis kelamin
+  - Lingkar dada
+  - Panjang badan
+  - Tombol hitung
+- Hasil utama berada di tab **Hitung Berat Badan**.
+- Estimasi harga dipindahkan ke tab **Estimasi Ekonomi**.
+- Biaya, profit, dan ROI dipindahkan ke tab **Biaya & Keuntungan**.
 
 ## Fitur Utama
 
 - Prediksi berat badan sapi, kambing, dan domba.
 - Rumus menyesuaikan jenis dan bangsa ternak.
-- Estimasi karkas, non-karkas, dan daging.
-- Harga default berdasarkan jenis dan bangsa ternak.
-- Kelas/kondisi pasar: Otomatis, Kelas A / Super, Kelas B / Normal, Kelas C / Kurus.
+- Status ukuran ternak.
 - Margin error prediksi berat.
-- Estimasi nilai bobot hidup, karkas, dan daging.
+- Estimasi karkas, non-karkas, dan daging.
+- Estimasi ekonomi berdasarkan jenis, bangsa, dan kelas pasar ternak.
 - Estimasi biaya pemeliharaan, total modal, keuntungan, dan ROI.
 - Rekomendasi otomatis.
 - Download laporan PDF.
@@ -41,28 +55,6 @@ repository-anda/
     └── panjang_badan.png
 ```
 
-## Cara Menjalankan Lokal
-
-Mac/Linux:
-
-```bash
-cd sapi_weight_predictor_streamlit_profit_final
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-streamlit run sapi_weight_predictor.py
-```
-
-Windows:
-
-```bash
-cd sapi_weight_predictor_streamlit_profit_final
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-streamlit run sapi_weight_predictor.py
-```
-
 ## Cara Deploy ke Streamlit Community Cloud
 
 1. Upload semua isi folder ini ke GitHub.
@@ -76,6 +68,28 @@ sapi_weight_predictor.py
 ```
 
 6. Klik **Deploy**.
+
+## Cara Menjalankan Lokal
+
+Mac/Linux:
+
+```bash
+cd sapi_weight_predictor_streamlit_weight_focus_tabs
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run sapi_weight_predictor.py
+```
+
+Windows:
+
+```bash
+cd sapi_weight_predictor_streamlit_weight_focus_tabs
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run sapi_weight_predictor.py
+```
 
 ## Catatan
 
