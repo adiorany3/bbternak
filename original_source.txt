@@ -23,27 +23,9 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.figure_factory as ff
 from datetime import datetime
-from pathlib import Path
 
 # Get current year for the footer
 current_year = datetime.now().year
-
-# Path helper agar gambar tetap aman saat aplikasi dipindahkan/deploy
-BASE_DIR = Path(__file__).resolve().parent
-ASSET_DIR = BASE_DIR / "assets"
-
-def show_image_safe(image_name, caption, fallback_paths=None):
-    """Menampilkan gambar jika file tersedia, tanpa membuat aplikasi error jika gambar belum ada."""
-    fallback_paths = fallback_paths or []
-    candidate_paths = [ASSET_DIR / image_name, BASE_DIR / image_name]
-    candidate_paths.extend(BASE_DIR / path for path in fallback_paths)
-
-    for image_path in candidate_paths:
-        if image_path.exists():
-            st.image(str(image_path), caption=caption, use_container_width=True)
-            return
-
-    st.info(f"Gambar panduan belum tersedia: {image_name}. Letakkan file di folder assets/.")
 
 # Konfigurasi halaman Streamlit - HARUS DITEMPATKAN PERTAMA
 st.set_page_config(
@@ -720,18 +702,6 @@ def hitung_komponen_karkas(berat_badan, jenis_ternak, bangsa_ternak, jenis_kelam
         "reference": slaughter_data["reference"]
     }
 
-def validate_weight_result(weight, jenis_ternak):
-    """Validasi sederhana agar hasil ekstrem diberi peringatan kepada pengguna."""
-    normal_limits = {
-        "Sapi": (50, 1200),
-        "Kambing": (5, 150),
-        "Domba": (5, 150),
-    }
-
-    minimum, maximum = normal_limits.get(jenis_ternak, (0, float("inf")))
-    return minimum <= weight <= maximum
-
-
 def create_weight_distribution_chart(jenis_ternak, bangsa_ternak, jenis_kelamin, current_weight):
     """
     Membuat visualisasi distribusi berat untuk jenis dan bangsa ternak tertentu
@@ -936,7 +906,7 @@ with guide_tab1:
         > **Catatan Penting**: Pengukuran sebaiknya dilakukan pada pagi hari sebelum ternak diberi makan untuk menghindari pengembangan perut yang dapat mempengaruhi hasil pengukuran. Selain itu, pastikan ternak dalam keadaan seimbang dan tidak terlalu gelisah.
         """)
     with col2:
-        show_image_safe("lingkar_dada.png", "Cara mengukur lingkar dada ternak. Pastikan pita ukur melingkar tepat di belakang bahu.", fallback_paths=["version/V3/assets/panjangbadan.png"])
+        st.image("version/V3/assets/panjangbadan.png", caption="Cara mengukur lingkar dada ternak. Pastikan pita ukur melingkar tepat di belakang bahu.", use_container_width=True)
 
 with guide_tab2:
     col1, col2 = st.columns([1, 1])
@@ -955,7 +925,7 @@ with guide_tab2:
         > **Catatan**: Untuk memudahkan, Anda dapat menggunakan dua tongkat yang ditempatkan tegak lurus di depan bahu dan belakang tulang duduk, lalu ukur jarak antara keduanya.
         """)
     with col2:
-        show_image_safe("panjang_badan.png", "Cara mengukur panjang badan ternak.", fallback_paths=["panjangbadan.png"])
+        st.image("panjangbadan.png", caption="Cara mengukur panjang badan ternak, ref : https://vetmedicinae.com/cara-menghitung-berat-badan-sapi/", use_container_width=True)
 
 with guide_tab3:
     st.markdown("""
@@ -1041,25 +1011,12 @@ panjang_badan = st.sidebar.number_input(
 )
 
 # Tombol untuk menghitung berat badan
-# st.session_state digunakan agar hasil tidak hilang ketika slider/komponen lain berubah.
-if "show_results" not in st.session_state:
-    st.session_state.show_results = False
-
 if st.sidebar.button("Hitung Berat Badan", type="primary"):
-    st.session_state.show_results = True
-
-if st.session_state.show_results:
     # Add info message to guide users
     st.sidebar.info("👉 Silakan geser ke kanan untuk melihat hasil perhitungan detail, visualisasi data, dan analisis komponen karkas.")
     
     # Hitung berat badan
     berat_badan, formula_name, formula_text = hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)
-
-    if not validate_weight_result(berat_badan, jenis_ternak):
-        st.warning(
-            "Hasil prediksi terlihat berada di luar rentang wajar. "
-            "Periksa kembali satuan pengukuran, rumus yang digunakan, dan data input."
-        )
     
     # Hitung komponen karkas
     karkas_data = hitung_komponen_karkas(berat_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)
@@ -1115,7 +1072,7 @@ if st.session_state.show_results:
         non_karkas_df = pd.DataFrame({
             "Komponen": list(karkas_data["non_karkas_weights"].keys()),
             "Berat (kg)": [f"{w:.2f}" for w in karkas_data["non_karkas_weights"].values()],
-            "Persentase (%)": [f"{(w / berat_badan) * 100:.1f}" if berat_badan > 0 else "0.0" for w in karkas_data["non_karkas_weights"].values()]
+            "Persentase (%)": [f"{(w/berat_badan)*100:.1f}" for w in karkas_data["non_karkas_weights"].values()]
         })
         
         # Tampilkan tabel

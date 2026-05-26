@@ -1,116 +1,113 @@
-# 🐄 BBTernak - Aplikasi Prediksi Berat Badan Ternak
+# Sapi Weight Predictor
 
-BBTernak adalah aplikasi berbasis web yang dibangun dengan Streamlit untuk membantu peternak memprediksi berat badan ternak (sapi, kambing, dan domba) tanpa memerlukan timbangan. Aplikasi ini menggunakan rumus-rumus formula yang telah divalidasi secara ilmiah berdasarkan lingkar dada dan panjang badan ternak.
+Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi estimasi karkas, non-karkas, daging, serta visualisasi data.
 
-![Screenshot Aplikasi BBTernak](screen.png)
+## File Utama
 
-## 📋 Fitur Utama
+Gunakan file berikut sebagai **main file** saat deploy di Streamlit Online:
 
-- Prediksi berat badan untuk 3 jenis ternak (Sapi, Kambing, Domba)
-- Mendukung berbagai bangsa ternak dengan faktor koreksi spesifik
-- Visualisasi hubungan antara lingkar dada, panjang badan, dan berat badan
-- Prediksi komponen karkas, non-karkas, dan daging saat pemotongan
-- Penjelasan detail tentang rumus-rumus yang digunakan
-- Informasi tentang cara pengukuran yang benar
-- Tabel prediksi dengan variasi ukuran untuk analisis sensitivitas
+```text
+sapi_weight_predictor.py
+```
 
-![Prediksi Komponen Karkas](karkas.jpeg)
+## Isi Paket
 
-## 🔧 Cara Penggunaan
+```text
+sapi_weight_predictor_streamlit/
+├── sapi_weight_predictor.py      # file utama aplikasi Streamlit
+├── requirements.txt              # dependency Python untuk Streamlit Online
+├── README.md                     # panduan penggunaan dan deploy
+├── .gitignore
+├── .streamlit/
+│   └── config.toml               # konfigurasi tema Streamlit
+├── assets/
+│   ├── lingkar_dada.png
+│   └── panjang_badan.png
+├── run_app.sh                    # menjalankan lokal di Mac/Linux
+├── run_app.bat                   # menjalankan lokal di Windows
+└── original_source.txt           # cadangan kode sumber awal
+```
 
-1. Pilih jenis ternak (Sapi, Kambing, atau Domba)
-2. Pilih bangsa ternak spesifik
-3. Masukkan lingkar dada ternak (cm)
-4. Masukkan panjang badan ternak (cm)
-5. Klik tombol "Hitung Berat Badan"
-6. Lihat hasil prediksi berat badan beserta detail perhitungan dan visualisasinya
+## Cara Menjalankan di Laptop/PC
 
-## 📊 Rumus yang Digunakan
+```bash
+cd sapi_weight_predictor_streamlit
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run sapi_weight_predictor.py
+```
 
-### Sapi
-- **Winter (Eropa)**: (LD)² × PB / 10815.15
-- **Schoorl (Indonesia)**: (LD + 22)² / 100
-- **Denmark**: (LD)² × 0.000138 × PB
-- **Lambourne (Sapi Kecil)**: (LD)² × PB / 11900
+Untuk Windows:
 
-### Kambing
-- **Arjodarmoko**: (LD)² × PB / 18000
-- **New Zealand**: 0.0000968 × (LD)² × PB
-- **Khan**: 0.0004 × (LD)² × 0.6 × PB
+```bash
+cd sapi_weight_predictor_streamlit
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run sapi_weight_predictor.py
+```
 
-### Domba
-- **Lambourne**: (LD)² × PB / 15000
-- **NSA Australia**: (0.0000627 × LD × PB) - 3.91
-- **Valdez**: 0.0003 × (LD)² × PB
+Atau jalankan cepat:
 
-## 📐 Cara Pengukuran yang Benar
+```bash
+./run_app.sh
+```
 
-### Lingkar Dada (LD)
-- Melingkarkan pita ukur pada bagian dada tepat di belakang sendi bahu (scapula)
-- Pastikan ternak berdiri dengan posisi normal
-- Tarik pita dengan kekencangan sedang
+Windows:
 
-### Panjang Badan (PB)
-- **Sapi**: Dari tonjolan bahu sampai tonjolan tulang duduk
-- **Kambing/Domba**: Dari sendi bahu sampai tonjolan tulang duduk
+```bat
+run_app.bat
+```
 
-## 💻 Instalasi dan Menjalankan Aplikasi
+## Cara Upload ke GitHub
 
-### Prasyarat
-- Python 3.7+
-- pip
+1. Extract file ZIP ini.
+2. Buka folder `sapi_weight_predictor_streamlit`.
+3. Upload semua isi folder ke repository GitHub.
+4. Pastikan file `sapi_weight_predictor.py` dan `requirements.txt` berada di root repository, bukan tersimpan di dalam folder tambahan yang bertingkat.
 
-### Langkah Instalasi
+Struktur yang benar di GitHub:
 
-1. Clone repository ini:
-   ```
-   git clone https://github.com/adiorany3/bbternak.git
-   cd bbternak
-   ```
+```text
+repository-anda/
+├── sapi_weight_predictor.py
+├── requirements.txt
+├── README.md
+├── .streamlit/
+└── assets/
+```
 
-2. Buat virtual environment (opsional tapi direkomendasikan):
-   ```
-   python -m venv venv
-   source venv/bin/activate  # Untuk Linux/Mac
-   venv\Scripts\activate     # Untuk Windows
-   ```
+## Cara Deploy di Streamlit Online
 
-3. Install dependencies:
-   ```
-   pip install -r requirements.txt
-   ```
+1. Buka Streamlit Community Cloud.
+2. Pilih **New app**.
+3. Pilih repository GitHub Anda.
+4. Pada bagian **Main file path**, isi:
 
-4. Jalankan aplikasi:
-   ```
-   streamlit run sapi_weight_predictor.py
-   ```
+```text
+sapi_weight_predictor.py
+```
 
-5. Buka browser dan kunjungi `http://localhost:8501`
+5. Klik **Deploy**.
 
-## 📱 Kompatibilitas
+## Catatan Penting untuk Streamlit Online
 
-Aplikasi dapat dijalankan pada:
-- Desktop (Windows, macOS, Linux)
-- Mobile (melalui browser)
-- Tablet (melalui browser)
+- Jangan ubah nama `requirements.txt`.
+- Jangan hapus folder `assets`, karena gambar panduan pengukuran diambil dari folder tersebut.
+- Jika aplikasi gagal membaca gambar, aplikasi tetap berjalan karena sudah disiapkan fallback pesan teks.
+- File utama sudah disesuaikan menjadi `sapi_weight_predictor.py`.
 
-## 🧪 Keterbatasan dan Pertimbangan
+## Catatan Perbaikan
 
-- Rumus-rumus prediksi memberikan estimasi, bukan nilai eksak
-- Faktor kondisi tubuh ternak (terlalu kurus/gemuk) dapat mempengaruhi akurasi
-- Untuk keperluan yang memerlukan presisi tinggi, sebaiknya tetap menggunakan timbangan
+Versi ini sudah ditambahkan beberapa perbaikan aman:
 
-## 📚 Referensi
+1. Hasil perhitungan tetap tersimpan memakai `st.session_state`.
+2. Path gambar dibuat lebih aman dengan folder `assets/`.
+3. Ada validasi sederhana jika hasil berat badan terlihat ekstrem.
+4. Perhitungan persentase non-karkas dibuat aman dari pembagian dengan nol.
+5. Nama file utama disesuaikan untuk deploy Streamlit Online.
 
-- Winter, A.W. (1910). Method for estimating live weight in cattle.
-- Schoorl, P. (1956). Live weight estimation methods for local Indonesian cattle.
-- Lambourne, L.J. (1963). A method of estimating the live weight of small ruminants.
-- Arjodarmoko, S. (1975). Pendugaan bobot badan kambing lokal Indonesia.
+## Catatan Akurasi
 
-## 📄 Lisensi
-
-© 2025 Galuh Adi Insani - Hak Cipta Dilindungi
-
-## 🧑‍💻 Tentang Pengembang
-
-Aplikasi ini dikembangkan oleh Galuh Adi Insani dengan fokus pada pembuatan alat praktis untuk membantu peternak kecil dan menengah di Indonesia.
+Rumus, konstanta, faktor koreksi bangsa, dan persentase karkas tetap perlu divalidasi ulang dengan rujukan akademik/lapangan sebelum aplikasi digunakan untuk keputusan jual beli, penelitian, atau produksi.

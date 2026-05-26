@@ -1,9 +1,7 @@
-streamlit
-pandas
-numpy
-matplotlib
-Pillow
-seaborn
-plotly
-scipy
-datetime
+streamlit>=1.31
+pandas>=2.0
+numpy>=1.24
+plotly>=5.18
+matplotlib>=3.7
+seaborn>=0.13
+pillow>=10.0
