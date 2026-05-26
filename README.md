@@ -114,3 +114,14 @@ streamlit run sapi_weight_predictor.py
 - Simulasi target berat adalah pendekatan matematis dari rumus aplikasi, bukan prediksi pertumbuhan biologis.
 - Harga default adalah acuan awal dan tetap bisa diedit manual sesuai daerah.
 - Untuk transaksi besar, tetap gunakan timbangan ternak terkalibrasi.
+
+
+## Catatan Perbaikan Error
+
+Versi fixed ini memperbaiki error:
+
+```text
+NameError: name 'BCS_OPTIONS' is not defined
+```
+
+Penyebabnya adalah konstanta BCS belum terdefinisi sebelum dipanggil di UI Streamlit. Pada versi ini, `BCS_OPTIONS` dan `BCS_NOTES` sudah didefinisikan di bagian atas file sebelum aplikasi berjalan.

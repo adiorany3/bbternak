@@ -102,6 +102,24 @@ MARKET_CLASS_OPTIONS = [
     "Kelas C / Kurus",
 ]
 
+BCS_OPTIONS = [
+    "Tidak dinilai",
+    "1 - Sangat Kurus",
+    "2 - Kurus",
+    "3 - Sedang/Ideal",
+    "4 - Gemuk",
+    "5 - Sangat Gemuk",
+]
+
+BCS_NOTES = {
+    "Tidak dinilai": "BCS belum dinilai. Skor akurasi tidak dikoreksi berdasarkan kondisi tubuh.",
+    "1 - Sangat Kurus": "Kondisi sangat kurus dapat membuat estimasi dari ukuran tubuh kurang mewakili bobot aktual.",
+    "2 - Kurus": "Kondisi kurus dapat menurunkan bobot aktual dibandingkan ukuran rangka tubuh.",
+    "3 - Sedang/Ideal": "Kondisi tubuh ideal. Estimasi relatif lebih stabil jika pengukuran dilakukan benar.",
+    "4 - Gemuk": "Kondisi gemuk dapat menaikkan bobot aktual dibandingkan ukuran rangka tubuh.",
+    "5 - Sangat Gemuk": "Kondisi sangat gemuk dapat membuat prediksi lebih menyimpang dari bobot aktual.",
+}
+
 
 # Path helper agar gambar tetap aman saat aplikasi dipindahkan/deploy
 BASE_DIR = Path(__file__).resolve().parent
