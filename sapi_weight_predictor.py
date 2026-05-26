@@ -653,6 +653,44 @@ code {
     color: var(--app-muted);
     font-size: .78rem;
 }
+
+.workflow-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: .75rem;
+    margin: 1rem 0 1.35rem 0;
+}
+.workflow-step {
+    border: 1px solid var(--app-border);
+    background: var(--app-surface);
+    border-radius: 16px;
+    padding: .9rem;
+    box-shadow: var(--app-shadow);
+}
+.workflow-step b {
+    display: block;
+    color: var(--app-text);
+    margin-bottom: .25rem;
+}
+.workflow-step span {
+    color: var(--app-text-soft);
+    font-size: .88rem;
+    line-height: 1.4;
+}
+.section-note {
+    border-left: 4px solid var(--app-accent);
+    background: var(--app-accent-soft);
+    padding: .85rem 1rem;
+    border-radius: 12px;
+    color: var(--app-text);
+    margin: .85rem 0 1rem 0;
+}
+@media (max-width: 900px) {
+    .workflow-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 </style>
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
@@ -1490,7 +1528,7 @@ def create_breed_comparison_chart(jenis_ternak, lingkar_dada, panjang_badan, jen
     # Update layout
     fig.update_layout(
         title=f"Perbandingan Berat Badan Antar Bangsa {jenis_ternak} ({jenis_kelamin})<br>Lingkar Dada: {lingkar_dada} cm, Panjang Badan: {panjang_badan} cm",
-        xaxis_title="Bangsa Ternak",
+        xaxis_title="2. Bangsa Ternak",
         yaxis_title="Berat Badan (kg)",
         showlegend=False,
         height=500,
@@ -2639,9 +2677,9 @@ def create_pdf_report(report_data):
 
     c.setFont("Helvetica", 10)
     rows = [
-        ("Jenis Ternak", report_data.get("jenis_ternak", "-")),
+        ("1. Jenis Ternak", report_data.get("jenis_ternak", "-")),
         ("Bangsa Ternak", report_data.get("bangsa_ternak", "-")),
-        ("Jenis Kelamin", report_data.get("jenis_kelamin", "-")),
+        ("3. Jenis Kelamin", report_data.get("jenis_kelamin", "-")),
         ("BCS / Kondisi Tubuh", report_data.get("bcs_option", "-")),
         ("Skor Akurasi Input", f"{report_data.get('accuracy_score', 0)}/100 ({report_data.get('accuracy_category', '-')})"),
         ("Kelas Pasar", report_data.get("kelas_pasar", "-")),
@@ -2883,96 +2921,108 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Tambahkan panduan pengukuran
-st.markdown("### Panduan Pengukuran Ternak")
+st.markdown("""
+<div class="workflow-grid">
+    <div class="workflow-step"><b>1. Input</b><span>Pilih jenis, bangsa, kelamin, LD, dan PB di sidebar.</span></div>
+    <div class="workflow-step"><b>2. Hitung</b><span>Klik tombol Hitung Berat Badan untuk membuat estimasi utama.</span></div>
+    <div class="workflow-step"><b>3. Baca Hasil</b><span>Lihat bobot, rentang error, BCS, dan skor akurasi.</span></div>
+    <div class="workflow-step"><b>4. Analisis</b><span>Gunakan tab ekonomi, jagal, dan blantik sesuai kebutuhan.</span></div>
+    <div class="workflow-step"><b>5. Simpan</b><span>Unduh PDF, CSV riwayat, atau proses banyak ternak sekaligus.</span></div>
+</div>
+""", unsafe_allow_html=True)
 
-# Buat tab untuk berbagai panduan pengukuran
-guide_tab1, guide_tab2, guide_tab3 = st.tabs([
-    "📏 Cara Mengukur Lingkar Dada", 
-    "📏 Cara Mengukur Panjang Badan",
-    "⚖️ Tips Lainnya"
-])
+with st.expander("📏 Panduan pengukuran dan catatan akurasi", expanded=False):
+    # Tambahkan panduan pengukuran
+    st.markdown("### Panduan Pengukuran Ternak")
 
-with guide_tab1:
-    col1, col2 = st.columns([1, 1])
-    with col1:
+    # Buat tab untuk berbagai panduan pengukuran
+    guide_tab1, guide_tab2, guide_tab3 = st.tabs([
+        "📏 Cara Mengukur Lingkar Dada", 
+        "📏 Cara Mengukur Panjang Badan",
+        "⚖️ Tips Lainnya"
+    ])
+
+    with guide_tab1:
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            st.markdown("""
+            #### Cara Mengukur Lingkar Dada
+        
+            Pengukuran lingkar dada ternak dilakukan dengan cara:
+        
+            1. **Posisikan ternak** pada permukaan yang datar dan pastikan ternak berdiri dengan keempat kaki sejajar
+            2. **Gunakan pita ukur** yang cukup panjang (meteran kain)
+            3. **Lingkarkan pita ukur** di belakang bahu ternak (tepat di belakang kaki depan)
+            4. **Pastikan pita** berada tepat di belakang bahu dan di depan rusuk pertama
+            5. **Tarik pita** hingga cukup erat tapi tidak terlalu ketat (jangan sampai kulit ternak terlipat)
+            6. **Catat hasil pengukuran** dalam satuan sentimeter (cm)
+        
+            > **Catatan Penting**: Pengukuran sebaiknya dilakukan pada pagi hari sebelum ternak diberi makan untuk menghindari pengembangan perut yang dapat mempengaruhi hasil pengukuran. Selain itu, pastikan ternak dalam keadaan seimbang dan tidak terlalu gelisah.
+            """)
+        with col2:
+            show_image_safe("assets/lingkar_dada.png", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["assets/lingkar_dada.png", "version/V3/assets/panjangbadan.png"])
+
+    with guide_tab2:
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            st.markdown("""
+            #### Cara Mengukur Panjang Badan
+        
+            Pengukuran panjang badan ternak dilakukan dengan cara:
+        
+            1. **Posisikan ternak** pada permukaan yang datar dan pastikan ternak berdiri dengan keempat kaki sejajar
+            2. **Gunakan pita ukur** atau meteran yang kaku/rigid
+            3. **Ukur jarak** dari tonjolan bahu (*tuberculum humeri*) sampai ke tonjolan tulang duduk (*tuberculum ischiadicum*) (**Gunakan Panjang Badan Absolut**)
+            4. **Pastikan pengukuran** dilakukan dalam garis lurus dan horizontal (sejajar dengan tanah)
+            5. **Catat hasil pengukuran** dalam satuan sentimeter (cm)
+        
+            > **Catatan**: Untuk memudahkan, Anda dapat menggunakan dua tongkat yang ditempatkan tegak lurus di depan bahu dan belakang tulang duduk, lalu ukur jarak antara keduanya.
+            """)
+        with col2:
+            show_image_safe("assets/panjang_badan.png", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["assets/panjang_badan.png", "panjangbadan.png"])
+
+    with guide_tab3:
         st.markdown("""
-        #### Cara Mengukur Lingkar Dada
-        
-        Pengukuran lingkar dada ternak dilakukan dengan cara:
-        
-        1. **Posisikan ternak** pada permukaan yang datar dan pastikan ternak berdiri dengan keempat kaki sejajar
-        2. **Gunakan pita ukur** yang cukup panjang (meteran kain)
-        3. **Lingkarkan pita ukur** di belakang bahu ternak (tepat di belakang kaki depan)
-        4. **Pastikan pita** berada tepat di belakang bahu dan di depan rusuk pertama
-        5. **Tarik pita** hingga cukup erat tapi tidak terlalu ketat (jangan sampai kulit ternak terlipat)
-        6. **Catat hasil pengukuran** dalam satuan sentimeter (cm)
-        
-        > **Catatan Penting**: Pengukuran sebaiknya dilakukan pada pagi hari sebelum ternak diberi makan untuk menghindari pengembangan perut yang dapat mempengaruhi hasil pengukuran. Selain itu, pastikan ternak dalam keadaan seimbang dan tidak terlalu gelisah.
-        """)
-    with col2:
-        show_image_safe("assets/lingkar_dada.png", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["assets/lingkar_dada.png", "version/V3/assets/panjangbadan.png"])
-
-with guide_tab2:
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        st.markdown("""
-        #### Cara Mengukur Panjang Badan
-        
-        Pengukuran panjang badan ternak dilakukan dengan cara:
-        
-        1. **Posisikan ternak** pada permukaan yang datar dan pastikan ternak berdiri dengan keempat kaki sejajar
-        2. **Gunakan pita ukur** atau meteran yang kaku/rigid
-        3. **Ukur jarak** dari tonjolan bahu (*tuberculum humeri*) sampai ke tonjolan tulang duduk (*tuberculum ischiadicum*) (**Gunakan Panjang Badan Absolut**)
-        4. **Pastikan pengukuran** dilakukan dalam garis lurus dan horizontal (sejajar dengan tanah)
-        5. **Catat hasil pengukuran** dalam satuan sentimeter (cm)
-        
-        > **Catatan**: Untuk memudahkan, Anda dapat menggunakan dua tongkat yang ditempatkan tegak lurus di depan bahu dan belakang tulang duduk, lalu ukur jarak antara keduanya.
-        """)
-    with col2:
-        show_image_safe("assets/panjang_badan.png", "Gambar panduan menggunakan file karkas.jpeg.", fallback_paths=["assets/panjang_badan.png", "panjangbadan.png"])
-
-with guide_tab3:
-    st.markdown("""
-    #### Tips Tambahan untuk Pengukuran Akurat
+        #### Tips Tambahan untuk Pengukuran Akurat
     
-    1. **Waktu Pengukuran**: Usahakan mengukur pada waktu yang sama dalam sehari, idealnya di pagi hari sebelum pemberian pakan.
-    2. **Kondisi Ternak**: Pastikan ternak dalam kondisi tenang dan tidak stres. Pengukuran pada ternak yang gelisah bisa menghasilkan data yang tidak akurat.
-    3. **Pengulangan**: Lakukan pengukuran 2-3 kali dan ambil nilai rata-rata untuk hasil yang lebih akurat.  
-    4. **Pengukur**: Sebaiknya pengukuran dilakukan oleh orang yang sama jika ingin membandingkan hasil dari waktu ke waktu.   
-    5. **Titik Referensi**: Gunakan titik-titik anatomi yang jelas dan konsisten sebagai referensi pengukuran.   
-    6. **Ketelitian Pita Ukur**: Gunakan pita ukur yang tidak elastis dan pastikan pita tidak terlipat saat pengukuran.
-    7. **Pencatatan**: Selalu catat tanggal pengukuran, karena pertumbuhan ternak dapat menyebabkan perubahan ukuran dalam periode waktu tertentu.
+        1. **Waktu Pengukuran**: Usahakan mengukur pada waktu yang sama dalam sehari, idealnya di pagi hari sebelum pemberian pakan.
+        2. **Kondisi Ternak**: Pastikan ternak dalam kondisi tenang dan tidak stres. Pengukuran pada ternak yang gelisah bisa menghasilkan data yang tidak akurat.
+        3. **Pengulangan**: Lakukan pengukuran 2-3 kali dan ambil nilai rata-rata untuk hasil yang lebih akurat.  
+        4. **Pengukur**: Sebaiknya pengukuran dilakukan oleh orang yang sama jika ingin membandingkan hasil dari waktu ke waktu.   
+        5. **Titik Referensi**: Gunakan titik-titik anatomi yang jelas dan konsisten sebagai referensi pengukuran.   
+        6. **Ketelitian Pita Ukur**: Gunakan pita ukur yang tidak elastis dan pastikan pita tidak terlipat saat pengukuran.
+        7. **Pencatatan**: Selalu catat tanggal pengukuran, karena pertumbuhan ternak dapat menyebabkan perubahan ukuran dalam periode waktu tertentu.
     
-    ##### Perbandingan dengan Timbangan
+        ##### Perbandingan dengan Timbangan
     
-    Meskipun metode pengukuran lingkar dada dan panjang badan merupakan pendekatan yang praktis untuk memprediksi berat badan ternak, 
-    hasil prediksi ini tetap memiliki margin error sekitar 5-10% dibandingkan dengan penimbangan langsung menggunakan timbangan.
+        Meskipun metode pengukuran lingkar dada dan panjang badan merupakan pendekatan yang praktis untuk memprediksi berat badan ternak, 
+        hasil prediksi ini tetap memiliki margin error sekitar 5-10% dibandingkan dengan penimbangan langsung menggunakan timbangan.
     
-    Untuk keperluan yang membutuhkan keakuratan tinggi (seperti penjualan, kompetisi, atau penelitian), 
-    sebaiknya tetap menggunakan timbangan ternak yang terkalibrasi dengan baik.
-    """)
-
-# Tambahkan gambar panduan pengukuran
-# col1, col2 = st.columns([2,1]) # Removing this redundant image section
-# with col1:
-st.markdown(f"""
-        =======================================
-        > Aplikasi ini menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan 
-        menggunakan **Rumus Formula** yang spesifik untuk jenis dan bangsa ternak yang berbeda. 
-        Silakan pilih jenis dan bangsa ternak yang sesuai di sidebar untuk mendapatkan hasil yang lebih akurat.
-        
+        Untuk keperluan yang membutuhkan keakuratan tinggi (seperti penjualan, kompetisi, atau penelitian), 
+        sebaiknya tetap menggunakan timbangan ternak yang terkalibrasi dengan baik.
         """)
 
-st.info(
-    "Harga ekonomi memakai default acuan terbaru yang tersedia, tetapi tetap dapat diedit manual "
-    "karena harga karkas dan daging berbeda antar daerah, kualitas potongan, dan waktu transaksi."
-)
-# with col2: # Removing this redundant image section
-# st.image("panjangbadan.png", caption="Panduan Pengukuran Panjang Badan, ref : https://vetmedicinae.com/cara-menghitung-berat-badan-sapi/", use_container_width=True)
+    # Tambahkan gambar panduan pengukuran
+    # col1, col2 = st.columns([2,1]) # Removing this redundant image section
+    # with col1:
+    st.markdown(f"""
+            =======================================
+            > Aplikasi ini menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan 
+            menggunakan **Rumus Formula** yang spesifik untuk jenis dan bangsa ternak yang berbeda. 
+            Silakan pilih jenis dan bangsa ternak yang sesuai di sidebar untuk mendapatkan hasil yang lebih akurat.
+        
+            """)
+
+    st.info(
+        "Harga ekonomi memakai default acuan terbaru yang tersedia, tetapi tetap dapat diedit manual "
+        "karena harga karkas dan daging berbeda antar daerah, kualitas potongan, dan waktu transaksi."
+    )
+    # with col2: # Removing this redundant image section
+    # st.image("panjangbadan.png", caption="Panduan Pengukuran Panjang Badan, ref : https://vetmedicinae.com/cara-menghitung-berat-badan-sapi/", use_container_width=True)
+
 
 # Sidebar untuk input pengguna
-st.sidebar.header("Input Data Ternak")
+st.sidebar.header("1. Input Utama Ternak")
 
 # Pilih jenis ternak
 jenis_ternak = st.sidebar.selectbox(
@@ -3002,7 +3052,7 @@ length_range = breed_data["length_range"]
 
 # Input lingkar dada dengan rentang sesuai bangsa ternak
 lingkar_dada = st.sidebar.number_input(
-    "Lingkar Dada (cm)",
+    "4. Lingkar Dada (cm)",
     min_value=chest_range["min"] * 0.8,  # Sedikit di bawah minimum untuk fleksibilitas
     max_value=chest_range["max"] * 1.2,  # Sedikit di atas maksimum untuk fleksibilitas
     value=chest_range["min"] + (chest_range["max"] - chest_range["min"]) / 2,  # Nilai default di tengah rentang
@@ -3012,7 +3062,7 @@ lingkar_dada = st.sidebar.number_input(
 
 # Input panjang badan dengan rentang sesuai bangsa ternak
 panjang_badan = st.sidebar.number_input(
-    "Panjang Badan (cm)",
+    "5. Panjang Badan (cm)",
     min_value=length_range["min"] * 0.8,  # Sedikit di bawah minimum untuk fleksibilitas
     max_value=length_range["max"] * 1.2,  # Sedikit di atas maksimum untuk fleksibilitas
     value=length_range["min"] + (length_range["max"] - length_range["min"]) / 2,  # Nilai default di tengah rentang
@@ -3070,13 +3120,15 @@ if "calculation_history" not in st.session_state:
 if "new_calculation" not in st.session_state:
     st.session_state.new_calculation = False
 
-if st.sidebar.button("Hitung Berat Badan", type="primary"):
+st.sidebar.markdown("---")
+st.sidebar.caption("Setelah data utama benar, klik tombol berikut untuk menampilkan hasil dan analisis.")
+if st.sidebar.button("🚀 Hitung Berat Badan", type="primary"):
     st.session_state.show_results = True
     st.session_state.new_calculation = True
 
 if st.session_state.show_results:
     # Add info message to guide users
-    st.sidebar.info("👉 Hasil utama ada di tab Hitung Berat Badan. Tab ekonomi dan biaya tersedia jika diperlukan.")
+    st.sidebar.info("👉 Alur baca hasil: Berat & Akurasi → Target → Ekonomi → Jagal → Blantik → Insight → Arsip.")
     
     # Hitung berat badan
     berat_badan, formula_name, formula_text = hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)
@@ -3093,14 +3145,20 @@ if st.session_state.show_results:
     # Area hasil dibuat bertab agar fokus utama tetap pada hitung berat badan.
     status_ukuran, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
 
-    hasil_tab, target_tab, ekonomi_tab, biaya_tab, jagal_tab, insight_tab, blantik_tab = st.tabs([
-        "⚖️ Hitung Berat Badan",
-        "🎯 Simulasi Target Berat",
-        "💰 Estimasi Ekonomi",
-        "📊 Biaya & Keuntungan",
-        "🔪 Kalkulator Jagal",
-        "📈 Insight Analisis",
-        "🤝 Insight Blantik",
+    st.markdown("""
+    <div class="section-note">
+        <b>Urutan membaca hasil:</b> mulai dari tab 1 untuk bobot utama, lanjut ke target berat, ekonomi ternak, biaya/profit, jagal, blantik, lalu insight ringkas.
+    </div>
+    """, unsafe_allow_html=True)
+
+    hasil_tab, target_tab, ekonomi_tab, biaya_tab, jagal_tab, blantik_tab, insight_tab = st.tabs([
+        "1️⃣ Berat & Akurasi",
+        "2️⃣ Target Berat",
+        "3️⃣ Ekonomi Ternak",
+        "4️⃣ Biaya & Profit",
+        "5️⃣ Jagal",
+        "6️⃣ Blantik",
+        "7️⃣ Insight",
     ])
 
     with hasil_tab:
@@ -3966,698 +4024,701 @@ if st.session_state.show_results:
         })
         st.session_state.new_calculation = False
     
-    # Tampilkan detail perhitungan
-    st.subheader("Detail Perhitungan:")
+    st.markdown("---")
+    with st.expander("🧾 Detail teknis, hasil potong, visualisasi, dan laporan", expanded=False):
+        # Tampilkan detail perhitungan
+        st.subheader("Detail Perhitungan:")
     
-    # Dapatkan referensi dari formula
-    formula_reference = ANIMAL_FORMULAS[jenis_ternak]["formulas"][formula_name]["reference"]
+        # Dapatkan referensi dari formula
+        formula_reference = ANIMAL_FORMULAS[jenis_ternak]["formulas"][formula_name]["reference"]
     
-    st.markdown(f"""
-    - Jenis Ternak: **{jenis_ternak}**
-    - Bangsa Ternak: **{bangsa_ternak}**
-    - Jenis Kelamin: **{jenis_kelamin}**
-    - Profil Pasar Bangsa: **{get_breed_business_profile(jenis_ternak, bangsa_ternak)['market_position']}**
-    - BCS / Kondisi Tubuh: **{bcs_option}**
-    - Skor Akurasi Input: **{accuracy_score}/100 ({accuracy_category})**
-    - Kelas Pasar: **{kelas_pasar}** (penyesuaian harga x{kelas_multiplier:.2f})
-    - Margin Error: **±{margin_error}%** (rentang BB: {bb_min:.2f}–{bb_max:.2f} kg)
-    - Rumus yang Digunakan: **{formula_name}**
-    - Formula: **{formula_text}**
-    - Referensi: **{formula_reference}**
-    - Lingkar Dada (LD): **{lingkar_dada} cm** (Rentang normal: {chest_range['min']}-{chest_range['max']} cm)
-    - Panjang Badan (PB): **{panjang_badan} cm** (Rentang normal: {length_range['min']}-{length_range['max']} cm)
-    - Berat Badan (BB) = **{berat_badan:.2f} kg**
-    """)
-
-    st.subheader("Rekomendasi Otomatis")
-    for recommendation in generate_recommendations(
-        berat_badan,
-        lingkar_dada,
-        panjang_badan,
-        jenis_ternak,
-        bangsa_ternak,
-        jenis_kelamin,
-        kelas_pasar=kelas_pasar,
-        margin_error=margin_error,
-        estimasi_keuntungan=business_metrics["estimasi_keuntungan"],
-        bcs_option=bcs_option,
-        accuracy_score=accuracy_score,
-    ):
-        st.write(f"- {recommendation}")
-
-    report_data = {
-        "tanggal": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "jenis_ternak": jenis_ternak,
-        "bangsa_ternak": bangsa_ternak,
-        "jenis_kelamin": jenis_kelamin,
-        "lingkar_dada": lingkar_dada,
-        "panjang_badan": panjang_badan,
-        "formula_name": formula_name,
-        "berat_badan": berat_badan,
-        "karkas_weight": karkas_data["karkas_weight"],
-        "meat_weight": karkas_data["meat_weight"],
-        "bone_and_fat_weight": karkas_data["bone_and_fat_weight"],
-        "status_ukuran": status_ukuran,
-        "bcs_option": bcs_option,
-        "accuracy_score": accuracy_score,
-        "accuracy_category": accuracy_category,
-        "kelas_pasar": kelas_pasar,
-        "margin_error": margin_error,
-        "bb_min": bb_min,
-        "bb_max": bb_max,
-        "karkas_min": karkas_min,
-        "karkas_max": karkas_max,
-        "daging_min": daging_min,
-        "daging_max": daging_max,
-        "harga_hidup": harga_bobot_hidup,
-        "nilai_hidup": nilai_hidup,
-        "nilai_hidup_min": nilai_hidup_min,
-        "nilai_hidup_max": nilai_hidup_max,
-        "harga_karkas": harga_karkas,
-        "nilai_karkas": nilai_karkas,
-        "harga_daging": harga_daging,
-        "nilai_daging": nilai_daging,
-        "total_biaya_pemeliharaan": business_metrics["total_biaya_pemeliharaan"],
-        "total_modal": business_metrics["total_modal"],
-        "estimasi_keuntungan": business_metrics["estimasi_keuntungan"],
-        "roi_percent": business_metrics["roi_percent"],
-    }
-    pdf_bytes = create_pdf_report(report_data)
-    if pdf_bytes:
-        st.download_button(
-            label="📄 Download Laporan PDF",
-            data=pdf_bytes,
-            file_name=f"laporan_prediksi_{jenis_ternak.lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-            mime="application/pdf"
-        )
-    else:
-        st.warning("Fitur PDF membutuhkan package reportlab. Pastikan requirements.txt berisi reportlab.")
-    
-    # Tampilkan prediksi karkas, non-karkas, dan daging
-    st.subheader("Prediksi Hasil Pemotongan:")
-    
-    # Buat layout kolom
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        # Informasi karkas dan daging
         st.markdown(f"""
-        #### Karkas
-        - Persentase karkas: **{karkas_data['karkas_percent']:.1f}%**
-        - Berat karkas: **{karkas_data['karkas_weight']:.2f} kg**
-        
-        #### Daging
-        - Persentase daging dari karkas: **{karkas_data['meat_percent_of_carcass']:.1f}%**
-        - Persentase daging dari berat hidup: **{karkas_data['meat_percent_of_body']:.1f}%**
-        - Berat daging total: **{karkas_data['meat_weight']:.2f} kg**
-        - Berat tulang dan lemak karkas: **{karkas_data['bone_and_fat_weight']:.2f} kg**
-        
-        > *Referensi data: {karkas_data['reference']}*
+        - Jenis Ternak: **{jenis_ternak}**
+        - Bangsa Ternak: **{bangsa_ternak}**
+        - Jenis Kelamin: **{jenis_kelamin}**
+        - Profil Pasar Bangsa: **{get_breed_business_profile(jenis_ternak, bangsa_ternak)['market_position']}**
+        - BCS / Kondisi Tubuh: **{bcs_option}**
+        - Skor Akurasi Input: **{accuracy_score}/100 ({accuracy_category})**
+        - Kelas Pasar: **{kelas_pasar}** (penyesuaian harga x{kelas_multiplier:.2f})
+        - Margin Error: **±{margin_error}%** (rentang BB: {bb_min:.2f}–{bb_max:.2f} kg)
+        - Rumus yang Digunakan: **{formula_name}**
+        - Formula: **{formula_text}**
+        - Referensi: **{formula_reference}**
+        - Lingkar Dada (LD): **{lingkar_dada} cm** (Rentang normal: {chest_range['min']}-{chest_range['max']} cm)
+        - Panjang Badan (PB): **{panjang_badan} cm** (Rentang normal: {length_range['min']}-{length_range['max']} cm)
+        - Berat Badan (BB) = **{berat_badan:.2f} kg**
         """)
-    
-    with col2:
-        # Informasi komponen non-karkas
-        st.markdown("#### Komponen Non-Karkas")
-        
-        # Buat dataframe untuk komponen non-karkas
-        non_karkas_df = pd.DataFrame({
-            "Komponen": list(karkas_data["non_karkas_weights"].keys()),
-            "Berat (kg)": [f"{w:.2f}" for w in karkas_data["non_karkas_weights"].values()],
-            "Persentase (%)": [f"{(w / berat_badan) * 100:.1f}" if berat_badan > 0 else "0.0" for w in karkas_data["non_karkas_weights"].values()]
-        })
-        
-        # Tampilkan tabel
-        st.dataframe(non_karkas_df, hide_index=True)
-    
-    # Visualisasi proporsi karkas dan non-karkas
-    st.subheader("Visualisasi Proporsi Pemotongan")
-    
-    # Buat data untuk pie chart
-    labels = ["Daging", "Tulang & Lemak Karkas"]
-    values = [karkas_data["meat_weight"], karkas_data["bone_and_fat_weight"]]
-    
-    # Tambahkan komponen non-karkas
-    for component, weight in karkas_data["non_karkas_weights"].items():
-        if weight > 0.01 * berat_badan:  # Tampilkan hanya komponen yang signifikan (>1%)
-            labels.append(component)
-            values.append(weight)
-    
-    # Buat 2 kolom untuk visualisasi yang berbeda
-    viz_col1, viz_col2 = st.columns([1, 1])
-    
-    with viz_col1:
-        # Buat pie chart dengan plotly
-        fig = go.Figure(data=[go.Pie(
-            labels=labels,
-            values=values,
-            hole=.3,
-            textinfo='label+percent',
-            insidetextorientation='radial',
-            pull=[0.1 if x == "Daging" else 0 for x in labels],
-            marker_colors=px.colors.qualitative.Pastel
-        )])
-        
-        fig.update_layout(
-            title_text=f"Proporsi Komponen Pemotongan<br>{jenis_ternak} {bangsa_ternak} {jenis_kelamin}",
-            annotations=[dict(text=f'Total: {berat_badan:.1f} kg', x=0.5, y=0.5, font_size=12, showarrow=False)]
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-    
-    with viz_col2:
-        # Buat treemap dengan plotly
-        fig = px.treemap(
-            names=labels,
-            parents=["" for _ in labels],
-            values=values,
-            color=values,
-            color_continuous_scale='Viridis',
-            title=f"Treemap Komponen Pemotongan<br>{jenis_ternak} {bangsa_ternak} {jenis_kelamin}"
-        )
-        
-        fig.update_traces(textinfo="label+value+percent parent")
-        fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
-        
-        st.plotly_chart(fig, use_container_width=True)
-    
-    # Perbandingan dengan bangsa lain
-    st.subheader("Perbandingan Hasil Karkas dengan Bangsa Lain")
-    
-    # Kumpulkan data karkas untuk semua bangsa dari jenis ternak yang sama
-    breeds = SLAUGHTER_DATA[jenis_ternak]["breeds"]
-    breed_names = []
-    karkas_percents = []
-    meat_percents = []
-    
-    for breed_name, breed_data in breeds.items():
-        breed_names.append(breed_name)
-        karkas_percents.append(breed_data["karkas_percent"][jenis_kelamin])
-        meat_of_karkas = breed_data["meat_percent_of_carcass"]
-        meat_of_live = (breed_data["karkas_percent"][jenis_kelamin] * meat_of_karkas) / 100
-        meat_percents.append(meat_of_live)
-    
-    # Buat dataframe
-    comparison_df = pd.DataFrame({
-        "Bangsa": breed_names,
-        "Persentase Karkas (%)": karkas_percents,
-        "Persentase Daging dari Berat Hidup (%)": meat_percents
-    })
-    
-    # Tambahkan kolom berat karkas dan daging untuk berat badan saat ini
-    comparison_df["Berat Karkas (kg)"] = [(p * berat_badan) / 100 for p in karkas_percents]
-    comparison_df["Berat Daging (kg)"] = [(p * berat_badan) / 100 for p in meat_percents]
-    
-    # Tampilkan tabel dengan highlight
-    st.dataframe(comparison_df.sort_values(by="Persentase Karkas (%)", ascending=False), 
-                 hide_index=True,
-                 use_container_width=True,
-                 column_config={
-                     "Persentase Karkas (%)": st.column_config.NumberColumn(format="%.1f%%"),
-                     "Persentase Daging dari Berat Hidup (%)": st.column_config.NumberColumn(format="%.1f%%"),
-                     "Berat Karkas (kg)": st.column_config.NumberColumn(format="%.2f kg"),
-                     "Berat Daging (kg)": st.column_config.NumberColumn(format="%.2f kg")
-                 })
-    
-    # Visualisasi perbandingan
-    fig = go.Figure()
-    
-    # Tambahkan bar untuk persentase karkas
-    fig.add_trace(go.Bar(
-        x=breed_names,
-        y=karkas_percents,
-        name='Persentase Karkas',
-        marker_color='skyblue',
-        text=[f"{p:.1f}%" for p in karkas_percents],
-        textposition='auto'
-    ))
-    
-    # Tambahkan bar untuk persentase daging
-    fig.add_trace(go.Bar(
-        x=breed_names,
-        y=meat_percents,
-        name='Persentase Daging dari Berat Hidup',
-        marker_color='salmon',
-        text=[f"{p:.1f}%" for p in meat_percents],
-        textposition='auto'
-    ))
-    
-    # Highlight bangsa saat ini
-    selected_idx = breed_names.index(bangsa_ternak)
-    
-    # Update layout
-    fig.update_layout(
-        title=f"Perbandingan Persentase Karkas dan Daging Antar Bangsa {jenis_ternak}",
-        xaxis_title="Bangsa",
-        yaxis_title="Persentase (%)",
-        barmode='group',
-        xaxis={'categoryorder':'total descending'}
-    )
-    
-    st.plotly_chart(fig, use_container_width=True)
-    
-    # Tambahkan informasi tambahan
-    st.info("""
-    ##### Penjelasan Komponen Hasil Pemotongan:
-    
-    **Karkas** adalah bagian dari tubuh ternak yang telah disembelih setelah dipisahkan dari kepala, kaki, kulit, ekor, 
-    organ dalam (jeroan) dan darah. Pada sapi, karkas terdiri dari daging, tulang, dan lemak.
-    
-    **Non-karkas** adalah semua bagian tubuh selain karkas, terdiri dari:
-    - Kepala, kulit, kaki, ekor
-    - Organ dalam (jantung, hati, paru-paru, limpa)
-    - Saluran pencernaan (lambung, usus)
-    - Darah dan lemak non-karkas
-    
-    **Daging** adalah bagian utama dari karkas yang dapat dikonsumsi, tidak termasuk tulang dan lemak.
-    
-    > **Catatan**: Nilai-nilai di atas adalah prediksi berdasarkan persentase rata-rata untuk setiap bangsa dan jenis kelamin ternak.
-    > Hasil aktual dapat bervariasi tergantung umur, kondisi, tingkat kegemukan, dan faktor lainnya.
-    """)
-    
-    # Visualisasi Data Detail (ekspansi dari fitur sebelumnya)
-    st.subheader("Visualisasi Data Detail")
-    
-    # Tampilkan tabs untuk berbagai visualisasi detail
-    viz_tab1, viz_tab2, viz_tab3, viz_tab4 = st.tabs([
-        "Grafik Dimensi & Berat", 
-        "Distribusi Berat", 
-        "Perbandingan Rumus",
-        "Perbandingan Bangsa"
-    ])
-    
-    with viz_tab1:
-        # Grafik hubungan dimensi dan berat
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            # Grafik hubungan lingkar dada dan berat badan
-            ld_range = np.linspace(chest_range['min'] * 0.9, chest_range['max'] * 1.1, 50)
-            bb_range = [hitung_berat_badan(ld, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for ld in ld_range]
-            
-            fig1, ax1 = plt.subplots()
-            ax1.plot(ld_range, bb_range)
-            ax1.scatter([lingkar_dada], [berat_badan], color='red', s=100)
-            
-            # Tambahkan area rentang normal
-            ax1.axvspan(chest_range['min'], chest_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
-            
-            ax1.set_xlabel('Lingkar Dada (cm)')
-            ax1.set_ylabel('Berat Badan (kg)')
-            ax1.set_title('Hubungan Lingkar Dada dan Berat Badan')
-            ax1.grid(True)
-            ax1.legend()
-            st.pyplot(fig1)
-        
-        with col2:
-            # Grafik hubungan panjang badan dan berat badan
-            pb_range = np.linspace(length_range['min'] * 0.9, length_range['max'] * 1.1, 50)
-            bb_range = [hitung_berat_badan(lingkar_dada, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for pb in pb_range]
-            
-            fig2, ax2 = plt.subplots()
-            ax2.plot(pb_range, bb_range)
-            ax2.scatter([panjang_badan], [berat_badan], color='red', s=100)
-            
-            # Tambahkan area rentang normal
-            ax2.axvspan(length_range['min'], length_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
-            
-            ax2.set_xlabel('Panjang Badan (cm)')
-            ax2.set_ylabel('Berat Badan (kg)')
-            ax2.set_title('Hubungan Panjang Badan dan Berat Badan')
-            ax2.grid(True)
-            ax2.legend()
-            st.pyplot(fig2)
-        
-        # Tabel perbandingan dengan variasi ukuran
-        st.subheader("Estimasi Berat dengan Variasi Dimensi Tubuh")
-        data = []
-        
-        # Variasi lingkar dada dan panjang badan (±10%)
-        ld_variations = [lingkar_dada * 0.9, lingkar_dada, lingkar_dada * 1.1]
-        pb_variations = [panjang_badan * 0.9, panjang_badan, panjang_badan * 1.1]
-        
-        for ld in ld_variations:
-            for pb in pb_variations:
-                bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)
-                data.append({
-                    "Lingkar Dada (cm)": f"{ld:.1f}",
-                    "Panjang Badan (cm)": f"{pb:.1f}",
-                    "Berat Badan (kg)": f"{bb:.2f}",
-                    "Persentase Perubahan (%)": f"{((bb/berat_badan)-1)*100:.1f}%"
-                })
-        
-        # Tampilkan tabel dengan highlight
-        df = pd.DataFrame(data)
-        st.dataframe(df, use_container_width=True, hide_index=True)
 
-    with viz_tab2:
-        # Visualisasi distribusi berat badan
-        st.write("##### Distribusi Berat Badan untuk Bangsa dan Jenis Kelamin")
-        st.write("Grafik ini menunjukkan distribusi berat umum untuk bangsa dan jenis kelamin ternak ini, dan dimana posisi ternak Anda berada dalam distribusi tersebut.")
-        
-        # Buat visualisasi distribusi berat
-        weight_dist_fig = create_weight_distribution_chart(jenis_ternak, bangsa_ternak, jenis_kelamin, berat_badan)
-        st.plotly_chart(weight_dist_fig, use_container_width=True)
-        
-        # Tambahkan penjelasan tentang distribusi
-        breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
-        
-        # Tentukan kategori berat (ringan, sedang, berat)
-        if jenis_ternak == "Sapi":
-            if jenis_kelamin == "Jantan":
-                weight_ranges = {"ringan": 300, "sedang": 600, "berat": 900}
-            else:
-                weight_ranges = {"ringan": 250, "sedang": 450, "berat": 700}
-        elif jenis_ternak == "Kambing":
-            if jenis_kelamin == "Jantan":
-                weight_ranges = {"ringan": 30, "sedang": 60, "berat": 90}
-            else:
-                weight_ranges = {"ringan": 25, "sedang": 45, "berat": 70}
-        else:  # Domba
-            if jenis_kelamin == "Jantan":
-                weight_ranges = {"ringan": 35, "sedang": 70, "berat": 120}
-            else:
-                weight_ranges = {"ringan": 30, "sedang": 60, "berat": 90}
-        
-        # Sesuaikan dengan faktor bangsa
-        factor = breed_data["factor"]
-        for key in weight_ranges:
-            weight_ranges[key] = weight_ranges[key] * factor
-        
-        # Tentukan kategori berat saat ini
-        if berat_badan < weight_ranges["ringan"]:
-            weight_category = "ringan"
-        elif berat_badan < weight_ranges["sedang"]:
-            weight_category = "sedang"
-        elif berat_badan < weight_ranges["berat"]:
-            weight_category = "berat"
+        st.subheader("Rekomendasi Otomatis")
+        for recommendation in generate_recommendations(
+            berat_badan,
+            lingkar_dada,
+            panjang_badan,
+            jenis_ternak,
+            bangsa_ternak,
+            jenis_kelamin,
+            kelas_pasar=kelas_pasar,
+            margin_error=margin_error,
+            estimasi_keuntungan=business_metrics["estimasi_keuntungan"],
+            bcs_option=bcs_option,
+            accuracy_score=accuracy_score,
+        ):
+            st.write(f"- {recommendation}")
+
+        report_data = {
+            "tanggal": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "jenis_ternak": jenis_ternak,
+            "bangsa_ternak": bangsa_ternak,
+            "jenis_kelamin": jenis_kelamin,
+            "lingkar_dada": lingkar_dada,
+            "panjang_badan": panjang_badan,
+            "formula_name": formula_name,
+            "berat_badan": berat_badan,
+            "karkas_weight": karkas_data["karkas_weight"],
+            "meat_weight": karkas_data["meat_weight"],
+            "bone_and_fat_weight": karkas_data["bone_and_fat_weight"],
+            "status_ukuran": status_ukuran,
+            "bcs_option": bcs_option,
+            "accuracy_score": accuracy_score,
+            "accuracy_category": accuracy_category,
+            "kelas_pasar": kelas_pasar,
+            "margin_error": margin_error,
+            "bb_min": bb_min,
+            "bb_max": bb_max,
+            "karkas_min": karkas_min,
+            "karkas_max": karkas_max,
+            "daging_min": daging_min,
+            "daging_max": daging_max,
+            "harga_hidup": harga_bobot_hidup,
+            "nilai_hidup": nilai_hidup,
+            "nilai_hidup_min": nilai_hidup_min,
+            "nilai_hidup_max": nilai_hidup_max,
+            "harga_karkas": harga_karkas,
+            "nilai_karkas": nilai_karkas,
+            "harga_daging": harga_daging,
+            "nilai_daging": nilai_daging,
+            "total_biaya_pemeliharaan": business_metrics["total_biaya_pemeliharaan"],
+            "total_modal": business_metrics["total_modal"],
+            "estimasi_keuntungan": business_metrics["estimasi_keuntungan"],
+            "roi_percent": business_metrics["roi_percent"],
+        }
+        pdf_bytes = create_pdf_report(report_data)
+        if pdf_bytes:
+            st.download_button(
+                label="📄 Download Laporan PDF",
+                data=pdf_bytes,
+                file_name=f"laporan_prediksi_{jenis_ternak.lower()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                mime="application/pdf"
+            )
         else:
-            weight_category = "sangat berat"
+            st.warning("Fitur PDF membutuhkan package reportlab. Pastikan requirements.txt berisi reportlab.")
+    
+        # Tampilkan prediksi karkas, non-karkas, dan daging
+        st.subheader("Prediksi Hasil Pemotongan:")
+    
+        # Buat layout kolom
+        col1, col2 = st.columns([1, 1])
+    
+        with col1:
+            # Informasi karkas dan daging
+            st.markdown(f"""
+            #### Karkas
+            - Persentase karkas: **{karkas_data['karkas_percent']:.1f}%**
+            - Berat karkas: **{karkas_data['karkas_weight']:.2f} kg**
         
-        st.info(f"""
-        ##### Interpretasi Hasil:
+            #### Daging
+            - Persentase daging dari karkas: **{karkas_data['meat_percent_of_carcass']:.1f}%**
+            - Persentase daging dari berat hidup: **{karkas_data['meat_percent_of_body']:.1f}%**
+            - Berat daging total: **{karkas_data['meat_weight']:.2f} kg**
+            - Berat tulang dan lemak karkas: **{karkas_data['bone_and_fat_weight']:.2f} kg**
         
-        Berdasarkan berat badan yang diprediksi ({berat_badan:.2f} kg), ternak Anda termasuk ke dalam **kategori {weight_category}** untuk {bangsa_ternak} {jenis_kelamin}.
+            > *Referensi data: {karkas_data['reference']}*
+            """)
+    
+        with col2:
+            # Informasi komponen non-karkas
+            st.markdown("#### Komponen Non-Karkas")
         
-        **Penjelasan Kategori**:
-        - Ringan: < {weight_ranges['ringan']:.0f} kg
-        - Sedang: {weight_ranges['ringan']:.0f} - {weight_ranges['sedang']:.0f} kg
-        - Berat: {weight_ranges['sedang']:.0f} - {weight_ranges['berat']:.0f} kg
-        - Sangat Berat: > {weight_ranges['berat']:.0f} kg
-        """)
-
-    with viz_tab3:
-        # Perbandingan hasil dari berbagai rumus
-        st.write("##### Perbandingan Hasil dari Berbagai Rumus Perhitungan")
-        st.write("Berat badan yang sama dapat dihitung dengan berbagai rumus yang berbeda. Berikut perbandingan hasil perhitungan dari berbagai rumus yang tersedia untuk jenis ternak yang dipilih.")
+            # Buat dataframe untuk komponen non-karkas
+            non_karkas_df = pd.DataFrame({
+                "Komponen": list(karkas_data["non_karkas_weights"].keys()),
+                "Berat (kg)": [f"{w:.2f}" for w in karkas_data["non_karkas_weights"].values()],
+                "Persentase (%)": [f"{(w / berat_badan) * 100:.1f}" if berat_badan > 0 else "0.0" for w in karkas_data["non_karkas_weights"].values()]
+            })
         
-        # Dapatkan hasil dari berbagai rumus
-        formula_results = compare_formulas(jenis_ternak, lingkar_dada, panjang_badan, jenis_kelamin, bangsa_ternak)
+            # Tampilkan tabel
+            st.dataframe(non_karkas_df, hide_index=True)
+    
+        # Visualisasi proporsi karkas dan non-karkas
+        st.subheader("Visualisasi Proporsi Pemotongan")
+    
+        # Buat data untuk pie chart
+        labels = ["Daging", "Tulang & Lemak Karkas"]
+        values = [karkas_data["meat_weight"], karkas_data["bone_and_fat_weight"]]
+    
+        # Tambahkan komponen non-karkas
+        for component, weight in karkas_data["non_karkas_weights"].items():
+            if weight > 0.01 * berat_badan:  # Tampilkan hanya komponen yang signifikan (>1%)
+                labels.append(component)
+                values.append(weight)
+    
+        # Buat 2 kolom untuk visualisasi yang berbeda
+        viz_col1, viz_col2 = st.columns([1, 1])
+    
+        with viz_col1:
+            # Buat pie chart dengan plotly
+            fig = go.Figure(data=[go.Pie(
+                labels=labels,
+                values=values,
+                hole=.3,
+                textinfo='label+percent',
+                insidetextorientation='radial',
+                pull=[0.1 if x == "Daging" else 0 for x in labels],
+                marker_colors=px.colors.qualitative.Pastel
+            )])
         
-        # Buat dataframe untuk visualisasi
-        formula_names = []
-        raw_weights = []
-        corrected_weights = []
-        formula_texts = []
-        descriptions = []
+            fig.update_layout(
+                title_text=f"Proporsi Komponen Pemotongan<br>{jenis_ternak} {bangsa_ternak} {jenis_kelamin}",
+                annotations=[dict(text=f'Total: {berat_badan:.1f} kg', x=0.5, y=0.5, font_size=12, showarrow=False)]
+            )
         
-        for formula_name, result in formula_results.items():
-            formula_names.append(formula_name)
-            raw_weights.append(result["raw_weight"])
-            corrected_weights.append(result["corrected_weight"])
-            formula_texts.append(result["formula"])
-            descriptions.append(result["description"])
+            st.plotly_chart(fig, use_container_width=True)
+    
+        with viz_col2:
+            # Buat treemap dengan plotly
+            fig = px.treemap(
+                names=labels,
+                parents=["" for _ in labels],
+                values=values,
+                color=values,
+                color_continuous_scale='Viridis',
+                title=f"Treemap Komponen Pemotongan<br>{jenis_ternak} {bangsa_ternak} {jenis_kelamin}"
+            )
         
-        # Buat tabel perbandingan
-        formulas_df = pd.DataFrame({
-            "Nama Rumus": formula_names,
-            "Formula": formula_texts,
-            "Berat Dasar (kg)": [f"{w:.2f}" for w in raw_weights],
-            "Berat Terkoreksi (kg)": [f"{w:.2f}" for w in corrected_weights],
-            "Deskripsi": descriptions
+            fig.update_traces(textinfo="label+value+percent parent")
+            fig.update_layout(margin=dict(t=50, l=25, r=25, b=25))
+        
+            st.plotly_chart(fig, use_container_width=True)
+    
+        # Perbandingan dengan bangsa lain
+        st.subheader("Perbandingan Hasil Karkas dengan Bangsa Lain")
+    
+        # Kumpulkan data karkas untuk semua bangsa dari jenis ternak yang sama
+        breeds = SLAUGHTER_DATA[jenis_ternak]["breeds"]
+        breed_names = []
+        karkas_percents = []
+        meat_percents = []
+    
+        for breed_name, breed_data in breeds.items():
+            breed_names.append(breed_name)
+            karkas_percents.append(breed_data["karkas_percent"][jenis_kelamin])
+            meat_of_karkas = breed_data["meat_percent_of_carcass"]
+            meat_of_live = (breed_data["karkas_percent"][jenis_kelamin] * meat_of_karkas) / 100
+            meat_percents.append(meat_of_live)
+    
+        # Buat dataframe
+        comparison_df = pd.DataFrame({
+            "Bangsa": breed_names,
+            "Persentase Karkas (%)": karkas_percents,
+            "Persentase Daging dari Berat Hidup (%)": meat_percents
         })
-        
-        # Tampilkan tabel
-        st.dataframe(formulas_df, use_container_width=True, hide_index=True)
-        
-        # Buat visualisasi perbandingan rumus
+    
+        # Tambahkan kolom berat karkas dan daging untuk berat badan saat ini
+        comparison_df["Berat Karkas (kg)"] = [(p * berat_badan) / 100 for p in karkas_percents]
+        comparison_df["Berat Daging (kg)"] = [(p * berat_badan) / 100 for p in meat_percents]
+    
+        # Tampilkan tabel dengan highlight
+        st.dataframe(comparison_df.sort_values(by="Persentase Karkas (%)", ascending=False), 
+                     hide_index=True,
+                     use_container_width=True,
+                     column_config={
+                         "Persentase Karkas (%)": st.column_config.NumberColumn(format="%.1f%%"),
+                         "Persentase Daging dari Berat Hidup (%)": st.column_config.NumberColumn(format="%.1f%%"),
+                         "Berat Karkas (kg)": st.column_config.NumberColumn(format="%.2f kg"),
+                         "Berat Daging (kg)": st.column_config.NumberColumn(format="%.2f kg")
+                     })
+    
+        # Visualisasi perbandingan
         fig = go.Figure()
-        
-        # Tambahkan batang untuk raw weight
+    
+        # Tambahkan bar untuk persentase karkas
         fig.add_trace(go.Bar(
-            x=formula_names, 
-            y=raw_weights,
-            name='Berat Dasar',
+            x=breed_names,
+            y=karkas_percents,
+            name='Persentase Karkas',
             marker_color='skyblue',
-            text=[f"{w:.1f} kg" for w in raw_weights],
+            text=[f"{p:.1f}%" for p in karkas_percents],
             textposition='auto'
         ))
-        
-        # Tambahkan batang untuk corrected weight
+    
+        # Tambahkan bar untuk persentase daging
         fig.add_trace(go.Bar(
-            x=formula_names, 
-            y=corrected_weights,
-            name='Berat Terkoreksi',
-            marker_color='orangered',
-            text=[f"{w:.1f} kg" for w in corrected_weights],
+            x=breed_names,
+            y=meat_percents,
+            name='Persentase Daging dari Berat Hidup',
+            marker_color='salmon',
+            text=[f"{p:.1f}%" for p in meat_percents],
             textposition='auto'
         ))
-        
-        # Tambahkan garis untuk berat yang dihitung
-        fig.add_shape(
-            type="line",
-            x0=-0.5, 
-            y0=berat_badan, 
-            x1=len(formula_names)-0.5, 
-            y1=berat_badan,
-            line=dict(color="green", width=2, dash="dash")
-        )
-        
-        # Tambahkan anotasi untuk berat yang dihitung
-        fig.add_annotation(
-            x=len(formula_names)-0.5,
-            y=berat_badan,
-            xshift=10,
-            text=f"Berat Saat Ini: {berat_badan:.1f} kg",
-            showarrow=False,
-            font=dict(color="green", size=12),
-            bgcolor="white",
-            bordercolor="green",
-            borderwidth=1
-        )
-        
-        # Konfigurasi layout
+    
+        # Highlight bangsa saat ini
+        selected_idx = breed_names.index(bangsa_ternak)
+    
+        # Update layout
         fig.update_layout(
-            title=f"Perbandingan Hasil Perhitungan Berbagai Rumus",
-            xaxis_title="Rumus Perhitungan",
-            yaxis_title="Berat Badan (kg)",
+            title=f"Perbandingan Persentase Karkas dan Daging Antar Bangsa {jenis_ternak}",
+            xaxis_title="Bangsa",
+            yaxis_title="Persentase (%)",
             barmode='group',
-            bargap=0.15,
-            bargroupgap=0.1,
-            legend=dict(
-                x=0.01,
-                y=0.99,
-                bgcolor='rgba(255, 255, 255, 0.8)',
-                bordercolor='rgba(0, 0, 0, 0.3)',
+            xaxis={'categoryorder':'total descending'}
+        )
+    
+        st.plotly_chart(fig, use_container_width=True)
+    
+        # Tambahkan informasi tambahan
+        st.info("""
+        ##### Penjelasan Komponen Hasil Pemotongan:
+    
+        **Karkas** adalah bagian dari tubuh ternak yang telah disembelih setelah dipisahkan dari kepala, kaki, kulit, ekor, 
+        organ dalam (jeroan) dan darah. Pada sapi, karkas terdiri dari daging, tulang, dan lemak.
+    
+        **Non-karkas** adalah semua bagian tubuh selain karkas, terdiri dari:
+        - Kepala, kulit, kaki, ekor
+        - Organ dalam (jantung, hati, paru-paru, limpa)
+        - Saluran pencernaan (lambung, usus)
+        - Darah dan lemak non-karkas
+    
+        **Daging** adalah bagian utama dari karkas yang dapat dikonsumsi, tidak termasuk tulang dan lemak.
+    
+        > **Catatan**: Nilai-nilai di atas adalah prediksi berdasarkan persentase rata-rata untuk setiap bangsa dan jenis kelamin ternak.
+        > Hasil aktual dapat bervariasi tergantung umur, kondisi, tingkat kegemukan, dan faktor lainnya.
+        """)
+    
+        # Visualisasi Data Detail (ekspansi dari fitur sebelumnya)
+        st.subheader("Visualisasi Data Detail")
+    
+        # Tampilkan tabs untuk berbagai visualisasi detail
+        viz_tab1, viz_tab2, viz_tab3, viz_tab4 = st.tabs([
+            "Grafik Dimensi & Berat", 
+            "Distribusi Berat", 
+            "Perbandingan Rumus",
+            "Perbandingan Bangsa"
+        ])
+    
+        with viz_tab1:
+            # Grafik hubungan dimensi dan berat
+            col1, col2 = st.columns(2)
+        
+            with col1:
+                # Grafik hubungan lingkar dada dan berat badan
+                ld_range = np.linspace(chest_range['min'] * 0.9, chest_range['max'] * 1.1, 50)
+                bb_range = [hitung_berat_badan(ld, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for ld in ld_range]
+            
+                fig1, ax1 = plt.subplots()
+                ax1.plot(ld_range, bb_range)
+                ax1.scatter([lingkar_dada], [berat_badan], color='red', s=100)
+            
+                # Tambahkan area rentang normal
+                ax1.axvspan(chest_range['min'], chest_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
+            
+                ax1.set_xlabel('Lingkar Dada (cm)')
+                ax1.set_ylabel('Berat Badan (kg)')
+                ax1.set_title('Hubungan Lingkar Dada dan Berat Badan')
+                ax1.grid(True)
+                ax1.legend()
+                st.pyplot(fig1)
+        
+            with col2:
+                # Grafik hubungan panjang badan dan berat badan
+                pb_range = np.linspace(length_range['min'] * 0.9, length_range['max'] * 1.1, 50)
+                bb_range = [hitung_berat_badan(lingkar_dada, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)[0] for pb in pb_range]
+            
+                fig2, ax2 = plt.subplots()
+                ax2.plot(pb_range, bb_range)
+                ax2.scatter([panjang_badan], [berat_badan], color='red', s=100)
+            
+                # Tambahkan area rentang normal
+                ax2.axvspan(length_range['min'], length_range['max'], alpha=0.2, color='green', label=f'Rentang normal {bangsa_ternak}')
+            
+                ax2.set_xlabel('Panjang Badan (cm)')
+                ax2.set_ylabel('Berat Badan (kg)')
+                ax2.set_title('Hubungan Panjang Badan dan Berat Badan')
+                ax2.grid(True)
+                ax2.legend()
+                st.pyplot(fig2)
+        
+            # Tabel perbandingan dengan variasi ukuran
+            st.subheader("Estimasi Berat dengan Variasi Dimensi Tubuh")
+            data = []
+        
+            # Variasi lingkar dada dan panjang badan (±10%)
+            ld_variations = [lingkar_dada * 0.9, lingkar_dada, lingkar_dada * 1.1]
+            pb_variations = [panjang_badan * 0.9, panjang_badan, panjang_badan * 1.1]
+        
+            for ld in ld_variations:
+                for pb in pb_variations:
+                    bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa_ternak, jenis_kelamin)
+                    data.append({
+                        "Lingkar Dada (cm)": f"{ld:.1f}",
+                        "Panjang Badan (cm)": f"{pb:.1f}",
+                        "Berat Badan (kg)": f"{bb:.2f}",
+                        "Persentase Perubahan (%)": f"{((bb/berat_badan)-1)*100:.1f}%"
+                    })
+        
+            # Tampilkan tabel dengan highlight
+            df = pd.DataFrame(data)
+            st.dataframe(df, use_container_width=True, hide_index=True)
+
+        with viz_tab2:
+            # Visualisasi distribusi berat badan
+            st.write("##### Distribusi Berat Badan untuk Bangsa dan Jenis Kelamin")
+            st.write("Grafik ini menunjukkan distribusi berat umum untuk bangsa dan jenis kelamin ternak ini, dan dimana posisi ternak Anda berada dalam distribusi tersebut.")
+        
+            # Buat visualisasi distribusi berat
+            weight_dist_fig = create_weight_distribution_chart(jenis_ternak, bangsa_ternak, jenis_kelamin, berat_badan)
+            st.plotly_chart(weight_dist_fig, use_container_width=True)
+        
+            # Tambahkan penjelasan tentang distribusi
+            breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+        
+            # Tentukan kategori berat (ringan, sedang, berat)
+            if jenis_ternak == "Sapi":
+                if jenis_kelamin == "Jantan":
+                    weight_ranges = {"ringan": 300, "sedang": 600, "berat": 900}
+                else:
+                    weight_ranges = {"ringan": 250, "sedang": 450, "berat": 700}
+            elif jenis_ternak == "Kambing":
+                if jenis_kelamin == "Jantan":
+                    weight_ranges = {"ringan": 30, "sedang": 60, "berat": 90}
+                else:
+                    weight_ranges = {"ringan": 25, "sedang": 45, "berat": 70}
+            else:  # Domba
+                if jenis_kelamin == "Jantan":
+                    weight_ranges = {"ringan": 35, "sedang": 70, "berat": 120}
+                else:
+                    weight_ranges = {"ringan": 30, "sedang": 60, "berat": 90}
+        
+            # Sesuaikan dengan faktor bangsa
+            factor = breed_data["factor"]
+            for key in weight_ranges:
+                weight_ranges[key] = weight_ranges[key] * factor
+        
+            # Tentukan kategori berat saat ini
+            if berat_badan < weight_ranges["ringan"]:
+                weight_category = "ringan"
+            elif berat_badan < weight_ranges["sedang"]:
+                weight_category = "sedang"
+            elif berat_badan < weight_ranges["berat"]:
+                weight_category = "berat"
+            else:
+                weight_category = "sangat berat"
+        
+            st.info(f"""
+            ##### Interpretasi Hasil:
+        
+            Berdasarkan berat badan yang diprediksi ({berat_badan:.2f} kg), ternak Anda termasuk ke dalam **kategori {weight_category}** untuk {bangsa_ternak} {jenis_kelamin}.
+        
+            **Penjelasan Kategori**:
+            - Ringan: < {weight_ranges['ringan']:.0f} kg
+            - Sedang: {weight_ranges['ringan']:.0f} - {weight_ranges['sedang']:.0f} kg
+            - Berat: {weight_ranges['sedang']:.0f} - {weight_ranges['berat']:.0f} kg
+            - Sangat Berat: > {weight_ranges['berat']:.0f} kg
+            """)
+
+        with viz_tab3:
+            # Perbandingan hasil dari berbagai rumus
+            st.write("##### Perbandingan Hasil dari Berbagai Rumus Perhitungan")
+            st.write("Berat badan yang sama dapat dihitung dengan berbagai rumus yang berbeda. Berikut perbandingan hasil perhitungan dari berbagai rumus yang tersedia untuk jenis ternak yang dipilih.")
+        
+            # Dapatkan hasil dari berbagai rumus
+            formula_results = compare_formulas(jenis_ternak, lingkar_dada, panjang_badan, jenis_kelamin, bangsa_ternak)
+        
+            # Buat dataframe untuk visualisasi
+            formula_names = []
+            raw_weights = []
+            corrected_weights = []
+            formula_texts = []
+            descriptions = []
+        
+            for formula_name, result in formula_results.items():
+                formula_names.append(formula_name)
+                raw_weights.append(result["raw_weight"])
+                corrected_weights.append(result["corrected_weight"])
+                formula_texts.append(result["formula"])
+                descriptions.append(result["description"])
+        
+            # Buat tabel perbandingan
+            formulas_df = pd.DataFrame({
+                "Nama Rumus": formula_names,
+                "Formula": formula_texts,
+                "Berat Dasar (kg)": [f"{w:.2f}" for w in raw_weights],
+                "Berat Terkoreksi (kg)": [f"{w:.2f}" for w in corrected_weights],
+                "Deskripsi": descriptions
+            })
+        
+            # Tampilkan tabel
+            st.dataframe(formulas_df, use_container_width=True, hide_index=True)
+        
+            # Buat visualisasi perbandingan rumus
+            fig = go.Figure()
+        
+            # Tambahkan batang untuk raw weight
+            fig.add_trace(go.Bar(
+                x=formula_names, 
+                y=raw_weights,
+                name='Berat Dasar',
+                marker_color='skyblue',
+                text=[f"{w:.1f} kg" for w in raw_weights],
+                textposition='auto'
+            ))
+        
+            # Tambahkan batang untuk corrected weight
+            fig.add_trace(go.Bar(
+                x=formula_names, 
+                y=corrected_weights,
+                name='Berat Terkoreksi',
+                marker_color='orangered',
+                text=[f"{w:.1f} kg" for w in corrected_weights],
+                textposition='auto'
+            ))
+        
+            # Tambahkan garis untuk berat yang dihitung
+            fig.add_shape(
+                type="line",
+                x0=-0.5, 
+                y0=berat_badan, 
+                x1=len(formula_names)-0.5, 
+                y1=berat_badan,
+                line=dict(color="green", width=2, dash="dash")
+            )
+        
+            # Tambahkan anotasi untuk berat yang dihitung
+            fig.add_annotation(
+                x=len(formula_names)-0.5,
+                y=berat_badan,
+                xshift=10,
+                text=f"Berat Saat Ini: {berat_badan:.1f} kg",
+                showarrow=False,
+                font=dict(color="green", size=12),
+                bgcolor="white",
+                bordercolor="green",
                 borderwidth=1
-            ),
-            margin=dict(t=80, b=60, l=40, r=40)
-        )
+            )
         
-        # Tampilkan grafik
-        st.plotly_chart(fig, use_container_width=True)
+            # Konfigurasi layout
+            fig.update_layout(
+                title=f"Perbandingan Hasil Perhitungan Berbagai Rumus",
+                xaxis_title="Rumus Perhitungan",
+                yaxis_title="Berat Badan (kg)",
+                barmode='group',
+                bargap=0.15,
+                bargroupgap=0.1,
+                legend=dict(
+                    x=0.01,
+                    y=0.99,
+                    bgcolor='rgba(255, 255, 255, 0.8)',
+                    bordercolor='rgba(0, 0, 0, 0.3)',
+                    borderwidth=1
+                ),
+                margin=dict(t=80, b=60, l=40, r=40)
+            )
         
-        # Tambahkan penjelasan
-        st.info("""
-        ##### Penjelasan Perbandingan Rumus:
+            # Tampilkan grafik
+            st.plotly_chart(fig, use_container_width=True)
         
-        **Berat Dasar** adalah hasil perhitungan murni menggunakan rumus tanpa faktor koreksi. 
+            # Tambahkan penjelasan
+            st.info("""
+            ##### Penjelasan Perbandingan Rumus:
         
-        **Berat Terkoreksi** adalah hasil setelah menerapkan faktor koreksi bangsa dan jenis kelamin.
+            **Berat Dasar** adalah hasil perhitungan murni menggunakan rumus tanpa faktor koreksi. 
         
-        Perbedaan hasil antar rumus disebabkan oleh:
-        1. Perbedaan konstanta perhitungan yang disesuaikan dengan tipe ternak
-        2. Perbedaan metode perhitungan yang mempertimbangkan karakteristik fisik ternak yang berbeda
-        """)
+            **Berat Terkoreksi** adalah hasil setelah menerapkan faktor koreksi bangsa dan jenis kelamin.
+        
+            Perbedaan hasil antar rumus disebabkan oleh:
+            1. Perbedaan konstanta perhitungan yang disesuaikan dengan tipe ternak
+            2. Perbedaan metode perhitungan yang mempertimbangkan karakteristik fisik ternak yang berbeda
+            """)
 
-    with viz_tab4:
-        # Perbandingan berat antar bangsa
-        st.write("##### Perbandingan Berat Antar Bangsa Ternak")
-        st.write("Grafik ini membandingkan berat badan yang dihasilkan pada berbagai bangsa ternak dengan ukuran lingkar dada dan panjang badan yang sama.")
+        with viz_tab4:
+            # Perbandingan berat antar bangsa
+            st.write("##### Perbandingan Berat Antar Bangsa Ternak")
+            st.write("Grafik ini membandingkan berat badan yang dihasilkan pada berbagai bangsa ternak dengan ukuran lingkar dada dan panjang badan yang sama.")
         
-        # Buat visualisasi perbandingan bangsa
-        breed_comparison_fig = create_breed_comparison_chart(jenis_ternak, lingkar_dada, panjang_badan, jenis_kelamin)
-        st.plotly_chart(breed_comparison_fig, use_container_width=True)
+            # Buat visualisasi perbandingan bangsa
+            breed_comparison_fig = create_breed_comparison_chart(jenis_ternak, lingkar_dada, panjang_badan, jenis_kelamin)
+            st.plotly_chart(breed_comparison_fig, use_container_width=True)
         
-        # Tambahkan penjelasan
-        st.info("""
-        ##### Penjelasan Perbandingan Bangsa:
+            # Tambahkan penjelasan
+            st.info("""
+            ##### Penjelasan Perbandingan Bangsa:
         
-        Grafik di atas menunjukkan bagaimana berat badan bervariasi antar bangsa ternak meskipun dengan ukuran lingkar dada dan panjang badan yang sama. Hal ini disebabkan oleh:
+            Grafik di atas menunjukkan bagaimana berat badan bervariasi antar bangsa ternak meskipun dengan ukuran lingkar dada dan panjang badan yang sama. Hal ini disebabkan oleh:
         
-        1. **Karakteristik fisik bangsa** - Setiap bangsa memiliki konformasi tubuh, kepadatan otot, dan distribusi lemak yang berbeda
-        2. **Rumus yang digunakan** - Bangsa yang berbeda sering menggunakan rumus perhitungan yang berbeda
-        3. **Faktor koreksi** - Faktor koreksi spesifik diterapkan untuk setiap bangsa
+            1. **Karakteristik fisik bangsa** - Setiap bangsa memiliki konformasi tubuh, kepadatan otot, dan distribusi lemak yang berbeda
+            2. **Rumus yang digunakan** - Bangsa yang berbeda sering menggunakan rumus perhitungan yang berbeda
+            3. **Faktor koreksi** - Faktor koreksi spesifik diterapkan untuk setiap bangsa
         
-        Perbandingan ini berguna untuk memahami potensi produksi dari berbagai bangsa ternak dan membantu dalam keputusan pemilihan bangsa untuk program peternakan.
-        """)
+            Perbandingan ini berguna untuk memahami potensi produksi dari berbagai bangsa ternak dan membantu dalam keputusan pemilihan bangsa untuk program peternakan.
+            """)
 
-    # Tabel perbandingan
-    st.subheader("Tabel Prediksi dengan Variasi Ukuran")
+        # Tabel perbandingan
+        st.subheader("Tabel Prediksi dengan Variasi Ukuran")
     
-    # Fungsi untuk membuat tabel prediksi berat dengan berbagai variasi ukuran
-    def create_prediction_table(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_kelamin, steps=5, variation_percent=15):
-        """
-        Membuat tabel prediksi berat badan dengan variasi ukuran lingkar dada dan panjang badan
+        # Fungsi untuk membuat tabel prediksi berat dengan berbagai variasi ukuran
+        def create_prediction_table(lingkar_dada, panjang_badan, jenis_ternak, bangsa, jenis_kelamin, steps=5, variation_percent=15):
+            """
+            Membuat tabel prediksi berat badan dengan variasi ukuran lingkar dada dan panjang badan
         
-        Args:
-            lingkar_dada (float): Ukuran lingkar dada saat ini (cm)
-            panjang_badan (float): Ukuran panjang badan saat ini (cm)
-            jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
-            bangsa (str): Bangsa ternak
-            jenis_kelamin (str): Jenis kelamin ternak
-            steps (int): Jumlah langkah variasi (default=5)
-            variation_percent (float): Persentase variasi dari nilai tengah (default=15%)
+            Args:
+                lingkar_dada (float): Ukuran lingkar dada saat ini (cm)
+                panjang_badan (float): Ukuran panjang badan saat ini (cm)
+                jenis_ternak (str): Jenis ternak (Sapi, Kambing, Domba)
+                bangsa (str): Bangsa ternak
+                jenis_kelamin (str): Jenis kelamin ternak
+                steps (int): Jumlah langkah variasi (default=5)
+                variation_percent (float): Persentase variasi dari nilai tengah (default=15%)
             
-        Returns:
-            pd.DataFrame: DataFrame berisi tabel prediksi berat dengan variasi ukuran
-        """
-        # Tentukan rentang variasi
-        ld_min = lingkar_dada * (1 - variation_percent/100)
-        ld_max = lingkar_dada * (1 + variation_percent/100)
-        pb_min = panjang_badan * (1 - variation_percent/100)
-        pb_max = panjang_badan * (1 + variation_percent/100)
+            Returns:
+                pd.DataFrame: DataFrame berisi tabel prediksi berat dengan variasi ukuran
+            """
+            # Tentukan rentang variasi
+            ld_min = lingkar_dada * (1 - variation_percent/100)
+            ld_max = lingkar_dada * (1 + variation_percent/100)
+            pb_min = panjang_badan * (1 - variation_percent/100)
+            pb_max = panjang_badan * (1 + variation_percent/100)
         
-        # Buat array variasi ukuran
-        ld_values = np.linspace(ld_min, ld_max, steps)
-        pb_values = np.linspace(pb_min, pb_max, steps)
+            # Buat array variasi ukuran
+            ld_values = np.linspace(ld_min, ld_max, steps)
+            pb_values = np.linspace(pb_min, pb_max, steps)
         
-        # Format untuk nama kolom (lingkar dada)
-        ld_headers = [f"LD: {ld:.1f} cm" for ld in ld_values]
+            # Format untuk nama kolom (lingkar dada)
+            ld_headers = [f"LD: {ld:.1f} cm" for ld in ld_values]
         
-        # Buat dataframe untuk menyimpan hasil
-        results = []
+            # Buat dataframe untuk menyimpan hasil
+            results = []
         
-        # Hitung berat untuk setiap kombinasi
-        for pb in pb_values:
-            row = {"Panjang Badan (cm)": f"{pb:.1f}"}
+            # Hitung berat untuk setiap kombinasi
+            for pb in pb_values:
+                row = {"Panjang Badan (cm)": f"{pb:.1f}"}
             
-            for i, ld in enumerate(ld_values):
-                bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa, jenis_kelamin)
-                row[ld_headers[i]] = f"{bb:.1f} kg"
+                for i, ld in enumerate(ld_values):
+                    bb, _, _ = hitung_berat_badan(ld, pb, jenis_ternak, bangsa, jenis_kelamin)
+                    row[ld_headers[i]] = f"{bb:.1f} kg"
             
-            results.append(row)
+                results.append(row)
         
-        # Kembalikan DataFrame
-        return pd.DataFrame(results)
+            # Kembalikan DataFrame
+            return pd.DataFrame(results)
     
-    # Tampilkan tabel prediksi berat dengan berbagai variasi ukuran
-    st.write("""
-    Tabel di bawah ini menunjukkan prediksi berat badan ternak dengan berbagai variasi ukuran lingkar dada (LD) 
-    dan panjang badan (PB). Gunakan tabel ini untuk memperkirakan berat ternak dengan rentang ukuran yang lebih luas
-    atau untuk memahami bagaimana perubahan kecil pada pengukuran dapat mempengaruhi hasil prediksi berat.
-    """)
+        # Tampilkan tabel prediksi berat dengan berbagai variasi ukuran
+        st.write("""
+        Tabel di bawah ini menunjukkan prediksi berat badan ternak dengan berbagai variasi ukuran lingkar dada (LD) 
+        dan panjang badan (PB). Gunakan tabel ini untuk memperkirakan berat ternak dengan rentang ukuran yang lebih luas
+        atau untuk memahami bagaimana perubahan kecil pada pengukuran dapat mempengaruhi hasil prediksi berat.
+        """)
     
-    # Buat container untuk memperbarui konten tabel saat slider berubah
-    table_container = st.container()
+        # Buat container untuk memperbarui konten tabel saat slider berubah
+        table_container = st.container()
     
-    # Opsi untuk kustomisasi tabel
-    col1, col2 = st.columns([1, 1])
-    with col1:
-        variation_percent = st.slider("Rentang Variasi (%)", min_value=5, max_value=30, value=15, 
-                                      help="Persentase variasi ukuran dari nilai tengah", key="variation_percent_slider")
-    with col2:
-        steps = st.slider("Jumlah Langkah Variasi", min_value=3, max_value=9, value=5, step=2,
-                          help="Jumlah langkah variasi ukuran (kolom dan baris)", key="steps_slider")
+        # Opsi untuk kustomisasi tabel
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            variation_percent = st.slider("Rentang Variasi (%)", min_value=5, max_value=30, value=15, 
+                                          help="Persentase variasi ukuran dari nilai tengah", key="variation_percent_slider")
+        with col2:
+            steps = st.slider("Jumlah Langkah Variasi", min_value=3, max_value=9, value=5, step=2,
+                              help="Jumlah langkah variasi ukuran (kolom dan baris)", key="steps_slider")
     
-    # Buat dan tampilkan tabel prediksi dalam container yang akan diperbarui saat slider berubah
-    with table_container:
-        # Buat tabel baru setiap kali slider berubah
-        prediction_table = create_prediction_table(
-            lingkar_dada=lingkar_dada,
-            panjang_badan=panjang_badan,
-            jenis_ternak=jenis_ternak,
-            bangsa=bangsa_ternak,
-            jenis_kelamin=jenis_kelamin,
-            steps=steps,
-            variation_percent=variation_percent
-        )
+        # Buat dan tampilkan tabel prediksi dalam container yang akan diperbarui saat slider berubah
+        with table_container:
+            # Buat tabel baru setiap kali slider berubah
+            prediction_table = create_prediction_table(
+                lingkar_dada=lingkar_dada,
+                panjang_badan=panjang_badan,
+                jenis_ternak=jenis_ternak,
+                bangsa=bangsa_ternak,
+                jenis_kelamin=jenis_kelamin,
+                steps=steps,
+                variation_percent=variation_percent
+            )
         
-        # Tampilkan tabel dengan highlight pada nilai tengah
-        st.dataframe(prediction_table, use_container_width=True, hide_index=True)
+            # Tampilkan tabel dengan highlight pada nilai tengah
+            st.dataframe(prediction_table, use_container_width=True, hide_index=True)
     
-    # Tambahkan penjelasan dan tips penggunaan
-    st.info("""
-    ##### Cara Menggunakan Tabel Prediksi:
+        # Tambahkan penjelasan dan tips penggunaan
+        st.info("""
+        ##### Cara Menggunakan Tabel Prediksi:
     
-    1. **Bandingkan rentang** - Lihat bagaimana berat badan berubah dengan variasi ukuran lingkar dada dan panjang badan
-    2. **Antisipasi pertumbuhan** - Gunakan untuk memperkirakan pertambahan berat jika ukuran tubuh ternak bertambah
-    3. **Koreksi pengukuran** - Jika tidak yakin dengan pengukuran awal, lihat rentang beratnya pada variasi ukuran
-    4. **Nilai optimal** - Identifikasi target ukuran tubuh untuk mencapai berat badan yang diinginkan
+        1. **Bandingkan rentang** - Lihat bagaimana berat badan berubah dengan variasi ukuran lingkar dada dan panjang badan
+        2. **Antisipasi pertumbuhan** - Gunakan untuk memperkirakan pertambahan berat jika ukuran tubuh ternak bertambah
+        3. **Koreksi pengukuran** - Jika tidak yakin dengan pengukuran awal, lihat rentang beratnya pada variasi ukuran
+        4. **Nilai optimal** - Identifikasi target ukuran tubuh untuk mencapai berat badan yang diinginkan
     
-    > **Tips**: Pengukuran lingkar dada memiliki pengaruh lebih besar terhadap berat badan dibandingkan dengan panjang badan,
-    > karena dalam rumus perhitungan, lingkar dada dikuadratkan sedangkan panjang badan tidak.
-    """)
+        > **Tips**: Pengukuran lingkar dada memiliki pengaruh lebih besar terhadap berat badan dibandingkan dengan panjang badan,
+        > karena dalam rumus perhitungan, lingkar dada dikuadratkan sedangkan panjang badan tidak.
+        """)
     
-    # Buat container untuk memperbarui heatmap saat slider berubah
-    heatmap_container = st.container()
+        # Buat container untuk memperbarui heatmap saat slider berubah
+        heatmap_container = st.container()
     
-    # Tampilkan visualisasi heatmap berat badan
-    with heatmap_container:
-        st.subheader("Peta Panas Prediksi Berat Badan")
-        st.write("Visualisasi di bawah ini menunjukkan hubungan antara lingkar dada, panjang badan, dan prediksi berat badan dalam bentuk peta panas (heatmap).")
+        # Tampilkan visualisasi heatmap berat badan
+        with heatmap_container:
+            st.subheader("Peta Panas Prediksi Berat Badan")
+            st.write("Visualisasi di bawah ini menunjukkan hubungan antara lingkar dada, panjang badan, dan prediksi berat badan dalam bentuk peta panas (heatmap).")
         
-        # Buat array untuk heatmap (gunakan nilai slider terbaru)
-        ld_values = np.linspace(lingkar_dada * (1 - variation_percent/100), 
-                               lingkar_dada * (1 + variation_percent/100), 
-                               20)  # Lebih banyak titik untuk visualisasi yang lebih halus
-        pb_values = np.linspace(panjang_badan * (1 - variation_percent/100), 
-                               panjang_badan * (1 + variation_percent/100), 
-                               20)
+            # Buat array untuk heatmap (gunakan nilai slider terbaru)
+            ld_values = np.linspace(lingkar_dada * (1 - variation_percent/100), 
+                                   lingkar_dada * (1 + variation_percent/100), 
+                                   20)  # Lebih banyak titik untuk visualisasi yang lebih halus
+            pb_values = np.linspace(panjang_badan * (1 - variation_percent/100), 
+                                   panjang_badan * (1 + variation_percent/100), 
+                                   20)
         
-        # Buat grid untuk heatmap
-        ld_grid, pb_grid = np.meshgrid(ld_values, pb_values)
-        weights = np.zeros(ld_grid.shape)
+            # Buat grid untuk heatmap
+            ld_grid, pb_grid = np.meshgrid(ld_values, pb_values)
+            weights = np.zeros(ld_grid.shape)
         
-        # Hitung berat untuk setiap kombinasi ukuran
-        for i in range(ld_grid.shape[0]):
-            for j in range(ld_grid.shape[1]):
-                weights[i, j], _, _ = hitung_berat_badan(ld_grid[i, j], pb_grid[i, j], 
-                                                        jenis_ternak, bangsa_ternak, jenis_kelamin)
+            # Hitung berat untuk setiap kombinasi ukuran
+            for i in range(ld_grid.shape[0]):
+                for j in range(ld_grid.shape[1]):
+                    weights[i, j], _, _ = hitung_berat_badan(ld_grid[i, j], pb_grid[i, j], 
+                                                            jenis_ternak, bangsa_ternak, jenis_kelamin)
         
-        # Buat heatmap dengan Plotly
-        fig = go.Figure(data=go.Heatmap(
-            z=weights,
-            x=ld_values,
-            y=pb_values,
-            colorscale='Viridis',
-            colorbar=dict(title='Berat (kg)')
-        ))
+            # Buat heatmap dengan Plotly
+            fig = go.Figure(data=go.Heatmap(
+                z=weights,
+                x=ld_values,
+                y=pb_values,
+                colorscale='Viridis',
+                colorbar=dict(title='Berat (kg)')
+            ))
         
-        # Tambahkan marker untuk nilai saat ini
-        fig.add_trace(go.Scatter(
-            x=[lingkar_dada],
-            y=[panjang_badan],
-            mode='markers',
-            marker=dict(size=12, color='red', symbol='x'),
-            name='Ukuran Saat Ini'
-        ))
+            # Tambahkan marker untuk nilai saat ini
+            fig.add_trace(go.Scatter(
+                x=[lingkar_dada],
+                y=[panjang_badan],
+                mode='markers',
+                marker=dict(size=12, color='red', symbol='x'),
+                name='Ukuran Saat Ini'
+            ))
         
-        # Konfigurasi layout
-        fig.update_layout(
-            title=f"Peta Panas Prediksi Berat {jenis_ternak} {bangsa_ternak} ({jenis_kelamin})<br>Rentang Variasi: {variation_percent}%, Langkah: {steps}",
-            xaxis_title="Lingkar Dada (cm)",
-            yaxis_title="Panjang Badan (cm)",
-            height=500
-        )
+            # Konfigurasi layout
+            fig.update_layout(
+                title=f"Peta Panas Prediksi Berat {jenis_ternak} {bangsa_ternak} ({jenis_kelamin})<br>Rentang Variasi: {variation_percent}%, Langkah: {steps}",
+                xaxis_title="Lingkar Dada (cm)",
+                yaxis_title="Panjang Badan (cm)",
+                height=500
+            )
         
-        # Tampilkan heatmap
-        st.plotly_chart(fig, use_container_width=True)
+            # Tampilkan heatmap
+            st.plotly_chart(fig, use_container_width=True)
+
 
 
 
 st.markdown("---")
-st.subheader("Riwayat Perhitungan dan Mode Banyak Ternak")
-riwayat_tab, batch_tab = st.tabs(["📋 Riwayat Perhitungan", "📤 Upload Banyak Ternak"])
+st.subheader("8. Arsip, Riwayat, dan Mode Banyak Ternak")
+riwayat_tab, batch_tab = st.tabs(["📋 Riwayat & Unduhan", "📤 Mode Banyak Ternak"])
 
 with riwayat_tab:
     if st.session_state.calculation_history:
@@ -4678,6 +4739,12 @@ with riwayat_tab:
 with batch_tab:
     st.markdown("""
     Gunakan fitur ini untuk menghitung banyak ternak sekaligus dari file CSV atau Excel.
+
+    **Alur mode banyak ternak:**
+    1. Download template CSV.
+    2. Isi data ternak sesuai kolom.
+    3. Upload kembali file CSV/Excel.
+    4. Download hasil prediksi.
 
     Kolom wajib:
     - `Jenis Ternak`

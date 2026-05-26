@@ -1,48 +1,56 @@
-# Sapi Weight Predictor - Breed Wide Perspective
+# Sapi Weight Predictor - Systematic UI
 
 Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi analisis berdasarkan **jenis ternak + bangsa ternak**.
 
-
-## Penyempurnaan Desain
-
-Versi ini sudah dilengkapi desain adaptif untuk **light mode** dan **dark mode**:
-
-- Warna teks otomatis menyesuaikan mode tampilan.
-- Background menggunakan palet lembut yang tetap kontras.
-- Sidebar dibuat lebih bersih.
-- Metric card lebih jelas dan konsisten.
-- Tab dibuat seperti pill agar mudah dibaca.
-- Tabel, expander, tombol, alert, dan footer dibuat adaptif.
-- Footer tidak lagi memakai warna statis yang berisiko kurang terbaca di dark mode.
-
 ## Fokus Versi Ini
 
-Versi ini memperluas sudut pandang aplikasi. Analisis tidak lagi hanya berdasarkan jenis ternak umum, tetapi juga disesuaikan dengan karakter **bangsa ternak**.
+Versi ini dirapikan agar lebih sistematis dan mudah dipahami. Urutan penggunaan dibuat jelas:
 
-Contoh:
-- Sapi Bali dibaca sebagai sapi lokal adaptif dan likuid untuk pasar rakyat/kurban.
-- Sapi Limousin dan Simental dibaca sebagai sapi besar/premium dengan kebutuhan modal dan pembeli berbeda.
-- Kambing Boer dibaca sebagai kambing pedaging premium.
-- Domba Garut dibaca sebagai domba lokal bernilai tinggi untuk segmen premium/pejantan/kurban.
-- Domba Texel dan Suffolk dibaca sebagai domba pedaging premium.
+```text
+1. Input data utama di sidebar
+2. Hitung berat badan
+3. Baca hasil utama
+4. Lanjutkan ke analisis target/ekonomi/jagal/blantik
+5. Cek insight
+6. Simpan PDF/CSV atau gunakan mode banyak ternak
+```
+
+## Penyempurnaan Struktur
+
+- Panduan pengukuran dipindahkan ke expander agar halaman utama tidak terlalu panjang.
+- Tab hasil diberi nomor urut agar alur baca lebih jelas.
+- Detail teknis, hasil potong, visualisasi, dan laporan PDF masuk ke expander khusus.
+- Riwayat dan upload banyak ternak ditempatkan sebagai bagian arsip.
+- Instruksi mode banyak ternak dibuat lebih ringkas dan bertahap.
+- Header menggunakan workflow ringkas: Input → Hitung → Baca Hasil → Analisis → Simpan.
+- Desain tetap adaptif untuk light mode dan dark mode.
 
 ## Tab Hasil
 
 Setelah tombol **Hitung Berat Badan** ditekan, hasil tampil dalam tab:
 
 ```text
-⚖️ Hitung Berat Badan
-🎯 Simulasi Target Berat
-💰 Estimasi Ekonomi
-📊 Biaya & Keuntungan
-🔪 Kalkulator Jagal
-📈 Insight Analisis
-🤝 Insight Blantik
+1️⃣ Berat & Akurasi
+2️⃣ Target Berat
+3️⃣ Ekonomi Ternak
+4️⃣ Biaya & Profit
+5️⃣ Jagal
+6️⃣ Blantik
+7️⃣ Insight
+```
+
+## Bagian Arsip
+
+Di bagian akhir aplikasi terdapat:
+
+```text
+📋 Riwayat & Unduhan
+📤 Mode Banyak Ternak
 ```
 
 ## Penyesuaian Berdasarkan Jenis dan Bangsa
 
-Aplikasi sekarang memakai profil bisnis tiap bangsa ternak untuk:
+Aplikasi memakai profil bisnis tiap bangsa ternak untuk:
 - Posisi pasar
 - Pembeli potensial
 - Kacamata jagal
@@ -53,52 +61,6 @@ Aplikasi sekarang memakai profil bisnis tiap bangsa ternak untuk:
 - Kesesuaian untuk jagal
 - Kesesuaian untuk penggemukan
 - Faktor premium harga
-
-## Fitur Utama
-
-- Prediksi berat badan sapi, kambing, dan domba.
-- Rumus menyesuaikan jenis dan bangsa ternak.
-- Profil pasar berdasarkan jenis dan bangsa.
-- Status ukuran ternak.
-- Margin error prediksi berat.
-- BCS / kondisi tubuh ternak.
-- Skor akurasi input pengukuran.
-- Simulasi target berat dengan catatan khusus bangsa.
-- Estimasi karkas, non-karkas, dan daging.
-- Estimasi ekonomi berdasarkan jenis, bangsa, kelas pasar, dan faktor premium.
-- Estimasi biaya pemeliharaan, total modal, keuntungan, dan ROI.
-- Kalkulator jagal berbasis profil bangsa:
-  - Omzet daging
-  - Omzet tulang & lemak
-  - Omzet non-karkas
-  - Kesesuaian jagal
-  - Harga beli impas
-  - Harga beli maksimal sesuai target margin
-  - Rekomendasi keputusan jagal
-- Insight Analisis:
-  - Efisiensi karkas
-  - Daging terhadap bobot hidup
-  - Risiko khusus bangsa
-  - Sensitivitas harga jual
-  - Sensitivitas susut daging
-  - Struktur omzet
-  - Checklist keputusan
-- Insight Blantik:
-  - Estimasi harga jual kembali
-  - Margin bersih blantik
-  - ROI blantik
-  - Harga ideal beli
-  - Harga maksimal beli
-  - Harga impas
-  - Skor daya jual berbasis bangsa
-  - Segmentasi calon pembeli berdasarkan bangsa
-  - Risiko transaksi
-  - Strategi jual: jual cepat, tahan, penggemukan, atau jangan deal
-  - Checklist tindakan transaksi
-- Riwayat perhitungan.
-- Upload data banyak ternak melalui CSV/Excel.
-- Download template CSV.
-- Download laporan PDF.
 
 ## File Utama untuk Streamlit Online
 
@@ -139,6 +101,7 @@ sapi_weight_predictor.py
 
 ## Catatan
 
+- Hasil adalah estimasi, bukan pengganti timbangan ternak.
 - Profil bangsa adalah alat bantu analisis pasar, bukan keputusan mutlak.
 - Harga lokal, musim, lokasi, umur, kesehatan, dan permintaan pasar tetap perlu dicek langsung.
 - Untuk transaksi besar, tetap gunakan timbangan ternak terkalibrasi.
