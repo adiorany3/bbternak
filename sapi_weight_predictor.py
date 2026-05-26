@@ -1312,6 +1312,180 @@ def generate_butcher_recommendations(metrics):
 
 
 
+
+
+def get_efficiency_category(value, thresholds):
+    """Mengubah nilai numerik menjadi kategori efisiensi sederhana."""
+    low, medium, high = thresholds
+    if value >= high:
+        return "Sangat Baik"
+    if value >= medium:
+        return "Baik"
+    if value >= low:
+        return "Cukup"
+    return "Rendah"
+
+
+def calculate_operational_insights(
+    berat_badan,
+    karkas_data,
+    accuracy_score,
+    bcs_option,
+    jagal_metrics=None,
+):
+    """Membuat insight otomatis dari berat, karkas, BCS, akurasi input, dan metrik jagal."""
+    berat_badan = max(0.0, float(berat_badan or 0))
+    karkas_weight = float(karkas_data.get("karkas_weight", 0) or 0)
+    meat_weight = float(karkas_data.get("meat_weight", 0) or 0)
+    bone_fat_weight = float(karkas_data.get("bone_and_fat_weight", 0) or 0)
+    non_karkas_total = sum(float(value or 0) for value in (karkas_data.get("non_karkas_weights", {}) or {}).values())
+
+    karkas_yield = (karkas_weight / berat_badan * 100) if berat_badan > 0 else 0
+    meat_yield_live = (meat_weight / berat_badan * 100) if berat_badan > 0 else 0
+    meat_yield_carcass = (meat_weight / karkas_weight * 100) if karkas_weight > 0 else 0
+    bone_fat_ratio = (bone_fat_weight / karkas_weight * 100) if karkas_weight > 0 else 0
+    non_karkas_ratio = (non_karkas_total / berat_badan * 100) if berat_badan > 0 else 0
+
+    karkas_category = get_efficiency_category(karkas_yield, (45, 50, 55))
+    meat_category = get_efficiency_category(meat_yield_live, (30, 35, 40))
+    accuracy_category = get_efficiency_category(float(accuracy_score or 0), (55, 70, 85))
+
+    risk_notes = []
+    opportunity_notes = []
+
+    if accuracy_score < 70:
+        risk_notes.append("Skor akurasi input belum tinggi; hasil estimasi sebaiknya diverifikasi ulang dengan pengukuran ulang atau timbangan.")
+    else:
+        opportunity_notes.append("Kualitas input cukup baik untuk dipakai sebagai estimasi awal.")
+
+    if bcs_option in ["1 - Sangat Kurus", "2 - Kurus"]:
+        risk_notes.append("BCS kurus berpotensi menurunkan hasil daging aktual dibandingkan angka estimasi.")
+    elif bcs_option in ["4 - Gemuk", "5 - Sangat Gemuk"]:
+        risk_notes.append("BCS gemuk dapat meningkatkan proporsi lemak, sehingga daging bersih perlu dibaca hati-hati.")
+    elif bcs_option == "3 - Sedang/Ideal":
+        opportunity_notes.append("BCS sedang/ideal mendukung hasil estimasi yang lebih stabil.")
+
+    if karkas_yield < 48:
+        risk_notes.append("Persentase karkas relatif rendah; cek kondisi tubuh, umur, dan bangsa ternak.")
+    elif karkas_yield >= 55:
+        opportunity_notes.append("Persentase karkas relatif baik; potensi hasil potong cukup menarik.")
+
+    if meat_yield_live < 34:
+        risk_notes.append("Estimasi daging bersih terhadap bobot hidup relatif rendah; margin jagal perlu lebih hati-hati.")
+    elif meat_yield_live >= 40:
+        opportunity_notes.append("Estimasi daging bersih terhadap bobot hidup relatif tinggi.")
+
+    if jagal_metrics:
+        if jagal_metrics.get("profit", 0) < 0:
+            risk_notes.append("Simulasi jagal menunjukkan potensi rugi pada harga dan biaya yang dimasukkan.")
+        elif jagal_metrics.get("roi_percent", 0) < 10:
+            risk_notes.append("ROI jagal masih tipis; sisakan ruang negosiasi harga beli.")
+        else:
+            opportunity_notes.append("ROI jagal relatif baik berdasarkan simulasi harga dan biaya saat ini.")
+
+    if not risk_notes:
+        risk_notes.append("Tidak ada risiko besar yang terdeteksi dari parameter utama, tetapi hasil tetap bersifat estimasi.")
+
+    if not opportunity_notes:
+        opportunity_notes.append("Peluang dapat ditingkatkan dengan memperbaiki harga jual, menekan biaya, atau memilih ternak dengan BCS lebih ideal.")
+
+    return {
+        "karkas_yield": karkas_yield,
+        "meat_yield_live": meat_yield_live,
+        "meat_yield_carcass": meat_yield_carcass,
+        "bone_fat_ratio": bone_fat_ratio,
+        "non_karkas_ratio": non_karkas_ratio,
+        "karkas_category": karkas_category,
+        "meat_category": meat_category,
+        "accuracy_category": accuracy_category,
+        "risk_notes": risk_notes,
+        "opportunity_notes": opportunity_notes,
+    }
+
+
+def create_price_sensitivity_dataframe(
+    karkas_data,
+    harga_jual_daging,
+    harga_jual_tulang_lemak,
+    harga_jual_non_karkas,
+    harga_beli_ternak,
+    biaya_operasional,
+):
+    """Membuat tabel sensitivitas profit jika harga jual berubah."""
+    rows = []
+    for change_percent in [-10, -5, 0, 5, 10]:
+        factor = 1 + (change_percent / 100)
+        metrics = calculate_butcher_metrics(
+            karkas_data=karkas_data,
+            harga_beli_ternak=harga_beli_ternak,
+            harga_jual_daging=harga_jual_daging * factor,
+            harga_jual_tulang_lemak=harga_jual_tulang_lemak * factor,
+            harga_jual_non_karkas=harga_jual_non_karkas * factor,
+            biaya_pemotongan=biaya_operasional,
+            biaya_transportasi=0,
+            biaya_tenaga_kerja=0,
+            biaya_es_penyimpanan=0,
+            biaya_sewa_retribusi=0,
+            biaya_lain_lain=0,
+            target_margin_percent=10,
+        )
+        rows.append({
+            "Perubahan Harga Jual": f"{change_percent:+.0f}%",
+            "Estimasi Omzet": format_rupiah(metrics["omzet_total"]),
+            "Estimasi Profit": format_rupiah(metrics["profit"]),
+            "ROI": f"{metrics['roi_percent']:.1f}%",
+            "Keputusan": metrics["decision"],
+        })
+    return pd.DataFrame(rows)
+
+
+def create_shrinkage_sensitivity_dataframe(
+    jagal_metrics,
+    harga_jual_daging,
+):
+    """Membuat simulasi dampak susut daging terhadap profit."""
+    meat_weight = float(jagal_metrics.get("meat_weight", 0) or 0)
+    base_profit = float(jagal_metrics.get("profit", 0) or 0)
+    rows = []
+
+    for shrink_percent in [0, 2, 5, 8, 10]:
+        shrink_weight = meat_weight * (shrink_percent / 100)
+        profit_after_shrink = base_profit - (shrink_weight * harga_jual_daging)
+        rows.append({
+            "Susut Daging": f"{shrink_percent}%",
+            "Estimasi Susut (kg)": round(shrink_weight, 2),
+            "Penurunan Nilai": format_rupiah(shrink_weight * harga_jual_daging),
+            "Profit Setelah Susut": format_rupiah(profit_after_shrink),
+        })
+
+    return pd.DataFrame(rows)
+
+
+def create_decision_checklist(insights, jagal_metrics=None):
+    """Membuat checklist tindakan lanjutan berdasarkan insight."""
+    checklist = []
+
+    if insights["accuracy_category"] in ["Rendah", "Cukup"]:
+        checklist.append("Ukur ulang lingkar dada dan panjang badan minimal 2–3 kali.")
+    else:
+        checklist.append("Data pengukuran cukup layak; tetap simpan hasil sebagai estimasi, bukan angka final.")
+
+    if insights["karkas_category"] in ["Rendah", "Cukup"]:
+        checklist.append("Cek kembali BCS, umur, dan kondisi fisik karena potensi karkas belum optimal.")
+    else:
+        checklist.append("Persentase karkas cukup menarik untuk dipertimbangkan dalam transaksi.")
+
+    if jagal_metrics:
+        if jagal_metrics.get("decision") == "Berisiko Rugi":
+            checklist.append("Prioritas: turunkan harga beli atau batalkan transaksi jika harga jual tidak bisa naik.")
+        elif jagal_metrics.get("decision") == "Perlu Negosiasi":
+            checklist.append("Negosiasikan harga beli mendekati harga beli maksimal target margin.")
+        else:
+            checklist.append("Transaksi relatif layak, tetapi tetap sisakan cadangan risiko susut dan biaya tambahan.")
+
+    checklist.append("Cocokkan kembali harga daging, tulang/lemak, dan non-karkas dengan pasar setempat.")
+    return checklist
+
 def calculate_input_accuracy_score(
     lingkar_dada,
     panjang_badan,
@@ -2023,12 +2197,13 @@ if st.session_state.show_results:
     # Area hasil dibuat bertab agar fokus utama tetap pada hitung berat badan.
     status_ukuran, status_note = get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak)
 
-    hasil_tab, target_tab, ekonomi_tab, biaya_tab, jagal_tab = st.tabs([
+    hasil_tab, target_tab, ekonomi_tab, biaya_tab, jagal_tab, insight_tab = st.tabs([
         "⚖️ Hitung Berat Badan",
         "🎯 Simulasi Target Berat",
         "💰 Estimasi Ekonomi",
         "📊 Biaya & Keuntungan",
         "🔪 Kalkulator Jagal",
+        "📈 Insight Analisis",
     ])
 
     with hasil_tab:
@@ -2523,6 +2698,107 @@ if st.session_state.show_results:
         st.caption(
             "Catatan: nilai non-karkas memakai harga rata-rata gabungan. Untuk transaksi aktual, "
             "harga kulit, kepala, kaki, jeroan, dan komponen lain sebaiknya disesuaikan dengan pasar setempat."
+        )
+
+
+
+    with insight_tab:
+        st.markdown("#### Insight Analisis Otomatis")
+        st.write(
+            "Tab ini merangkum hasil utama menjadi insight praktis untuk membaca kualitas ternak, "
+            "risiko transaksi, dan prioritas tindakan."
+        )
+
+        insights = calculate_operational_insights(
+            berat_badan=berat_badan,
+            karkas_data=karkas_data,
+            accuracy_score=accuracy_score,
+            bcs_option=bcs_option,
+            jagal_metrics=jagal_metrics if "jagal_metrics" in locals() else None,
+        )
+
+        insight_col1, insight_col2, insight_col3, insight_col4 = st.columns(4)
+        with insight_col1:
+            st.metric("Efisiensi Karkas", f"{insights['karkas_yield']:.1f}%")
+            st.caption(insights["karkas_category"])
+        with insight_col2:
+            st.metric("Daging / Bobot Hidup", f"{insights['meat_yield_live']:.1f}%")
+            st.caption(insights["meat_category"])
+        with insight_col3:
+            st.metric("Daging / Karkas", f"{insights['meat_yield_carcass']:.1f}%")
+            st.caption("Proporsi daging dari karkas")
+        with insight_col4:
+            st.metric("Non-Karkas / Bobot Hidup", f"{insights['non_karkas_ratio']:.1f}%")
+            st.caption("Kepala, kulit, kaki, jeroan, dll.")
+
+        st.markdown("#### Ringkasan Komposisi Hasil Potong")
+        composition_df = pd.DataFrame([
+            {"Indikator": "Bobot hidup", "Nilai": f"{berat_badan:.2f} kg", "Insight": "Dasar estimasi seluruh hasil potong"},
+            {"Indikator": "Berat karkas", "Nilai": f"{karkas_data['karkas_weight']:.2f} kg", "Insight": f"Efisiensi {insights['karkas_yield']:.1f}%"},
+            {"Indikator": "Berat daging bersih", "Nilai": f"{karkas_data['meat_weight']:.2f} kg", "Insight": f"{insights['meat_yield_live']:.1f}% dari bobot hidup"},
+            {"Indikator": "Tulang & lemak karkas", "Nilai": f"{karkas_data['bone_and_fat_weight']:.2f} kg", "Insight": f"{insights['bone_fat_ratio']:.1f}% dari karkas"},
+            {"Indikator": "Non-karkas", "Nilai": f"{sum(karkas_data['non_karkas_weights'].values()):.2f} kg", "Insight": f"{insights['non_karkas_ratio']:.1f}% dari bobot hidup"},
+        ])
+        st.dataframe(composition_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Risiko Utama")
+        for note in insights["risk_notes"]:
+            st.warning(note)
+
+        st.markdown("#### Peluang / Sisi Positif")
+        for note in insights["opportunity_notes"]:
+            st.success(note)
+
+        if "jagal_metrics" in locals():
+            st.markdown("#### Sensitivitas Harga Jual")
+            price_sensitivity_df = create_price_sensitivity_dataframe(
+                karkas_data=karkas_data,
+                harga_jual_daging=harga_jual_daging_jagal,
+                harga_jual_tulang_lemak=harga_jual_tulang_lemak_jagal,
+                harga_jual_non_karkas=harga_jual_non_karkas_jagal,
+                harga_beli_ternak=harga_beli_ternak_jagal,
+                biaya_operasional=jagal_metrics["biaya_operasional"],
+            )
+            st.dataframe(price_sensitivity_df, use_container_width=True, hide_index=True)
+
+            st.markdown("#### Sensitivitas Susut Daging")
+            shrinkage_df = create_shrinkage_sensitivity_dataframe(
+                jagal_metrics=jagal_metrics,
+                harga_jual_daging=harga_jual_daging_jagal,
+            )
+            st.dataframe(shrinkage_df, use_container_width=True, hide_index=True)
+
+            st.markdown("#### Struktur Omzet Jagal")
+            omzet_total = jagal_metrics["omzet_total"] if jagal_metrics["omzet_total"] > 0 else 1
+            omzet_structure_df = pd.DataFrame([
+                {
+                    "Sumber Omzet": "Daging",
+                    "Nilai": format_rupiah(jagal_metrics["omzet_daging"]),
+                    "Kontribusi": f"{(jagal_metrics['omzet_daging'] / omzet_total) * 100:.1f}%",
+                },
+                {
+                    "Sumber Omzet": "Tulang & lemak",
+                    "Nilai": format_rupiah(jagal_metrics["omzet_tulang_lemak"]),
+                    "Kontribusi": f"{(jagal_metrics['omzet_tulang_lemak'] / omzet_total) * 100:.1f}%",
+                },
+                {
+                    "Sumber Omzet": "Non-karkas",
+                    "Nilai": format_rupiah(jagal_metrics["omzet_non_karkas"]),
+                    "Kontribusi": f"{(jagal_metrics['omzet_non_karkas'] / omzet_total) * 100:.1f}%",
+                },
+            ])
+            st.dataframe(omzet_structure_df, use_container_width=True, hide_index=True)
+
+        st.markdown("#### Checklist Keputusan")
+        for item in create_decision_checklist(
+            insights,
+            jagal_metrics if "jagal_metrics" in locals() else None,
+        ):
+            st.write(f"- {item}")
+
+        st.caption(
+            "Insight ini membantu membaca hasil secara cepat. Keputusan akhir tetap perlu mempertimbangkan "
+            "pemeriksaan fisik, timbangan aktual, harga pasar, dan biaya nyata di lapangan."
         )
 
 

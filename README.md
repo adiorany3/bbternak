@@ -1,6 +1,6 @@
-# Sapi Weight Predictor - Kalkulator Jagal
+# Sapi Weight Predictor - Insight Analisis
 
-Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi estimasi hasil potong dan kalkulator jagal.
+Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi kalkulator jagal dan insight otomatis.
 
 ## Fokus Tampilan
 
@@ -25,6 +25,7 @@ Setelah tombol **Hitung Berat Badan** ditekan, hasil tampil dalam tab:
 💰 Estimasi Ekonomi
 📊 Biaya & Keuntungan
 🔪 Kalkulator Jagal
+📈 Insight Analisis
 ```
 
 ## Fitur Utama
@@ -40,12 +41,6 @@ Setelah tombol **Hitung Berat Badan** ditekan, hasil tampil dalam tab:
 - Estimasi ekonomi berdasarkan jenis, bangsa, dan kelas pasar ternak.
 - Estimasi biaya pemeliharaan, total modal, keuntungan, dan ROI.
 - Kalkulator jagal:
-  - Harga beli ternak
-  - Biaya pemotongan
-  - Biaya transportasi
-  - Biaya tenaga kerja
-  - Biaya es/penyimpanan
-  - Biaya sewa/retribusi
   - Estimasi omzet daging
   - Estimasi omzet tulang & lemak
   - Estimasi omzet non-karkas
@@ -54,7 +49,18 @@ Setelah tombol **Hitung Berat Badan** ditekan, hasil tampil dalam tab:
   - ROI jagal
   - Harga beli impas
   - Harga beli maksimal sesuai target margin
-  - Rekomendasi keputusan: Layak Dibeli, Perlu Negosiasi, atau Berisiko Rugi
+  - Rekomendasi keputusan
+- Insight Analisis:
+  - Efisiensi karkas
+  - Daging terhadap bobot hidup
+  - Daging terhadap karkas
+  - Non-karkas terhadap bobot hidup
+  - Risiko utama
+  - Peluang/sisi positif
+  - Sensitivitas harga jual
+  - Sensitivitas susut daging
+  - Struktur omzet jagal
+  - Checklist keputusan
 - Rekomendasi otomatis.
 - Download laporan PDF.
 - Riwayat perhitungan.
@@ -100,6 +106,7 @@ sapi_weight_predictor.py
 
 ## Catatan
 
+- Insight otomatis adalah alat bantu membaca hasil, bukan keputusan mutlak.
 - Nilai non-karkas pada kalkulator jagal memakai harga rata-rata gabungan.
 - Untuk transaksi aktual, harga kulit, kepala, kaki, jeroan, dan komponen lain sebaiknya disesuaikan dengan pasar setempat.
 - BCS adalah penilaian sederhana kondisi tubuh, bukan diagnosis kesehatan.
