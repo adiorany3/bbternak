@@ -1,3 +1,12 @@
+
+## Tambahan Pilihan Sapi
+
+Tersedia 40 pilihan sapi: 8 data lama dan 32 tambahan rumpun lokal, impor, serta silangan. Daftar ini bukan inventaris lengkap seluruh sapi di Indonesia; nama silangan tidak selalu merupakan rumpun resmi.
+
+**Tambahan memakai estimasi belum tervalidasi.** Pemetaan `CATTLE_ESTIMATE_BASES` menyebutkan sapi acuan untuk rumus, faktor bobot, rentang ukuran/umur, karkas, dan faktor harga. Pemetaan merupakan pendekatan aplikasi, bukan bukti kesetaraan biologis. Target bobot, hasil potong, dan analisis ekonomi harus diperiksa dengan penimbangan serta harga pasar setempat. Referensi karkas sapi acuan tidak diklaim sebagai validasi sapi tambahan.
+
+Uji data tanpa memasang Streamlit: `python3 test_cattle_data.py`.
+
 # Sapi Weight Predictor - Systematic UI
 
 Aplikasi Streamlit untuk menghitung prediksi berat badan ternak berdasarkan lingkar dada dan panjang badan, dilengkapi analisis berdasarkan **jenis ternak + bangsa ternak**.

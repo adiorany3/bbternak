@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import seaborn as sns
 import json
+from copy import deepcopy
 from PIL import Image
 from io import BytesIO
 import plotly.graph_objects as go
@@ -1246,6 +1247,56 @@ SLAUGHTER_DATA = {
 }
 
 # Function definitions - add these before they're called in the app
+# ponytail: parameter proksi, bukan kalibrasi rumpun; ganti dengan data tervalidasi saat tersedia.
+CATTLE_ESTIMATE_BASES = {
+    "Sapi Pesisir": "Sapi Aceh",
+    "Sapi Sumba Ongole (SO)": "Sapi Peranakan Ongole (PO)",
+    "Sapi Ongole": "Sapi Peranakan Ongole (PO)",
+    "Sapi Jabres": "Sapi Madura",
+    "Sapi Pasundan": "Sapi Madura",
+    "Sapi Rancah": "Sapi Madura",
+    "Sapi Rambon": "Sapi Madura",
+    "Sapi Galekan": "Sapi Madura",
+    "Sapi PO Kebumen": "Sapi Peranakan Ongole (PO)",
+    "Sapi Kuantan": "Sapi Aceh",
+    "Sapi Sumbawa": "Sapi Bali",
+    "Sapi Bali Polled": "Sapi Bali",
+    "Sapi Belgian Blue": "Sapi Limousin",
+    "Sapi Angus": "Sapi Limousin",
+    "Sapi Hereford": "Sapi Simental",
+    "Sapi Charolais": "Sapi Simental",
+    "Sapi Shorthorn": "Sapi Simental",
+    "Sapi Santa Gertrudis": "Sapi Brahman",
+    "Sapi Droughtmaster": "Sapi Brahman",
+    "Sapi Brangus": "Sapi Brahman",
+    "Sapi Brahman Cross (BX)": "Sapi Brahman",
+    "Sapi Wagyu": "Sapi Limousin",
+    "Sapi Jersey": "Sapi Friesian Holstein (FH)",
+    "Sapi Peranakan Friesian Holstein (PFH)": "Sapi Friesian Holstein (FH)",
+    "Sapi Sahiwal": "Sapi Peranakan Ongole (PO)",
+    "Sapi Limousin × PO (Limpo)": "Sapi Peranakan Ongole (PO)",
+    "Sapi Simental × PO (Simpo)": "Sapi Peranakan Ongole (PO)",
+    "Sapi Limousin × Bali (Limbal)": "Sapi Bali",
+    "Sapi Simental × Bali (Simbal)": "Sapi Bali",
+    "Sapi Simental × Brahman (Simbrah)": "Sapi Brahman",
+    "Sapi Belgian Blue Silangan": "Sapi Limousin",
+    "Sapi Wagyu Silangan": "Sapi Limousin",
+}
+for cattle_name, base_name in CATTLE_ESTIMATE_BASES.items():
+    estimate_note = (
+        f"Estimasi belum tervalidasi untuk {cattle_name}. "
+        f"Rumus, faktor bobot, rentang ukuran/umur, karkas, dan faktor harga "
+        f"menggunakan pendekatan {base_name}; bukan data khusus rumpun ini. "
+        "Target bobot dan analisis ekonomi juga bersifat pendekatan. "
+        "Validasi dengan timbangan dan harga pasar lokal sebelum transaksi."
+    )
+    ANIMAL_DATA["Sapi"]["breeds"][cattle_name] = deepcopy(ANIMAL_DATA["Sapi"]["breeds"][base_name])
+    ANIMAL_DATA["Sapi"]["breeds"][cattle_name]["estimate_note"] = estimate_note
+    SLAUGHTER_DATA["Sapi"]["breeds"][cattle_name] = deepcopy(SLAUGHTER_DATA["Sapi"]["breeds"][base_name])
+    SLAUGHTER_DATA["Sapi"]["breeds"][cattle_name]["reference"] = estimate_note
+    BREED_PRICE_FACTORS["Sapi"][cattle_name] = BREED_PRICE_FACTORS["Sapi"][base_name]
+
+
 def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak, jenis_kelamin):
     """
     Menghitung berat badan ternak berdasarkan lingkar dada, panjang badan, jenis ternak, bangsa, dan jenis kelamin
@@ -3365,6 +3416,9 @@ jenis_kelamin = st.sidebar.selectbox(
 
 # Dapatkan rentang ukuran untuk bangsa ternak yang dipilih
 breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
+if breed_data.get("estimate_note"):
+    st.sidebar.warning(breed_data["estimate_note"])
+    st.warning(breed_data["estimate_note"])
 chest_range = breed_data["chest_range"]
 length_range = breed_data["length_range"]
 
