@@ -3303,8 +3303,6 @@ st.markdown("""
 
 # ponytail: chat dalam panel; bubble global membutuhkan dukungan host di luar iframe Streamlit.
 with st.expander("Tanya AI — Chat", expanded=False):
-    st.caption("Pesan dikirim ke layanan Dify. Jangan masukkan data pribadi atau rahasia. Jawaban AI perlu diverifikasi.")
-    st.markdown("[Buka chat di tab baru](https://udify.app/chatbot/s8pa4tyZ2EdkN1Bf) jika chat tidak tampil.")
     components.iframe("https://udify.app/chatbot/s8pa4tyZ2EdkN1Bf", height=560, scrolling=True)
 
 with st.expander("📏 Panduan pengukuran dan catatan akurasi", expanded=False):
@@ -4458,12 +4456,8 @@ if st.session_state.show_results:
         )
 
         st.markdown("#### Prompt Siap Salin")
-        st.text_area(
-            "Salin prompt di bawah ini, lalu tempel ke AI lain.",
-            value=ai_prompt_text,
-            height=520,
-            key="generated_ai_prompt_text_area"
-        )
+        st.caption("Klik ikon salin di pojok kanan atas kotak prompt, lalu tempel ke chat AI.")
+        st.code(ai_prompt_text, language=None)
 
         download_filename = (
             f"prompt_ai_{jenis_ternak}_{bangsa_ternak}_{prompt_mode}"
