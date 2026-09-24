@@ -10,6 +10,7 @@ jenis dan bangsa ternak yang berbeda.
 """
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -3299,6 +3300,12 @@ st.markdown("""
     <div class="workflow-step"><b>5. Simpan</b><span>Unduh PDF, CSV riwayat, atau proses banyak ternak sekaligus.</span></div>
 </div>
 """, unsafe_allow_html=True)
+
+# ponytail: chat dalam panel; bubble global membutuhkan dukungan host di luar iframe Streamlit.
+with st.expander("Tanya AI — Chat", expanded=False):
+    st.caption("Pesan dikirim ke layanan Dify. Jangan masukkan data pribadi atau rahasia. Jawaban AI perlu diverifikasi.")
+    st.markdown("[Buka chat di tab baru](https://udify.app/chatbot/s8pa4tyZ2EdkN1Bf) jika chat tidak tampil.")
+    components.iframe("https://udify.app/chatbot/s8pa4tyZ2EdkN1Bf", height=560, scrolling=True)
 
 with st.expander("📏 Panduan pengukuran dan catatan akurasi", expanded=False):
     # Tambahkan panduan pengukuran
