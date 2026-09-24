@@ -1312,6 +1312,10 @@ def hitung_berat_badan(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak,
     Returns:
         tuple: (berat_badan, formula_name, formula_text)
     """
+    for label, value in (("Lingkar dada", lingkar_dada), ("Panjang badan", panjang_badan)):
+        if isinstance(value, bool) or not 0 < value < float("inf"):
+            raise ValueError(f"{label} harus berupa angka positif dan berhingga (cm).")
+
     # Dapatkan informasi formula yang digunakan untuk bangsa ternak ini
     breed_data = ANIMAL_DATA[jenis_ternak]["breeds"][bangsa_ternak]
     formula_name = breed_data["formula_name"]
@@ -1349,6 +1353,8 @@ def hitung_komponen_karkas(berat_badan, jenis_ternak, bangsa_ternak, jenis_kelam
     Returns:
         dict: Dictionary berisi informasi karkas dan non-karkas
     """
+    if isinstance(berat_badan, bool) or not 0 <= berat_badan < float("inf"):
+        raise ValueError("Berat badan harus berhingga dan tidak negatif (kg).")
     slaughter_data_breed = SLAUGHTER_DATA[jenis_ternak]["breeds"][bangsa_ternak]
 
     if berat_badan == 0:
@@ -1649,7 +1655,7 @@ def clean_price_value(value, fallback=0):
         value = float(value)
     except (TypeError, ValueError):
         return float(fallback)
-    return value if value > 0 else float(fallback)
+    return value if 0 < value < float("inf") else float(fallback)
 
 
 def get_size_status(lingkar_dada, panjang_badan, jenis_ternak, bangsa_ternak):
@@ -1707,11 +1713,10 @@ def apply_market_class_to_prices(price_defaults, market_multiplier, market_class
 
 
 def calculate_error_range(value, margin_percent):
-    """Menghitung rentang bawah-atas berdasarkan margin error."""
-    try:
-        margin = float(margin_percent) / 100
-    except (TypeError, ValueError):
-        margin = 0.10
+    """Rentang sensitivitas pengguna; bukan interval statistik tervalidasi."""
+    margin = float(margin_percent) / 100
+    if not 0 <= value < float("inf") or not 0 <= margin <= 1:
+        raise ValueError("Nilai harus berhingga dan tidak negatif; margin harus 0–100%.")
 
     lower = max(0, value * (1 - margin))
     upper = value * (1 + margin)
@@ -3279,6 +3284,16 @@ def process_batch_dataframe(df):
 
     return pd.DataFrame(results)
 
+
+# Status bukti berlaku juga untuk rumpun lama, bukan hanya tambahan.
+st.warning(
+    "Status ilmiah: aplikasi ini simulasi eksploratif, belum model tervalidasi. "
+    "Referensi, koefisien rumus, faktor bangsa/kelamin, rentang ukuran, persentase karkas, "
+    "dan harga bawaan belum diverifikasi terhadap sumber primer. "
+    "Skor akurasi adalah heuristik, bukan akurasi terukur; margin error adalah skenario pengguna, "
+    "bukan interval kepercayaan/prediksi. Histogram berasal dari simulasi ukuran, bukan sampel ternak. "
+    "Gunakan timbangan, data potong, dan harga lokal sebelum keputusan riset atau transaksi."
+)
 
 # Judul dan deskripsi aplikasi
 st.markdown("""

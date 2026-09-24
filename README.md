@@ -1,3 +1,11 @@
+## Scientific status
+
+**Exploratory simulation; not scientifically validated.** Formula citations, breed/sex
+corrections, carcass data and default prices still require primary-source verification.
+“Accuracy” scores are heuristics; percentage ranges are user scenarios, not statistical
+prediction intervals. See [audit findings and unresolved issues](SCIENTIFIC_AUDIT.md).
+
+
 
 ## Tambahan Pilihan Sapi
 
